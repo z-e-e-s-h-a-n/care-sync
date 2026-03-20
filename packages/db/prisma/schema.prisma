@@ -1,0 +1,458 @@
+generator client {
+    provider = "prisma-client"
+    output   = "./generated"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+//
+// ENUMS
+//
+
+enum ThemeMode {
+    light
+    dark
+    system
+}
+
+enum UserRole {
+    admin
+    customer
+}
+
+enum UserStatus {
+    pending
+    active
+    suspended
+}
+
+enum OtpPurpose {
+    setPassword
+    resetPassword
+    updatePassword
+    verifyIdentifier
+    updateIdentifier
+    enableMfa
+    disableMfa
+    updateMfa
+    verifyMfa
+}
+
+enum OtpType {
+    numericCode
+    secureToken
+}
+
+enum MfaMethod {
+    email
+    sms
+    whatsapp
+    authApp
+}
+
+enum SessionStatus {
+    active
+    revoked
+    expired
+}
+
+enum NotificationChannel {
+    push
+    email
+    sms
+    whatsapp
+}
+
+enum MessagingChannel {
+    sms
+    whatsapp
+}
+
+enum PushProvider {
+    fcm
+    expo
+}
+
+enum NotificationPurpose {
+    signUp
+    signIn
+    verifyMfa
+    updateMfa
+    updatePassword
+    verifyIdentifier
+    updateIdentifier
+
+    userStatus
+
+    newsletter
+    securityAlert
+    contactMessage
+}
+
+enum NotificationPriority {
+    normal
+    important
+}
+
+enum NotificationStatus {
+    pending
+    partial
+    sent
+    failed
+}
+
+enum ContactMessageStatus {
+    pending
+    replied
+}
+
+enum AuditAction {
+    create
+    update
+    delete
+    login
+    logout
+    statusChange
+}
+
+enum MediaVisibility {
+    private
+    public
+}
+
+enum MediaType {
+    photo
+    logo
+    other
+}
+
+//
+// AUTH MODELS
+//
+
+model User {
+    // Core fields
+    id          String  @id @default(ulid())
+    firstName   String
+    lastName    String?
+    displayName String
+    password    String? @db.VarChar(255)
+
+    imageId String?
+    image   Media?  @relation("UserImage", fields: [imageId], references: [id])
+
+    // Contact info
+    email           String? @unique @db.VarChar(255)
+    phone           String? @unique @db.VarChar(20)
+    isEmailVerified Boolean @default(false)
+    isPhoneVerified Boolean @default(false)
+
+    role   UserRole
+    status UserStatus @default(pending)
+
+    preferredTheme    ThemeMode @default(system)
+    pushNotifications Boolean   @default(false)
+
+    preferredMfa    MfaMethod?
+    fallbackChannel MessagingChannel @default(sms)
+
+    loginAlerts Boolean   @default(true)
+    lastLoginAt DateTime?
+
+    // Meta
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    // Relations
+    otps          Otp[]
+    sessions      Session[]
+    notifications Notification[]
+    auditLogs     AuditLog[]
+
+    medias Media[] @relation("UserUploads")
+
+    // Indexes
+    @@index([status])
+    @@index([role])
+    @@index([email, isEmailVerified])
+    @@index([phone, isPhoneVerified])
+    @@index([deletedAt])
+}
+
+model Session {
+    id String @id @default(ulid())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    refreshTokenHash String
+    status           SessionStatus @default(active)
+
+    ip       String
+    location String
+    isp      String?
+    timezone String
+
+    deviceId   String
+    deviceType String
+    deviceInfo String
+
+    isTrusted  Boolean   @default(false)
+    lastSeenAt DateTime?
+
+    pushProvider PushProvider?
+    pushToken    String?
+
+    createdAt DateTime  @default(now())
+    expiresAt DateTime
+    revokedAt DateTime?
+
+    @@unique([userId, deviceId])
+    @@index([expiresAt])
+    @@index([userId, status])
+    @@index([expiresAt, status])
+}
+
+model Otp {
+    id        String     @id @default(ulid())
+    userId    String
+    user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    purpose   OtpPurpose
+    type      OtpType    @default(numericCode)
+    secret    String
+    meta      Json?
+    expiresAt DateTime
+    usedAt    DateTime?
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @updatedAt
+
+    @@index([userId, purpose])
+    @@index([expiresAt])
+}
+
+model Notification {
+    id     String @id @default(ulid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    purpose  NotificationPurpose
+    channels NotificationChannel[]
+    priority NotificationPriority
+
+    subject   String
+    message   String
+    recipient String
+    meta      Json?
+
+    status NotificationStatus @default(failed)
+
+    viewedAt  DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    @@index([userId])
+    @@index([status, createdAt])
+}
+
+model Media {
+    id String @id @default(ulid())
+
+    uploadedById String
+    uploadedBy   User   @relation("UserUploads", fields: [uploadedById], references: [id])
+
+    url      String @unique
+    filename String
+    mimeType String
+    size     Int
+    hash     String @unique
+
+    title      String
+    altText    String?
+    type       MediaType
+    visibility MediaVisibility @default(private)
+
+    notes String?
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    users            User[]            @relation("UserImage")
+    businessLogos    BusinessProfile[] @relation("BusinessProfileLogo")
+    businessCovers   BusinessProfile[] @relation("BusinessProfileCoverImage")
+    businessFavIcons BusinessProfile[] @relation("BusinessProfileFavicon")
+
+    @@index([type])
+    @@index([filename])
+    @@index([uploadedById])
+    @@index([createdAt])
+    @@index([deletedAt])
+}
+
+//
+// SYSTEM
+//
+
+model AuditLog {
+    id String @id @default(ulid())
+
+    userId String?
+    user   User?   @relation(fields: [userId], references: [id])
+
+    action AuditAction
+
+    entityType String
+    entityId   String
+
+    meta Json?
+
+    ip        String?
+    userAgent String?
+
+    createdAt DateTime @default(now())
+
+    @@index([userId])
+    @@index([entityType, entityId])
+    @@index([createdAt])
+}
+
+model ContactMessage {
+    id String @id @default(cuid())
+
+    trafficSourceId String?
+    trafficSource   TrafficSource? @relation(fields: [trafficSourceId], references: [id])
+
+    fullName String
+    email    String
+    phone    String
+    message  String
+
+    status ContactMessageStatus @default(pending)
+    notes  String?
+
+    viewedAt  DateTime?
+    repliedAt DateTime?
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    @@index([createdAt])
+    @@index([status])
+    @@index([email])
+}
+
+model NewsletterSubscriber {
+    id String @id @default(ulid())
+
+    trafficSourceId String?
+    trafficSource   TrafficSource? @relation(fields: [trafficSourceId], references: [id])
+
+    name  String
+    email String @unique @db.VarChar(255)
+
+    isActive Boolean @default(true)
+
+    subscribedAt   DateTime  @default(now())
+    unsubscribedAt DateTime?
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    @@index([email])
+    @@index([createdAt])
+    @@index([isActive])
+}
+
+model TrafficSource {
+    id String @id @default(ulid())
+
+    utmSource   String?
+    utmMedium   String?
+    utmCampaign String?
+    utmTerm     String?
+    utmContent  String?
+
+    referrer    String?
+    landingPage String?
+
+    ip        String?
+    userAgent String?
+
+    createdAt DateTime @default(now())
+
+    contactMessages ContactMessage[]
+    newsletterSubs  NewsletterSubscriber[]
+}
+
+model BusinessPhone {
+    id    String @id @default(ulid())
+    label String
+    value String @db.VarChar(20)
+
+    whatsappProfile BusinessProfile? @relation("BusinessProfileWhatsapp")
+
+    phoneProfileId String?
+    phoneProfile   BusinessProfile? @relation("BusinessProfilePhones", fields: [phoneProfileId], references: [id], onDelete: Cascade)
+
+    faxProfileId String?
+    faxProfile   BusinessProfile? @relation("BusinessProfileFax", fields: [faxProfileId], references: [id], onDelete: Cascade)
+}
+
+model BusinessAddress {
+    id      String @id @default(ulid())
+    label   String
+    line1   String
+    city    String
+    state   String
+    zip     String
+    country String
+
+    businessProfileId String?
+    businessProfile   BusinessProfile? @relation("BusinessProfileAddresses", fields: [businessProfileId], references: [id], onDelete: Cascade)
+}
+
+model BusinessProfile {
+    id String @id @default(ulid())
+
+    name        String
+    legalName   String
+    description String
+
+    faviconId String
+    favicon   Media  @relation("BusinessProfileFavicon", fields: [faviconId], references: [id])
+
+    logoId String
+    logo   Media  @relation("BusinessProfileLogo", fields: [logoId], references: [id])
+
+    coverId String?
+    cover   Media?  @relation("BusinessProfileCoverImage", fields: [coverId], references: [id])
+
+    email String @db.VarChar(255)
+
+    whatsappId String        @unique
+    whatsapp   BusinessPhone @relation("BusinessProfileWhatsapp", fields: [whatsappId], references: [id])
+
+    website   String
+    facebook  String
+    instagram String
+    twitter   String
+    linkedin  String
+
+    fax       BusinessPhone[]   @relation("BusinessProfileFax")
+    phones    BusinessPhone[]   @relation("BusinessProfilePhones")
+    addresses BusinessAddress[] @relation("BusinessProfileAddresses")
+
+    officeHoursDays String?
+    officeHoursTime String?
+
+    metaTitle       String
+    metaDescription String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}

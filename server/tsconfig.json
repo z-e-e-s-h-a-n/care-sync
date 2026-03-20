@@ -1,0 +1,24 @@
+{
+  "extends": "@workspace/config/typescript/node",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "rootDir": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/decorators/*": ["src/lib/decorators/*"],
+      "@/dto/*": ["src/lib/dto/*"],
+      "@/filters/*": ["src/lib/filters/*"],
+      "@/guards/*": ["src/lib/guards/*"],
+      "@/middleware/*": ["src/lib/middleware/*"],
+      "@/interceptors/*": ["src/lib/interceptors/*"],
+      "@/pipes/*": ["src/lib/pipes/*"],
+      "@/schemas/*": ["src/lib/schemas/*"],
+      "@/templates/*": ["src/lib/templates/*"],
+      "@/utils/*": ["src/lib/utils/*"],
+      "@/constants/*": ["src/lib/constants/*"]
+    }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

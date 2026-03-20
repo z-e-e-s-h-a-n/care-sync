@@ -1,0 +1,36 @@
+{
+  "name": "@workspace/sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "ISC",
+  "scripts": {
+    "lint": "eslint",
+    "check-types": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/lib/index.ts",
+    "./public": "./src/public/index.ts",
+    "./auth": "./src/auth/index.ts",
+    "./admin": "./src/admin/index.ts",
+    "./dashboard": "./src/dashboard/index.ts",
+    "./audit": "./src/audit/index.ts",
+    "./business": "./src/business/index.ts",
+    "./traffic": "./src/traffic/index.ts",
+    "./user": "./src/user/index.ts",
+    "./media": "./src/media/index.ts",
+    "./lead": "./src/lead/index.ts",
+    "./notification": "./src/notification/index.ts"
+  },
+  "dependencies": {
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@types/node": "^25.3.5",
+    "@workspace/config": "workspace:*",
+    "@workspace/contracts": "workspace:*",
+    "eslint": "^9.39.3"
+  }
+}

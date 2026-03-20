@@ -1,0 +1,9 @@
+{
+  "extends": "@workspace/config/typescript/node",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts", "prisma/generated/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

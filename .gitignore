@@ -1,0 +1,53 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+
+node_modules
+.pnp
+.pnp.js
+
+# Local env files
+
+.env*
+!.env.example
+
+# Testing
+
+coverage
+
+# Turbo
+
+.turbo
+
+# Vercel
+
+.vercel
+
+# Build Outputs
+
+.next
+out
+build
+dist
+
+# Generated app artifacts
+**/next-env.d.ts
+apps/web/public/sitemap*.xml
+
+# Debug
+
+npm-debug.log\*
+logs
+
+# Misc
+
+.DS_Store
+\*.pem
+
+# Prisma
+**/prisma/generated/
+
+
+# others
+
+.history

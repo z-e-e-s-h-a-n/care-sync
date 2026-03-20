@@ -1,0 +1,53 @@
+{
+  "name": "@workspace/db",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "license": "ISC",
+  "scripts": {
+    "build": "prisma generate && tsup",
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "prisma generate && tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:validate": "prisma validate",
+    "prisma:reset": "prisma migrate reset",
+    "prisma:seed": "prisma db seed"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser.js",
+      "types": "./dist/browser.d.ts"
+    },
+    "./enums": {
+      "import": "./dist/enums.js",
+      "types": "./dist/enums.d.ts"
+    }
+  },
+  "dependencies": {
+    "@faker-js/faker": "^10.3.0",
+    "@prisma/client": "^7.4.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@prisma/adapter-pg": "^7.4.2",
+    "@types/node": "^25.3.5",
+    "@workspace/config": "workspace:*",
+    "dotenv": "^17.3.1",
+    "eslint": "^9.39.3",
+    "prisma": "^7.4.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3"
+  }
+}
