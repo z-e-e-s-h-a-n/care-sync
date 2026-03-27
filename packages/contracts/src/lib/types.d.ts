@@ -73,10 +73,11 @@ export type AuthFormType =
   | "reset-password"
   | "set-password";
 
-export type SortOrderType = z.infer<typeof enums.SortOrderEnum>;
-export type ChartRangeType = z.infer<typeof enums.ChartRangeEnum>;
+export type ClientApp = "web" | "dashboard";
 export type IdentifierType = "email" | "phone";
 export type OAuthProvider = "google";
+export type SortOrderType = z.infer<typeof enums.SortOrderEnum>;
+export type ChartRangeType = z.infer<typeof enums.ChartRangeEnum>;
 export type ThemeMode = z.infer<typeof enums.ThemeModeEnum>;
 
 export type OtpPurpose = z.infer<typeof enums.OtpPurposeEnum>;

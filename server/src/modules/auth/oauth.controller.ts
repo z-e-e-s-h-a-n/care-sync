@@ -13,6 +13,7 @@ import { AuthService } from "./auth.service";
 import { UseOAuthGuard } from "@/decorators/oauth.decorator";
 import { TokenService } from "@/modules/token/token.service";
 import { PrismaService } from "@/modules/prisma/prisma.service";
+import { ClientService } from "@/modules/client/client.service";
 
 @Controller("oauth")
 export class OAuthController {
@@ -20,9 +21,8 @@ export class OAuthController {
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
     private readonly authService: AuthService,
+    private readonly client: ClientService,
   ) {}
-
-  // ===== GOOGLE =====
 
   @Get("google")
   @UseOAuthGuard("google")
@@ -34,13 +34,12 @@ export class OAuthController {
     return this.handleOAuthCallback(req, res);
   }
 
-  // ===== SHARED =====
-
   private async handleOAuthCallback(req: Request, res: Response) {
     const user = req.user!;
     const redirectUrl = this.extractRedirectUrl(req);
 
     this.authService.checkUserStatus(user.status);
+    await this.client.assertRoleAccess(req, user.role);
 
     await this.tokenService.createAuthSession(req, res, user);
 

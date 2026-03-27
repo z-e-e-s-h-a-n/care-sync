@@ -10,7 +10,7 @@ export function OAuthGuard(provider: OAuthProvider) {
   class OAuthGuardMixin extends AuthGuard(provider) {
     getAuthenticateOptions(context: ExecutionContext) {
       const req = context.switchToHttp().getRequest();
-      const clientUrl = req.query.clientUrl;
+      const clientUrl = req.query.clientUrl ?? req.query.redirectUrl;
 
       if (typeof clientUrl !== "string") {
         throw new BadRequestException("clientUrl is required");

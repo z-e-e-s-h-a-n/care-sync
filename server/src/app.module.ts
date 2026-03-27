@@ -29,6 +29,7 @@ import { ChatModule } from "@/modules/chat/chat.module";
 import { PaymentModule } from "@/modules/payment/payment.module";
 import { CommerceModule } from "@/modules/commerce/commerce.module";
 import { CampaignModule } from "@/modules/campaign/campaign.module";
+import { ClientModule } from "./modules/client/client.module";
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CampaignModule } from "@/modules/campaign/campaign.module";
     CacheModule,
     SchedulerModule,
     PublicModule,
+    ClientModule,
     PrismaModule,
     LoggerModule,
     NotificationModule,

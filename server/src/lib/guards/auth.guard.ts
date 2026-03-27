@@ -10,19 +10,16 @@ import {
 import type { UserRole } from "@workspace/db/client";
 
 import { ROLES_KEY } from "@/decorators/roles.decorator";
-import { InjectLogger } from "@/decorators/logger.decorator";
 import { IS_PUBLIC_KEY } from "@/decorators/public.decorator";
 import { TokenService } from "@/modules/token/token.service";
-import { LoggerService } from "@/modules/logger/logger.service";
+import { ClientService } from "@/modules/client/client.service";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  @InjectLogger()
-  private readonly logger!: LoggerService;
-
   constructor(
     private readonly tokenService: TokenService,
     private readonly reflector: Reflector,
+    private readonly client: ClientService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -45,6 +42,7 @@ export class AuthGuard implements CanActivate {
     try {
       const payload = await this.tokenService.verifyToken(req, "accessToken");
       this.checkRoles(payload.rol, requiredRoles);
+      await this.client.assertRoleAccess(req, payload.rol);
       this.tokenService.attachAuthContext(req, payload);
       return true;
     } catch (err: any) {
@@ -53,6 +51,7 @@ export class AuthGuard implements CanActivate {
 
       const payload = await this.tokenService.verifyToken(req, "refreshToken");
       this.checkRoles(payload.rol, requiredRoles);
+      await this.client.assertRoleAccess(req, payload.rol);
       await this.tokenService.refreshTokens(req, res, payload);
       if (!req["user"]) throw new UnauthorizedException("User not found");
       return true;
@@ -62,7 +61,12 @@ export class AuthGuard implements CanActivate {
   private checkRoles(userRole: UserRole, requiredRoles?: UserRole[]) {
     if (requiredRoles?.length) {
       const hasRole = requiredRoles.some((role) => role === userRole);
-      if (!hasRole) throw new ForbiddenException({ errorCode: "forbidden" });
+      if (!hasRole) {
+        throw new ForbiddenException({
+          errorCode: "forbidden",
+          message: "You do not have permission to access this resource.",
+        });
+      }
     }
   }
 }

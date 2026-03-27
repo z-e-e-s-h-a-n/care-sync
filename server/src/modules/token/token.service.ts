@@ -6,15 +6,15 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { futureDate } from "@workspace/shared/utils";
 import { UserRole, UserStatus, type Prisma } from "@workspace/db/client";
 
-import { CookieService } from "@/utils/cookie.util";
-import { ClientService } from "@/utils/client.utils";
 import { EnvService } from "@/modules/env/env.service";
+import { ClientService } from "@/modules/client/client.service";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 
 type TokenType = "accessToken" | "refreshToken";
 
 export interface JwtPayload {
   sub: string;
+  aud: string;
   sid: string;
   rol: UserRole;
   sts: UserStatus;
@@ -35,7 +35,6 @@ export class TokenService {
   constructor(
     private readonly env: EnvService,
     private readonly prisma: PrismaService,
-    private readonly cookieService: CookieService,
     private readonly client: ClientService,
   ) {
     this.accessSecret = this.encoder.encode(this.env.get("JWT_ACCESS_SECRET"));
@@ -45,7 +44,8 @@ export class TokenService {
   }
 
   async generateTokens(req: Request, user: Express.User) {
-    const ctx = await this.client.resolve(req);
+    const ctx = await this.client.buildSessionContext(req);
+    const clientApp = await this.client.resolveClientApp(req);
     const isTrusted = req.headers["x-trusted-device"] === "true";
     const refreshExp = futureDate(this.env.get("REFRESH_TOKEN_EXP"));
     const deviceId =
@@ -53,6 +53,7 @@ export class TokenService {
 
     const payload: JWTPayload & JwtPayload = {
       sid: user.sessionId ?? ulid(),
+      aud: clientApp,
       sub: user.id,
       rol: user.role,
       sts: user.status,
@@ -98,6 +99,7 @@ export class TokenService {
 
   async verifyToken(req: Request, type: TokenType): Promise<JwtPayload> {
     const token = req.cookies[type] as string;
+    const clientApp = await this.client.resolveClientApp(req);
 
     const secret =
       type === "accessToken" ? this.accessSecret : this.refreshSecret;
@@ -106,6 +108,10 @@ export class TokenService {
       throw new UnauthorizedException({
         errorCode:
           type === "accessToken" ? "access_token_missing" : "session_expired",
+        message:
+          type === "accessToken"
+            ? "Access token is missing."
+            : "Your session has expired. Please sign in again.",
       });
     }
 
@@ -114,10 +120,13 @@ export class TokenService {
         token,
         secret,
       );
+
+      if (payload.aud !== clientApp) throw new Error("unauthorized");
       return payload;
     } catch {
       throw new UnauthorizedException({
         errorCode: "unauthorized",
+        message: "You are not authorized to perform this action.",
       });
     }
   }
@@ -131,7 +140,10 @@ export class TokenService {
       });
 
       if (!session || session.status !== "active") {
-        throw new UnauthorizedException({ errorCode: "session_expired" });
+        throw new UnauthorizedException({
+          errorCode: "session_expired",
+          message: "Your session has expired. Please sign in again.",
+        });
       }
 
       if (session.expiresAt <= new Date()) {
@@ -139,7 +151,10 @@ export class TokenService {
           where: { id: payload.sid },
           data: { status: "expired" },
         });
-        throw new UnauthorizedException({ errorCode: "session_expired" });
+        throw new UnauthorizedException({
+          errorCode: "session_expired",
+          message: "Your session has expired. Please sign in again.",
+        });
       }
 
       const isValid = await argon2.verify(
@@ -151,7 +166,10 @@ export class TokenService {
 
       if (!isValid && IS_PROD) {
         await this.revokeSession(session.id, undefined, tx);
-        throw new UnauthorizedException({ errorCode: "session_expired" });
+        throw new UnauthorizedException({
+          errorCode: "session_expired",
+          message: "Your session has expired. Please sign in again.",
+        });
       }
 
       await this.createAuthSession(req, res, {
@@ -183,20 +201,20 @@ export class TokenService {
     const accessExp = futureDate(this.env.get("ACCESS_TOKEN_EXP"));
     const refreshExp = futureDate(this.env.get("REFRESH_TOKEN_EXP"));
 
-    this.cookieService.setCookie(res, "accessToken", accessToken, {
+    this.client.setCookie(res, "accessToken", accessToken, {
       expires: accessExp,
     });
-    this.cookieService.setCookie(res, "refreshToken", refreshToken, {
+    this.client.setCookie(res, "refreshToken", refreshToken, {
       expires: isTrusted ? refreshExp : undefined,
     });
-    this.cookieService.setCookie(res, "deviceId", deviceId, {
+    this.client.setCookie(res, "deviceId", deviceId, {
       expires: futureDate("1y"),
     });
   }
 
   clearAuthCookies(res: Response): void {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    this.client.clearCookie(res, "accessToken");
+    this.client.clearCookie(res, "refreshToken");
   }
 
   async getUserSessions(user: Express.User) {
@@ -257,4 +275,3 @@ export class TokenService {
     return { message: "All Session Revoked Successfully." };
   }
 }
-

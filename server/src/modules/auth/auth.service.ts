@@ -19,18 +19,20 @@ import type {
 } from "@workspace/contracts/auth";
 
 import { OtpService } from "./otp.service";
-import { PrismaService } from "@/modules/prisma/prisma.service";
-import { TokenService } from "@/modules/token/token.service";
-import { NotificationService } from "@/modules/notification/notification.service";
-import type { SafeUser } from "@workspace/contracts/user";
 import type { SafeUserRole } from "@workspace/contracts";
+import type { SafeUser } from "@workspace/contracts/user";
+import { TokenService } from "@/modules/token/token.service";
+import { ClientService } from "@/modules/client/client.service";
+import { PrismaService } from "@/modules/prisma/prisma.service";
+import { NotificationService } from "@/modules/notification/notification.service";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly tokenService: TokenService,
+    private readonly client: ClientService,
     private readonly otpService: OtpService,
+    private readonly tokenService: TokenService,
     private readonly notifyService: NotificationService,
   ) {}
 
@@ -91,6 +93,8 @@ export class AuthService {
         action: "verifyMfa",
       };
     }
+
+    await this.client.assertRoleAccess(req, user.role);
 
     await this.tokenService.createAuthSession(req, res, {
       id: user.id,
@@ -295,6 +299,7 @@ export class AuthService {
 
       case "verifyMfa": {
         this.checkUserStatus(user.status);
+        await this.client.assertRoleAccess(req, user.role);
 
         await this.tokenService.createAuthSession(req, res, {
           id: user.id,
@@ -455,6 +460,17 @@ export class AuthService {
     });
 
     return { message: "Identifier changed successfully." };
+  }
+
+  async validateSession(req: Request, user: Express.User) {
+    await this.client.assertRoleAccess(req, user.role);
+    return {
+      message: "Session is valid.",
+      data: {
+        id: user.id,
+        role: user.role,
+      },
+    };
   }
 
   async createUser(

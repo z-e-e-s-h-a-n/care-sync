@@ -10,13 +10,11 @@ import {
   type Profile as GoogleProfile,
 } from "passport-google-oauth20";
 import { slugify } from "@workspace/shared/utils";
+import type { OAuthProvider } from "@workspace/contracts";
 
 import { OtpService } from "./otp.service";
 import { EnvService } from "@/modules/env/env.service";
-import { InjectLogger } from "@/decorators/logger.decorator";
-import { LoggerService } from "@/modules/logger/logger.service";
 import { PrismaService } from "@/modules/prisma/prisma.service";
-import type { OAuthProvider } from "@workspace/contracts";
 
 interface OAuthProfile {
   provider: OAuthProvider;
@@ -30,9 +28,6 @@ interface OAuthProfile {
 
 @Injectable()
 export class OAuthService implements OnModuleInit {
-  @InjectLogger()
-  private readonly logger!: LoggerService;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly otpService: OtpService,
