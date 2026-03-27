@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CUUserType, UserQueryType } from "@workspace/contracts/admin";
-import type { ApiException } from "@workspace/sdk";
+import type { ApiException, ApiSuccess } from "@workspace/sdk";
 import * as user from "@workspace/sdk/admin";
 import { parseDuration } from "@workspace/shared/utils";
+import type { UserResponse } from "@workspace/contracts/user";
 
 const STALE_TIME = parseDuration("15m");
 
@@ -46,11 +46,16 @@ export function useAdminUser(id?: string) {
     ...queryDefaults,
   });
 
-  const CUMutation = useMutation<any, ApiException, CUUserType>({
+  const CUMutation = useMutation<
+    ApiSuccess<UserResponse>,
+    ApiException,
+    CUUserType
+  >({
     mutationFn: (data) =>
       id ? user.updateUser(id, data) : user.createUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["user", id] });
     },
   });
 

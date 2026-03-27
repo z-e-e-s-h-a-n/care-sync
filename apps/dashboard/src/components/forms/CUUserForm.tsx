@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -6,7 +5,8 @@ import { useForm } from "@tanstack/react-form";
 
 import { CUUserSchema, type CUUserType } from "@workspace/contracts/admin";
 import {
-  UserRoleEnum,
+  SafeUserRoleEnum,
+  type SafeUserRole,
   UserStatusEnum,
   type BaseCUFormProps,
 } from "@workspace/contracts";
@@ -23,15 +23,41 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { useAdminUser } from "@/hooks/admin";
 import CUFormSkeleton from "@/components/skeleton/CUFormSkeleton";
+import type { UserResponse } from "@workspace/contracts/user";
+import useUser from "@workspace/ui/hooks/user";
 
-const CUUserForm = ({ entityId, formType }: BaseCUFormProps) => {
+interface CUUserFormProps extends BaseCUFormProps {
+  onSuccess?: (user: UserResponse) => void;
+  onCancel?: () => void;
+  userRole?: SafeUserRole;
+}
+
+const CUUserForm = ({
+  entityId,
+  formType,
+  userRole,
+  onSuccess,
+  onCancel,
+}: CUUserFormProps) => {
   const router = useRouter();
+  const { currentUser, isLoading: isUserLoading } = useUser();
   const { data, mutateAsync, isPending, isLoading } = useAdminUser(entityId);
   const [changePassword, setChangePassword] = useState(false);
+  const allowedRoles =
+    currentUser?.role === "doctor"
+      ? SafeUserRoleEnum.options.filter((role) => role === "patient")
+      : SafeUserRoleEnum.options;
+
+  const handleClose = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
+  };
 
   const form = useForm({
     defaultValues: {
@@ -40,7 +66,7 @@ const CUUserForm = ({ entityId, formType }: BaseCUFormProps) => {
       displayName: "",
       identifier: data?.email ?? data?.phone,
       password: undefined,
-      role: "customer",
+      role: userRole,
       status: "pending",
       ...data,
     } as CUUserType,
@@ -49,17 +75,26 @@ const CUUserForm = ({ entityId, formType }: BaseCUFormProps) => {
     },
     onSubmit: async ({ value }) => {
       try {
-        await mutateAsync(value);
+        const response = await mutateAsync(value);
         toast.success(
           `User ${formType === "add" ? "created" : "updated"} successfully`,
         );
-        router.push("/admin/users");
+        onSuccess?.(response.data);
+        if (!onSuccess) {
+          router.push("/users");
+        }
       } catch (err: any) {
         toast.error(err.message || "Failed to save user");
       }
     },
   });
 
+  useEffect(() => {
+    if (!data) return;
+    form.reset();
+  }, [data, form]);
+
+  if (isUserLoading || !currentUser) return <CUFormSkeleton />;
   if (isLoading) return <CUFormSkeleton />;
 
   return (
@@ -67,7 +102,6 @@ const CUUserForm = ({ entityId, formType }: BaseCUFormProps) => {
       <div>
         <h2 className="capitalize text-lg font-semibold">
           {formType === "add" ? "Add New" : "Update"} User
-          {entityId}
         </h2>
       </div>
 
@@ -181,7 +215,7 @@ const CUUserForm = ({ entityId, formType }: BaseCUFormProps) => {
             form={form}
             name="role"
             label="Role"
-            options={UserRoleEnum.options}
+            options={allowedRoles}
           />
           <SelectField
             form={form}
@@ -199,7 +233,7 @@ const CUUserForm = ({ entityId, formType }: BaseCUFormProps) => {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/admin/users")}
+          onClick={handleClose}
           disabled={isPending}
         >
           Cancel

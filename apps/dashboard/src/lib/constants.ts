@@ -1,87 +1,160 @@
 import {
   IconDashboard,
-  IconUsers,
-  IconSettings,
-  type Icon,
   IconPhoto,
-  IconRoute,
   IconHistory,
-  IconAddressBook,
+  IconCalendarTime,
+  IconCreditCard,
+  IconHeartHandshake,
+  IconMessageCircle,
+  IconSpeakerphone,
+  IconStethoscope,
+  IconBuildingHospital,
+  IconClockHour4,
+  IconUserCircle,
+  IconUsersGroup,
+  IconNotification,
 } from "@tabler/icons-react";
+import type { NavGroup } from "@workspace/contracts";
 
-export type NavItem = {
-  title: string;
-  url?: string;
-  icon?: Icon;
-  children?: NavItem[];
-};
-
-export interface NavGroup {
-  groupLabel?: string;
-  items: NavItem[];
-}
-
-export const sidebarMenu: NavGroup[] = [
+export const adminSidebarMenu: NavGroup[] = [
   {
     items: [
       {
-        title: "Dashboard",
-        url: "/dashboard",
+        label: "Overview",
+        href: "/admin",
         icon: IconDashboard,
       },
     ],
   },
-
   {
-    groupLabel: "MANAGEMENT",
+    groupLabel: "CARE OPERATIONS",
     items: [
       {
-        title: "Leads",
-        icon: IconAddressBook,
-        children: [
-          {
-            title: "Newsletter",
-            url: "/admin/leads/subscribers",
-          },
-        ],
+        label: "Doctors",
+        href: "/admin/doctors",
+        icon: IconStethoscope,
       },
-
       {
-        title: "Users",
-        icon: IconUsers,
-        children: [
-          { title: "Users", url: "/admin/users" },
-          { title: "Add User", url: "/admin/users/new" },
-        ],
+        label: "Patients",
+        href: "/admin/patients",
+        icon: IconHeartHandshake,
       },
-
       {
-        title: "Media",
-        url: "/media",
+        label: "Appointments",
+        href: "/admin/appointments",
+        icon: IconCalendarTime,
+      },
+      {
+        label: "Users",
+        href: "/users",
+        icon: IconUsersGroup,
+      },
+      {
+        label: "Branches",
+        href: "/admin/branches",
+        icon: IconBuildingHospital,
+      },
+    ],
+  },
+  {
+    groupLabel: "REVENUE",
+    items: [
+      {
+        label: "Payments",
+        href: "/admin/payments",
+        icon: IconCreditCard,
+      },
+      {
+        label: "Campaigns",
+        href: "/admin/campaigns",
+        icon: IconSpeakerphone,
+      },
+    ],
+  },
+  {
+    groupLabel: "SYSTEM",
+    items: [
+      {
+        label: "Media",
+        href: "/media",
         icon: IconPhoto,
       },
-
       {
-        title: "Traffic Sources",
-        url: "/admin/traffic-sources",
-        icon: IconRoute,
-      },
-
-      {
-        title: "Audit Logs",
-        url: "/admin/audit-logs",
+        label: "Audit Logs",
+        href: "/admin/audit-logs",
         icon: IconHistory,
       },
     ],
   },
+];
 
+export const doctorSidebarMenu: NavGroup[] = [
   {
     items: [
       {
-        title: "Business Profile",
-        url: "/settings",
-        icon: IconSettings,
+        label: "Overview",
+        href: "/doctor",
+        icon: IconDashboard,
+      },
+    ],
+  },
+  {
+    items: [
+      {
+        label: "Patients",
+        href: "/users",
+        icon: IconUsersGroup,
+      },
+      {
+        label: "Appointments",
+        href: "/doctor/appointments",
+        icon: IconCalendarTime,
+      },
+      {
+        label: "Messages",
+        href: "/doctor/messages",
+        icon: IconMessageCircle,
+      },
+      {
+        label: "Profile",
+        href: "/doctor/profile",
+        icon: IconUserCircle,
+      },
+      {
+        label: "Availability",
+        href: "/doctor/availability",
+        icon: IconClockHour4,
+      },
+    ],
+  },
+  {
+    groupLabel: "System",
+    items: [
+      {
+        label: "Media",
+        href: "/media",
+        icon: IconPhoto,
       },
     ],
   },
 ];
+
+export const footerSidebarMenu: NavGroup[] = [
+  {
+    items: [
+      {
+        label: "Account",
+        href: "/account",
+        icon: IconUserCircle,
+      },
+      {
+        label: "Notifications",
+        href: "/notifications",
+        icon: IconNotification,
+      },
+    ],
+  },
+];
+
+export const getSidebarMenu = (role?: string): NavGroup[] =>
+  role === "doctor" ? doctorSidebarMenu : adminSidebarMenu;

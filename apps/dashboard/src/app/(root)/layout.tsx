@@ -1,18 +1,21 @@
 "use client";
+
 import { redirect } from "next/navigation";
 import {
   SidebarInset,
   SidebarProvider,
 } from "@workspace/ui/components/sidebar";
 
-import { useAuth } from "@/hooks/auth";
-import Header from "@/components/layout/Header";
-import AppSidebar from "@/components/layout/AppSidebar";
+import { useAuth } from "@workspace/ui/hooks/auth";
 import RootLayoutSkeleton from "@/components/skeleton/RootLayoutSkeleton";
 import type { AppLayoutProps } from "@workspace/contracts";
+import AppSidebar from "@workspace/ui/shared/AppSidebar";
+import SidebarHeader from "@workspace/ui/shared/AppSidebarHeader";
+import { getSidebarMenu, footerSidebarMenu } from "@/lib/constants";
 
-const Layout = ({ children }: AppLayoutProps) => {
-  const { isLoading, isSuccess, error } = useAuth();
+const DashboardLayout = ({ children }: AppLayoutProps) => {
+  const { data, isLoading, isSuccess, error } = useAuth();
+  const sidebarMenu = getSidebarMenu(data?.role);
 
   if (isLoading) return <RootLayoutSkeleton />;
 
@@ -29,13 +32,17 @@ const Layout = ({ children }: AppLayoutProps) => {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar
+        variant="inset"
+        mainMenu={sidebarMenu}
+        footerMenu={footerSidebarMenu}
+      />
       <SidebarInset>
-        <Header />
-        <div className="section-wrapper">{children}</div>
+        <SidebarHeader appType="dashboard" />
+        <div className="section-wrapper sm:py-6 md:py-8">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
 };
 
-export default Layout;
+export default DashboardLayout;

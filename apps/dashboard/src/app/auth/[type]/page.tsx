@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import AuthForm from "@/components/forms/AuthForm";
-import type { AppPageProps, AuthFormType } from "@workspace/contracts";
 import type { ValidateOtpType } from "@workspace/contracts/auth";
+import type { AppPageProps, AuthFormType } from "@workspace/contracts";
+import { AuthForm } from "@workspace/ui/forms/AuthForm";
 
 const page = async ({
   params,
@@ -10,12 +10,12 @@ const page = async ({
   const { type } = await params;
   const queryParams = await searchParams;
 
-  if (
-    !["sign-up", "sign-in", "reset-password", "set-password"].includes(type)
-  ) {
+  if (!["sign-in", "reset-password", "set-password"].includes(type)) {
     return notFound();
   }
-  return <AuthForm formType={type} queryParams={queryParams} />;
+  return (
+    <AuthForm appType="dashboard" formType={type} queryParams={queryParams} />
+  );
 };
 
 export default page;

@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { GenericDetailsPage } from "@/components/shared/GenericDetailsPage";
+import { GenericDetailsPage } from "@workspace/ui/shared/GenericDetailsPage";
 import { useAuditLog } from "@/hooks/audit";
 import type { AppPageProps } from "@workspace/contracts";
 import React from "react";

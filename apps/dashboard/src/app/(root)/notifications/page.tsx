@@ -2,7 +2,6 @@
 
 import { Bell, BellRing, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -16,10 +15,9 @@ import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { cn } from "@workspace/ui/lib/utils";
 import {
-  getUnreadNotificationsCount,
   useNotificationActions,
   useNotifications,
-} from "@/hooks/notification";
+} from "@workspace/ui/hooks/notification";
 
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString(undefined, {
@@ -27,17 +25,14 @@ const formatDateTime = (value: string) =>
     timeStyle: "short",
   });
 
-const NotificationsPage = () => {
-  const { data, isLoading } = useNotifications();
+export default function NotificationsPage() {
+  const { data, isLoading, unreadCount } = useNotifications();
   const { markAsReadAsync, isPending } = useNotificationActions();
-
-  const unreadCount = getUnreadNotificationsCount(data);
 
   const handleMarkAsRead = async (id: string) => {
     try {
       await markAsReadAsync(id);
       toast.success("Notification marked as read.");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error("Failed to update notification", {
         description: error?.message,
@@ -73,7 +68,6 @@ const NotificationsPage = () => {
           </CardHeader>
         </Card>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -97,7 +91,6 @@ const NotificationsPage = () => {
               ))}
             </div>
           )}
-
           {!isLoading && !data?.length && (
             <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-dashed text-center">
               <Bell className="size-8 text-muted-foreground" />
@@ -109,10 +102,8 @@ const NotificationsPage = () => {
               </div>
             </div>
           )}
-
           {data?.map((notification) => {
-            const isUnread = !notification.viewedAt;
-
+            const isUnread = !notification.readAt;
             return (
               <div
                 key={notification.id}
@@ -132,7 +123,7 @@ const NotificationsPage = () => {
                       </Badge>
                     </div>
                     <div>
-                      <p className="font-medium">{notification.subject}</p>
+                      <p className="font-medium">{notification.title}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {notification.message}
                       </p>
@@ -141,7 +132,6 @@ const NotificationsPage = () => {
                       Received {formatDateTime(notification.createdAt)}
                     </div>
                   </div>
-
                   {isUnread && (
                     <Button
                       size="sm"
@@ -156,7 +146,7 @@ const NotificationsPage = () => {
                 </div>
                 <Separator className="my-4" />
                 <div className="text-xs text-muted-foreground">
-                  Channels: {notification.channels.join(", ")}
+                  Channel: {notification.channels.join(", ")}
                 </div>
               </div>
             );
@@ -165,6 +155,4 @@ const NotificationsPage = () => {
       </Card>
     </div>
   );
-};
-
-export default NotificationsPage;
+}

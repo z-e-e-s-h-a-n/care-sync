@@ -1,7 +1,7 @@
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { cn } from "@workspace/ui/lib/utils";
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
-import type { SectionConfig } from "@/components/shared/GenericDetailsPage";
+import type { SectionConfig } from "@workspace/ui/shared/GenericDetailsPage";
 
 interface DetailsPageSkeletonProps<TData> {
   sections: SectionConfig<TData>[];

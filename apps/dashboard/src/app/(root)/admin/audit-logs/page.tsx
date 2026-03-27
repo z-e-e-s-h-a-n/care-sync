@@ -8,10 +8,10 @@ import type {
 } from "@workspace/contracts/audit";
 
 import { useAuditLogs } from "@/hooks/audit";
-import ListPage from "@/components/shared/ListPage";
-import DateWrapper from "@/components/shared/DateWrapper";
-import type { ColumnConfig } from "@/components/shared/GenericTable";
-import type { SearchByOption } from "@/components/shared/SearchToolbar";
+import ListPage from "@workspace/ui/shared/ListPage";
+import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
+import type { SearchByOption } from "@workspace/ui/shared/SearchToolbar";
+import { formatDate } from "@workspace/shared/utils";
 
 const auditColumns: ColumnConfig<AuditLogResponse, AuditLogQueryType>[] = [
   {
@@ -34,7 +34,7 @@ const auditColumns: ColumnConfig<AuditLogResponse, AuditLogQueryType>[] = [
   },
   {
     header: "Created",
-    accessor: (log) => <DateWrapper date={log.createdAt} />,
+    accessor: (log) => formatDate(log.createdAt),
     sortKey: "createdAt",
   },
 ];
@@ -50,6 +50,7 @@ const AuditLogsPage = () => {
     <ListPage
       dataKey={"logs"}
       entityType="audit-logs"
+      canAdd={false}
       canEdit={false}
       columns={auditColumns}
       searchByOptions={auditSearchOptions}

@@ -1,4 +1,4 @@
-import MediaLibrary from "@/components/media";
+import MediaLibrary from "@workspace/ui/media/layout";
 
 function MediaPage() {
   return <MediaLibrary />;

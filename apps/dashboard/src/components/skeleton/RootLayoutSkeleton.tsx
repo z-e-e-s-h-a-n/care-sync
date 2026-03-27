@@ -17,10 +17,11 @@ import {
 } from "@workspace/ui/components/sidebar";
 import { cn } from "@workspace/ui/lib/utils";
 import DashboardSkeleton from "./DashboardSke1eton";
-import { sidebarMenu } from "@/lib/constants";
-// import { sidebarMenu } from "@/lib/constants";
+import { adminSidebarMenu } from "@/lib/constants";
 
 const RootLayoutSkeleton = () => {
+  const sidebarMenu = adminSidebarMenu;
+
   return (
     <SidebarProvider
       style={
@@ -53,7 +54,7 @@ const RootLayoutSkeleton = () => {
                 )}
                 <SidebarMenu>
                   {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.label}>
                       <SidebarMenuButton className="flex items-center gap-2">
                         <Skeleton className="h-4 w-4 rounded" />
                         <Skeleton className="h-4 w-full" />

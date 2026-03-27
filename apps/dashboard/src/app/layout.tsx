@@ -1,6 +1,6 @@
 import "@workspace/ui/globals.css";
 import { Inter, Poppins } from "next/font/google";
-import ProviderWrapper from "@/providers/index";
+import ProviderWrapper from "@workspace/ui/provider-wrapper";
 import type { AppLayoutProps } from "@workspace/contracts";
 
 const primaryFont = Poppins({
