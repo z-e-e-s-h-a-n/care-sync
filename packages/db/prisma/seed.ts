@@ -80,25 +80,12 @@ async function clearDatabase() {
   await prisma.media.deleteMany();
   await prisma.branch.deleteMany();
   await prisma.user.deleteMany();
-  await prisma.businessProfile.deleteMany();
 }
 
 async function seedFoundation() {
-  console.log("Seeding business profile, branches, and users...");
+  console.log("Seeding branches, and users...");
 
   const hashedPassword = await argon2.hash(DEFAULT_PASSWORD);
-
-  const businessProfile = await prisma.businessProfile.create({
-    data: {
-      name: "CareSync Medical Center",
-      legalName: "CareSync Medical Center LLC",
-      description: "Primary seeded business profile for testing.",
-      email: "hello@caresync.test",
-      phone: "+923001110000",
-      website: "https://caresync.test",
-      defaultDoctorCommissionPercent: 12.5,
-    },
-  });
 
   const downtownBranch = await prisma.branch.create({
     data: {
@@ -235,7 +222,6 @@ async function seedFoundation() {
   });
 
   return {
-    businessProfile,
     downtownBranch,
     northBranch,
     admin,

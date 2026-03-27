@@ -14,7 +14,6 @@
     "./auth": "./src/auth/index.ts",
     "./admin": "./src/admin/index.ts",
     "./branch": "./src/branch/index.ts",
-    "./business": "./src/business/index.ts",
     "./doctor": "./src/doctor/index.ts",
     "./availability": "./src/availability/index.ts",
     "./appointment": "./src/appointment/index.ts",

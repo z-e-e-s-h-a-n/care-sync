@@ -234,32 +234,6 @@ enum AuditAction {
     logout
 }
 
-model BusinessProfile {
-    id String @id @default(ulid())
-
-    name        String
-    legalName   String?
-    description String?
-
-    faviconId String?
-    favicon   Media?  @relation("BusinessProfileFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
-
-    logoId String?
-    logo   Media?  @relation("BusinessProfileLogo", fields: [logoId], references: [id], onDelete: SetNull)
-
-    coverId String?
-    cover   Media?  @relation("BusinessProfileCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
-
-    email   String? @db.VarChar(255)
-    phone   String? @db.VarChar(20)
-    website String?
-
-    defaultDoctorCommissionPercent Decimal? @db.Decimal(5, 2)
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-}
-
 model Branch {
     id String @id @default(ulid())
 
@@ -895,9 +869,6 @@ model Media {
     patientIdentificationDocuments PatientProfile[]    @relation("PatientIdentificationDocument")
     doctorIdentificationDocuments  DoctorProfile[]     @relation("DoctorIdentificationDocument")
     doctorLicenseDocuments         DoctorProfile[]     @relation("DoctorLicenseDocument")
-    businessProfileFavicons        BusinessProfile[]   @relation("BusinessProfileFavicon")
-    businessProfileLogos           BusinessProfile[]   @relation("BusinessProfileLogo")
-    businessProfileCovers          BusinessProfile[]   @relation("BusinessProfileCoverImage")
 
     @@index([name])
     @@index([type])

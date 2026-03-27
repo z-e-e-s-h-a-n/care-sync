@@ -6,7 +6,6 @@ export default defineConfig({
     auth: "src/auth/index.ts",
     user: "src/user/index.ts",
     admin: "src/admin/index.ts",
-    business: "src/business/index.ts",
     branch: "src/branch/index.ts",
     patient: "src/patient/index.ts",
     doctor: "src/doctor/index.ts",

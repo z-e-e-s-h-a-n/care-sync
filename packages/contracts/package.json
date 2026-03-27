@@ -26,10 +26,6 @@
       "import": "./dist/admin.js",
       "types": "./dist/admin.d.ts"
     },
-    "./business": {
-      "import": "./dist/business.js",
-      "types": "./dist/business.d.ts"
-    },
     "./branch": {
       "import": "./dist/branch.js",
       "types": "./dist/branch.d.ts"
