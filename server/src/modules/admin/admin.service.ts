@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 
 import { AuthService } from "@/modules/auth/auth.service";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import type { CUUserDto, UserQueryDto } from "@workspace/contracts/admin";
+import type { CUUserType } from "@workspace/contracts/admin";
 import type { Prisma } from "@workspace/db/client";
 
 @Injectable()
@@ -12,17 +13,20 @@ export class AdminService {
     private readonly authService: AuthService,
   ) {}
 
-  async createUser(dto: CUUserDto) {
-    const { role, ...rest } = dto;
+  async createUser(dto: CUUserDto, currentUser: Express.User) {
+    const { role, ...rest } = dto as CUUserType;
+    if (currentUser.role === "doctor" && role !== "patient") {
+      throw new ForbiddenException("Doctor can only create patients.");
+    }
     const { user } = await this.authService.createUser(rest, role);
 
     return {
-      message: "Customer created successfully",
+      message: "User created successfully",
       data: user,
     };
   }
 
-  async findAllUsers(query: UserQueryDto) {
+  async findAllUsers(query: UserQueryDto, currentUser: Express.User) {
     const {
       page,
       limit,
@@ -37,8 +41,11 @@ export class AdminService {
 
     const where: Prisma.UserWhereInput = {};
 
-    if (role) where.role = role;
-    else where.role = { not: "admin" };
+    if (currentUser.role === "doctor") {
+      where.role = "patient";
+    } else if (role) {
+      where.role = role;
+    }
 
     if (isEmailVerified !== undefined) where.isEmailVerified = isEmailVerified;
     if (isPhoneVerified !== undefined) where.isPhoneVerified = isPhoneVerified;
@@ -103,16 +110,17 @@ export class AdminService {
       hashedPassword = await this.authService.hashPassword(dto.password);
     }
 
-    await this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: {
         ...dto,
         [key]: value,
         ...(hashedPassword && { password: hashedPassword }),
       },
+      ...this.authService.userView,
     });
 
-    return { message: "User Updated Successfully" };
+    return { message: "User Updated Successfully", data: updated };
   }
 
   async deleteUser(userId: string, force = false) {

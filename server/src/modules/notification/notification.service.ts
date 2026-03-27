@@ -1,23 +1,16 @@
 import { Injectable } from "@nestjs/common";
-import {
-  resolveEmailTemplate,
-  type EmailTemplateMap,
-} from "@workspace/templates";
+import { resolveEmailTemplate } from "@workspace/templates";
 import { appName } from "@workspace/shared/constants";
 
 import { PushService } from "./push.service";
 import { EmailService } from "./email.service";
 import { MessagingService } from "./messaging.service";
-
-import { NOTIFICATION_POLICY_MAP } from "@/constants/index";
 import { InjectLogger } from "@/decorators/logger.decorator";
 import { EnvService } from "@/modules/env/env.service";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { LoggerService } from "@/modules/logger/logger.service";
 import type {
-  MessagingChannel,
   NotificationChannel,
-  NotificationPriority,
   NotificationPurpose,
   NotificationStatus,
 } from "@workspace/contracts";
@@ -25,12 +18,11 @@ import type { SafeUser } from "@workspace/contracts/user";
 import type { Otp } from "@workspace/db/client";
 
 export type SendNotificationProps = {
-  [K in NotificationPurpose]: { purpose: K } & EmailTemplateMap[K] & {
-      identifier: string;
-      user: SafeUser;
-      otp?: Otp;
-    };
-}[NotificationPurpose];
+  purpose: NotificationPurpose;
+  identifier: string;
+  user: SafeUser;
+  otp?: Otp;
+} & Record<string, unknown>;
 
 @Injectable()
 export class NotificationService {
@@ -48,12 +40,9 @@ export class NotificationService {
   async sendNotification(props: SendNotificationProps) {
     const { html, subject, message } = await resolveEmailTemplate(props);
 
-    const { priority, push } = NOTIFICATION_POLICY_MAP[props.purpose];
     const channels = this.determineChannels(
       props.identifier,
       props.user,
-      priority,
-      push,
       !!props.otp,
     );
 
@@ -64,8 +53,7 @@ export class NotificationService {
           recipient: props.identifier,
           purpose: props.purpose,
           channels,
-          priority,
-          subject,
+          title: subject,
           message,
           meta: props as any,
         },
@@ -126,7 +114,7 @@ export class NotificationService {
     await this.emailService.sendMail({ from, to, subject, html });
   }
 
-  async sendMessage(type: MessagingChannel, to: string, text: string) {
+  async sendMessage(type: "sms" | "whatsapp", to: string, text: string) {
     if (type === "sms") {
       await this.messagingService.sendSms(to, text);
     } else {
@@ -141,30 +129,16 @@ export class NotificationService {
   private determineChannels(
     identifier: string,
     user: SafeUser,
-    priority: NotificationPriority,
-    allowPush: boolean,
     isOtp: boolean,
   ): NotificationChannel[] {
     const channels: NotificationChannel[] = [];
+    const isEmail = identifier.includes("@");
+    channels.push(isEmail ? "email" : "sms");
 
-    if (isOtp) {
-      const isEmail = identifier.includes("@");
-      return [isEmail ? "email" : user.fallbackChannel];
-    }
+    if (isOtp) return channels;
 
-    if (allowPush && user.pushNotifications) {
+    if (user.pushNotifications) {
       channels.push("push");
-    }
-
-    const hasEmail = user.email && user.isEmailVerified;
-    const hasPhone = user.phone && user.isPhoneVerified;
-
-    if (hasEmail) {
-      channels.push("email");
-    }
-
-    if (priority === "important" && hasPhone) {
-      channels.push(user.fallbackChannel);
     }
 
     return channels;

@@ -12,7 +12,15 @@ export class NotificationController {
   async getAllNotification(@User("id") userId: string) {
     const notifications = await this.prisma.notification.findMany({
       where: { userId },
-      orderBy: [{ viewedAt: "asc" }, { createdAt: "desc" }],
+      orderBy: [
+        {
+          readAt: {
+            sort: "asc",
+            nulls: "first",
+          },
+        },
+        { createdAt: "desc" },
+      ],
     });
 
     return {
@@ -29,7 +37,7 @@ export class NotificationController {
 
     await this.prisma.notification.update({
       where: { id },
-      data: { viewedAt: new Date() },
+      data: { readAt: new Date() },
     });
 
     return { message: "Notification read successfully." };

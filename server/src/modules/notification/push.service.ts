@@ -2,7 +2,6 @@ import * as admin from "firebase-admin";
 import { Injectable } from "@nestjs/common";
 
 import { InjectLogger } from "@/decorators/logger.decorator";
-import { EnvService } from "@/modules/env/env.service";
 import { LoggerService } from "@/modules/logger/logger.service";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import type { SafeUser } from "@workspace/contracts/user";
@@ -12,10 +11,7 @@ export class PushService {
   @InjectLogger()
   private readonly logger!: LoggerService;
 
-  constructor(
-    private readonly env: EnvService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async sendPush(user: SafeUser, title: string, body: string) {
     const sessions = await this.prisma.session.findMany({
@@ -30,11 +26,9 @@ export class PushService {
         case "fcm":
           await this.sendWithFCM(s.pushToken, title, body, user.id);
           break;
-
         case "expo":
           await this.sendWithExpo(s.pushToken, title, body);
           break;
-
         default:
           this.logger.warn("Unknown push provider", {
             provider: s.pushProvider,
@@ -51,43 +45,42 @@ export class PushService {
   ) {
     try {
       this.ensureFirebase();
+
       const message: admin.messaging.Message = {
         token,
         notification: { title, body },
       };
 
       await admin.messaging().send(message);
+      this.logger.log("FCM push sent", { userId, token });
     } catch (err: any) {
-      this.logger.error("FCM push failed", { token, error: err.message });
+      this.logger.error("FCM push failed", {
+        token,
+        error: err?.message,
+        code: err?.code,
+      });
+
       if (
-        err.code === "messaging/registration-token-not-registered" ||
-        err.code === "messaging/invalid-registration-token"
+        err?.code === "messaging/registration-token-not-registered" ||
+        err?.code === "messaging/invalid-registration-token"
       ) {
         await this.prisma.session.updateMany({
           where: { userId, pushToken: token },
           data: { pushToken: null },
         });
+
         this.logger.warn("Removed invalid FCM token", { token });
       }
     }
   }
 
   private async sendWithExpo(token: string, title: string, body: string) {
-    // TODO: implement Expo push logic here
     this.logger.log("Expo push placeholder", { token, title, body });
   }
 
   private ensureFirebase() {
     if (admin.apps.length) return;
-
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: this.env.get("FIREBASE_PROJECT_ID"),
-        clientEmail: this.env.get("FIREBASE_CLIENT_EMAIL"),
-        privateKey: this.env.get("FIREBASE_PRIVATE_KEY"),
-      }),
-    });
-
-    this.logger.log("✅ Firebase Admin initialized");
+    admin.initializeApp();
+    this.logger.log("Firebase Admin initialized with ADC");
   }
 }

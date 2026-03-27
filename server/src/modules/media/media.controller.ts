@@ -67,7 +67,7 @@ export class MediaController {
     return this.mediaService.deleteMedia(mediaId, force);
   }
 
-  @Post("/:mediaId")
+  @Post("/:mediaId/restore")
   async restoreMedia(@Param("mediaId") mediaId: string) {
     return this.mediaService.restoreMedia(mediaId);
   }

@@ -20,10 +20,15 @@ import { CacheModule } from "@/modules/cache/cache.module";
 import { UserModule } from "@/modules/user/user.module";
 import { MediaModule } from "@/modules/media/media.module";
 import { AuditModule } from "@/modules/audit/audit.module";
-import { BusinessModule } from "@/modules/business/business.module";
-import { DashboardModule } from "@/modules/dashboard/dashboard.module";
-import { TrafficModule } from "@/modules/traffic/traffic.module";
-import { LeadModule } from "./modules/lead/lead.module";
+import { BranchModule } from "@/modules/branch/branch.module";
+import { PatientModule } from "@/modules/patient/patient.module";
+import { DoctorModule } from "@/modules/doctor/doctor.module";
+import { AvailabilityModule } from "@/modules/availability/availability.module";
+import { AppointmentModule } from "@/modules/appointment/appointment.module";
+import { ChatModule } from "@/modules/chat/chat.module";
+import { PaymentModule } from "@/modules/payment/payment.module";
+import { CommerceModule } from "@/modules/commerce/commerce.module";
+import { CampaignModule } from "@/modules/campaign/campaign.module";
 
 @Module({
   imports: [
@@ -44,10 +49,15 @@ import { LeadModule } from "./modules/lead/lead.module";
     AdminModule,
     MediaModule,
     AuditModule,
-    BusinessModule,
-    DashboardModule,
-    TrafficModule,
-    LeadModule,
+    BranchModule,
+    PatientModule,
+    DoctorModule,
+    AvailabilityModule,
+    AppointmentModule,
+    ChatModule,
+    PaymentModule,
+    CommerceModule,
+    CampaignModule,
   ],
 
   providers: [

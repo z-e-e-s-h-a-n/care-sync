@@ -3,11 +3,5 @@
 
 export const SoftDeleteModels = new Set<string>([
   "User",
-  "Media",
-  "Post",
-  "Category",
-  "Tag",
-  "ContactMessage",
-  "ConsultationRequest",
-  "NewsletterSubscriber"
+  "Media"
 ]);

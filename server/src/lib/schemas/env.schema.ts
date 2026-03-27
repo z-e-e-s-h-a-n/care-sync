@@ -15,7 +15,7 @@ const zMsString = z
 
 export const envSchema = z.object({
   // ==============================
-  // App Config
+  // Mi MedCare Server
   // ==============================
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -23,35 +23,39 @@ export const envSchema = z.object({
 
   APP_PORT: z.coerce.number(),
   APP_ENDPOINT: z.string(),
-  CLIENT_ENDPOINT: z.string(),
-  ADMIN_ENDPOINT: z.string(),
-
   CORS_ORIGIN: z
     .string()
     .transform((val) => val.split(",").map((origin) => origin.trim())),
+  CLIENT_ENDPOINT: z.string(),
+  ADMIN_ENDPOINT: z.string(),
 
   // ==============================
-  // Database / Cloud
+  // Database
   // ==============================
   DB_URI: z.string(),
 
-  CLOUDINARY_CLOUD_NAME: z.string(),
-  CLOUDINARY_API_KEY: z.string(),
-  CLOUDINARY_API_SECRET: z.string(),
+  // ==============================
+  // Media Storage
+  // ==============================
   CLOUDINARY_URL: z.string(),
+  CLOUDINARY_ROOT_FOLDER: z.string(),
 
   // ==============================
-  // OTP Model
+  // OTP and Auth
   // ==============================
   OTP_EXP: zMsString,
-
-  // ==============================
-  // Auth
-  // ==============================
   JWT_ACCESS_SECRET: z.string(),
   JWT_REFRESH_SECRET: z.string(),
   ACCESS_TOKEN_EXP: zMsString,
   REFRESH_TOKEN_EXP: zMsString,
+
+  // ==============================
+  // Email Delivery
+  // ==============================
+  SMTP_HOST: z.string(),
+  SMTP_PORT: z.coerce.number(),
+  SMTP_USER: z.string(),
+  SMTP_PASS: z.string(),
 
   // ==============================
   // OAuth Providers
@@ -60,12 +64,8 @@ export const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string(),
   GOOGLE_CALLBACK_URL: z.string(),
 
-  FACEBOOK_CLIENT_ID: z.string(),
-  FACEBOOK_CLIENT_SECRET: z.string(),
-  FACEBOOK_CALLBACK_URL: z.string(),
-
   // ==============================
-  // SMS (Twilio)
+  // SMS / WhatsApp (Twilio)
   // ==============================
   TWILIO_ACCOUNT_SID: z.string(),
   TWILIO_AUTH_TOKEN: z.string(),
@@ -73,29 +73,12 @@ export const envSchema = z.object({
   TWILIO_WHATSAPP_NUMBER: z.string(),
 
   // ==============================
-  // Email (Resend)
-  // ==============================
-  SMTP_HOST: z.string(),
-  SMTP_PORT: z.coerce.number(),
-  SMTP_USER: z.string(),
-  SMTP_PASS: z.string(),
-
-  // ==============================
-  // Firebase
-  // ==============================
-  FIREBASE_PROJECT_ID: z.string(),
-  FIREBASE_CLIENT_EMAIL: z.string(),
-  FIREBASE_PRIVATE_KEY: z
-    .string()
-    .transform((key) => key.replace(/\\n/g, "\n")),
-
-  // ==============================
-  // API Keys
+  // External APIs
   // ==============================
   IP_STACK_API_KEY: z.string(),
 
   // ==============================
-  // Admin
+  // Admin Bootstrap
   // ==============================
   ADMIN_NAME: z.string(),
   ADMIN_EMAIL: z.string(),

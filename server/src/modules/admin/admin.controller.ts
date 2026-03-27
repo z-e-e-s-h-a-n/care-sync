@@ -13,33 +13,38 @@ import { CUUserDto, UserQueryDto } from "@workspace/contracts/admin";
 import { AdminService } from "./admin.service";
 import { Roles } from "@/decorators/roles.decorator";
 import { BooleanQuery } from "@/decorators/boolean-query.decorator";
+import { User } from "@/decorators/user.decorator";
 
-@Roles("admin")
-@Controller("admin")
+@Controller("users")
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  @Post("users")
-  createUser(@Body() dto: CUUserDto) {
-    return this.adminService.createUser(dto);
+  @Roles("admin", "doctor")
+  @Post()
+  createUser(@Body() dto: CUUserDto, @User() user: Express.User) {
+    return this.adminService.createUser(dto, user);
   }
 
-  @Get("users")
-  findAllUsers(@Query() query: UserQueryDto) {
-    return this.adminService.findAllUsers(query);
+  @Roles("admin", "doctor")
+  @Get()
+  findAllUsers(@Query() query: UserQueryDto, @User() user: Express.User) {
+    return this.adminService.findAllUsers(query, user);
   }
 
-  @Get("users/:userId")
+  @Roles("admin", "doctor")
+  @Get(":userId")
   async findUser(@Param("userId") userId: string) {
     return this.adminService.findUser(userId);
   }
 
-  @Put("users/:userId")
+  @Roles("admin")
+  @Put(":userId")
   async updateUser(@Body() dto: CUUserDto, @Param("userId") userId: string) {
     return this.adminService.updateUser(dto, userId);
   }
 
-  @Delete("users/:userId")
+  @Roles("admin")
+  @Delete(":userId")
   async deleteUser(
     @Param("userId") userId: string,
     @BooleanQuery("force") force: boolean,
@@ -47,7 +52,8 @@ export class AdminController {
     return this.adminService.deleteUser(userId, force);
   }
 
-  @Post("users/:userId/restore")
+  @Roles("admin")
+  @Post(":userId/restore")
   async restoreUser(@Param("userId") userId: string) {
     return this.adminService.restoreUser(userId);
   }

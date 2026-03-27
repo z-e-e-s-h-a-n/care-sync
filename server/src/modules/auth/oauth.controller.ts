@@ -34,18 +34,6 @@ export class OAuthController {
     return this.handleOAuthCallback(req, res);
   }
 
-  // ===== FACEBOOK =====
-
-  @Get("facebook")
-  @UseOAuthGuard("facebook")
-  facebookLogin() {}
-
-  @Get("facebook/callback")
-  @UseGuards(AuthGuard("facebook"))
-  facebookCallback(@Req() req: Request, @Res() res: Response) {
-    return this.handleOAuthCallback(req, res);
-  }
-
   // ===== SHARED =====
 
   private async handleOAuthCallback(req: Request, res: Response) {

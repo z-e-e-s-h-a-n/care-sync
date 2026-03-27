@@ -23,7 +23,7 @@ import { PrismaService } from "@/modules/prisma/prisma.service";
 import { TokenService } from "@/modules/token/token.service";
 import { NotificationService } from "@/modules/notification/notification.service";
 import type { SafeUser } from "@workspace/contracts/user";
-import type { IdentifierType, UserRole } from "@workspace/contracts";
+import type { SafeUserRole } from "@workspace/contracts";
 
 @Injectable()
 export class AuthService {
@@ -39,7 +39,7 @@ export class AuthService {
       throw new BadRequestException("Password should not be empty.");
     }
 
-    const { key } = await this.createUser(dto, "customer");
+    const { key } = await this.createUser(dto, "patient");
 
     return {
       message: `User created successfully. Please verify your ${key}.`,
@@ -113,6 +113,7 @@ export class AuthService {
 
     return {
       message: "Signed in successfully",
+      data: { id: user.id, role: user.role },
     };
   }
 
@@ -125,8 +126,6 @@ export class AuthService {
     const { user, key, value, meta } = await this.findUserFail404(
       dto.identifier,
     );
-
-    console.log("request received", dto.purpose);
 
     switch (dto.purpose) {
       case "verifyIdentifier": {
@@ -310,6 +309,7 @@ export class AuthService {
 
         return {
           message: "MFA verified. Signed in successfully.",
+          data: { id: user.id, role: user.role },
         };
       }
 
@@ -423,12 +423,13 @@ export class AuthService {
       throw new BadRequestException("Invalid identifier update token.");
     }
 
-    const { key } = this.parseIdentifier(newIdentifier);
-
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        [key]: newIdentifier,
+        [this.parseIdentifier(newIdentifier).key]: newIdentifier,
+        ...(newIdentifier.includes("@")
+          ? { isEmailVerified: true }
+          : { isPhoneVerified: true }),
       },
     });
 
@@ -453,10 +454,13 @@ export class AuthService {
       },
     });
 
-    return { message: `${key} changed successfully.` };
+    return { message: "Identifier changed successfully." };
   }
 
-  async createUser(dto: SignUpDto, role: UserRole) {
+  async createUser(
+    dto: Omit<SignUpDto, "password"> & { password?: string },
+    role: SafeUserRole,
+  ) {
     const { key, value } = await this.findUserFail200(dto.identifier);
 
     const hashedPassword = dto.password
@@ -472,18 +476,17 @@ export class AuthService {
         displayName: `${dto.firstName} ${dto.lastName}`.trim(),
         role,
       },
-      ...this.userView,
     });
 
     await this.notifyService.sendNotification({
       purpose: "signUp",
-      identifier: value,
+      identifier: dto.identifier,
       user,
     });
 
     await this.otpService.sendOtp({
       user,
-      identifier: value,
+      identifier: dto.identifier,
       purpose: "verifyIdentifier",
     });
 
@@ -501,8 +504,8 @@ export class AuthService {
     return argon2.verify(hash, password);
   }
 
-  async findUserFail404(i: string) {
-    const { key, value, query } = this.parseIdentifier(i);
+  async findUserFail404(identifier: string) {
+    const { key, value, query } = this.parseIdentifier(identifier);
 
     const user = await this.prisma.user.findUniqueOrThrow({
       where: query,
@@ -521,8 +524,8 @@ export class AuthService {
     };
   }
 
-  private findUserFail200 = async (i: string) => {
-    const { key, value, query } = this.parseIdentifier(i);
+  private findUserFail200 = async (identifier: string) => {
+    const { key, value, query } = this.parseIdentifier(identifier);
     const user = await this.prisma.user.findUnique({
       where: query,
     });
@@ -548,7 +551,7 @@ export class AuthService {
 
   private async checkVerificationStatus(
     user: SafeUser,
-    key: IdentifierType,
+    key: "email" | "phone",
     value: string,
     check: "verified" | "unverified",
   ) {
@@ -573,10 +576,10 @@ export class AuthService {
     }
   }
 
-  parseIdentifier(i: string) {
-    const isEmail = i.includes("@");
-    const key: IdentifierType = isEmail ? "email" : "phone";
-    const value = isEmail ? i.toLowerCase() : i;
+  parseIdentifier(identifier: string) {
+    const isEmail = identifier.includes("@");
+    const key: "email" | "phone" = isEmail ? "email" : "phone";
+    const value = isEmail ? identifier.toLowerCase() : identifier;
     const query = key === "email" ? { email: value } : { phone: value };
 
     return { key, value, query };

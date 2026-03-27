@@ -110,8 +110,13 @@ export class AuthController {
   }
 
   @Get("session/validate")
-  validateSession() {
-    return { message: "Session is valid." };
+  validateSession(@User() user: Express.User) {
+    return {
+      message: "Session is valid.",
+      data: {
+        id: user.id,
+        role: user.role,
+      },
+    };
   }
 }
-

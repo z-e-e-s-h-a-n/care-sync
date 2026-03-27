@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import type { MediaCreateDto, MediaQueryDto, MediaUpdateDto } from "@workspace/contracts/media";
+import type {
+  MediaCreateDto,
+  MediaQueryDto,
+  MediaUpdateDto,
+} from "@workspace/contracts/media";
 import type { Prisma } from "@workspace/db/client";
 
 import { PrismaService } from "@/modules/prisma/prisma.service";
@@ -17,21 +21,19 @@ export class MediaService {
     dto: MediaCreateDto,
     userId: string,
   ) {
-    const { data, hash } = await this.cloudinary.uploadFile(
-      file,
-      `media/${dto.type}`,
-    );
+    const { data, hash } = await this.cloudinary.uploadFile(file, dto.type);
 
     const media = await this.prisma.media.create({
       data: {
         ...dto,
-        title: dto.title ?? data.original_filename,
-        uploadedById: userId,
-        url: data.secure_url,
-        filename: data.original_filename,
-        mimeType: `${data.resource_type}/${data.format}`,
-        size: data.bytes,
         hash,
+        name: dto.name ?? data.original_filename,
+        url: data.secure_url,
+        publicId: data.public_id,
+        uploadedById: userId,
+        size: data.bytes,
+        resourceType: data.resource_type,
+        mimeType: `${data.resource_type}/${data.format}`,
       },
       include: this.mediaInclude,
     });
@@ -54,8 +56,8 @@ export class MediaService {
     if (search && searchBy) {
       const searchWhereMap: Record<typeof searchBy, Prisma.MediaWhereInput> = {
         id: { id: search },
-        title: {
-          title: { contains: search, mode: "insensitive" },
+        name: {
+          name: { contains: search, mode: "insensitive" },
         },
       };
       Object.assign(where, searchWhereMap[searchBy]);
@@ -118,12 +120,11 @@ export class MediaService {
     });
 
     if (force) {
-      await this.cloudinary.deleteFile(media.hash);
+      await this.cloudinary.deleteFile(media.publicId, media.resourceType);
     }
 
     await this.prisma.media.delete({
       where: { id: mediaId },
-      ...({ force } as any),
     });
 
     return {
@@ -142,6 +143,7 @@ export class MediaService {
     };
   }
 
-  private mediaInclude = { uploadedBy: { omit: { password: true } } };
+  private mediaInclude = {
+    uploadedBy: { omit: { password: true } },
+  };
 }
-
