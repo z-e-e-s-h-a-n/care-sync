@@ -103,8 +103,8 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
               <p className="text-sm text-muted-foreground">{user.email}</p>
 
               <div className="mt-2 flex gap-2">
-                <Badge variant="secondary">{user.role}</Badge>
-                <Badge variant={getStatusVariant("verified")} className="text-green-600">
+                <Badge variant="info">{user.role}</Badge>
+                <Badge variant={getStatusVariant("verified")}>
                   Email verified
                 </Badge>
               </div>
