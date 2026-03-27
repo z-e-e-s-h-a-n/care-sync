@@ -7,10 +7,6 @@ datasource db {
     provider = "postgresql"
 }
 
-//
-// ENUMS
-//
-
 enum ThemeMode {
     light
     dark
@@ -19,13 +15,185 @@ enum ThemeMode {
 
 enum UserRole {
     admin
-    customer
+    patient
+    doctor
 }
 
 enum UserStatus {
     pending
     active
     suspended
+}
+
+enum Gender {
+    male
+    female
+    other
+}
+
+enum IdentificationType {
+    nationalId
+    passport
+    driversLicense
+    other
+}
+
+enum DoctorVerificationStatus {
+    pending
+    verified
+    rejected
+}
+
+enum Weekday {
+    monday
+    tuesday
+    wednesday
+    thursday
+    friday
+    saturday
+    sunday
+}
+
+enum AppointmentChannel {
+    inPerson
+    virtual
+}
+
+enum AppointmentStatus {
+    booked
+    confirmed
+    cancelled
+    completed
+    noShow
+}
+
+enum AppointmentCancellationSource {
+    patient
+    doctor
+    admin
+}
+
+enum BookingSource {
+    app
+    admin
+}
+
+enum ConversationType {
+    support
+    appointment
+}
+
+enum ConversationStatus {
+    open
+    closed
+}
+
+enum PaymentProvider {
+    stripe
+    paypal
+    manual
+}
+
+enum PaymentMethodType {
+    card
+    wallet
+    bankTransfer
+    cash
+}
+
+enum PaymentStatus {
+    pending
+    succeeded
+    failed
+    refunded
+}
+
+enum RefundStatus {
+    pending
+    processed
+    rejected
+}
+
+enum CampaignStatus {
+    draft
+    scheduled
+    sent
+    failed
+}
+
+enum CampaignAudience {
+    allUsers
+    patients
+    doctors
+    custom
+}
+
+enum MediaType {
+    avatar
+    document
+    prescription
+    product
+    other
+}
+
+enum MediaVisibility {
+    private
+    public
+}
+
+enum OrderStatus {
+    pending
+    paid
+    processing
+    shipped
+    delivered
+    cancelled
+    refunded
+}
+
+enum ShipmentStatus {
+    pending
+    shipped
+    delivered
+    cancelled
+}
+
+enum PushProvider {
+    fcm
+    expo
+}
+
+enum NotificationChannel {
+    push
+    email
+    sms
+    whatsapp
+}
+
+enum NotificationStatus {
+    pending
+    partial
+    sent
+    failed
+}
+
+enum NotificationPurpose {
+    signUp
+    signIn
+    verifyMfa
+    updateMfa
+    updatePassword
+    verifyIdentifier
+    updateIdentifier
+    userStatus
+    securityAlert
+    appointmentStatus
+    appointmentReminder
+    newChatMessage
+    paymentStatus
+    refundStatus
+    orderStatus
+    campaign
 }
 
 enum OtpPurpose {
@@ -58,94 +226,79 @@ enum SessionStatus {
     expired
 }
 
-enum NotificationChannel {
-    push
-    email
-    sms
-    whatsapp
-}
-
-enum MessagingChannel {
-    sms
-    whatsapp
-}
-
-enum PushProvider {
-    fcm
-    expo
-}
-
-enum NotificationPurpose {
-    signUp
-    signIn
-    verifyMfa
-    updateMfa
-    updatePassword
-    verifyIdentifier
-    updateIdentifier
-
-    userStatus
-
-    newsletter
-    securityAlert
-    contactMessage
-}
-
-enum NotificationPriority {
-    normal
-    important
-}
-
-enum NotificationStatus {
-    pending
-    partial
-    sent
-    failed
-}
-
-enum ContactMessageStatus {
-    pending
-    replied
-}
-
 enum AuditAction {
     create
     update
     delete
     login
     logout
-    statusChange
 }
 
-enum MediaVisibility {
-    private
-    public
+model BusinessProfile {
+    id String @id @default(ulid())
+
+    name        String
+    legalName   String?
+    description String?
+
+    faviconId String?
+    favicon   Media?  @relation("BusinessProfileFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
+
+    logoId String?
+    logo   Media?  @relation("BusinessProfileLogo", fields: [logoId], references: [id], onDelete: SetNull)
+
+    coverId String?
+    cover   Media?  @relation("BusinessProfileCoverImage", fields: [coverId], references: [id], onDelete: SetNull)
+
+    email   String? @db.VarChar(255)
+    phone   String? @db.VarChar(20)
+    website String?
+
+    defaultDoctorCommissionPercent Decimal? @db.Decimal(5, 2)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
-enum MediaType {
-    photo
-    logo
-    other
-}
+model Branch {
+    id String @id @default(ulid())
 
-//
-// AUTH MODELS
-//
+    name            String
+    slug            String  @unique
+    email           String? @db.VarChar(255)
+    phone           String? @db.VarChar(20)
+    whatsapp        String? @db.VarChar(20)
+    address         String?
+    timezone        String?
+    officeHoursDays String?
+    officeHoursTime String?
+    isActive        Boolean @default(true)
+
+    doctors          DoctorProfile[]
+    appointments     Appointment[]
+    conversations    Conversation[]
+    preferredByUsers PatientProfile[] @relation("PreferredBranch")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([isActive])
+}
 
 model User {
-    // Core fields
-    id          String  @id @default(ulid())
-    firstName   String
-    lastName    String?
-    displayName String
-    password    String? @db.VarChar(255)
+    id String @id @default(ulid())
 
     imageId String?
-    image   Media?  @relation("UserImage", fields: [imageId], references: [id])
+    image   Media?  @relation("UserImage", fields: [imageId], references: [id], onDelete: SetNull)
 
-    // Contact info
-    email           String? @unique @db.VarChar(255)
-    phone           String? @unique @db.VarChar(20)
+    firstName   String
+    lastName    String?
+    displayName String?
+    password    String? @db.VarChar(255)
+
+    email String? @unique @db.VarChar(255)
+    phone String? @unique @db.VarChar(20)
+
     isEmailVerified Boolean @default(false)
     isPhoneVerified Boolean @default(false)
 
@@ -155,30 +308,601 @@ model User {
     preferredTheme    ThemeMode @default(system)
     pushNotifications Boolean   @default(false)
 
-    preferredMfa    MfaMethod?
-    fallbackChannel MessagingChannel @default(sms)
+    preferredMfa MfaMethod?
+    loginAlerts  Boolean    @default(true)
+    lastLoginAt  DateTime?
 
-    loginAlerts Boolean   @default(true)
-    lastLoginAt DateTime?
-
-    // Meta
     createdAt DateTime  @default(now())
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
-    // Relations
+    patientProfile PatientProfile?
+    doctorProfile  DoctorProfile?
+
     otps          Otp[]
     sessions      Session[]
     notifications Notification[]
-    auditLogs     AuditLog[]
+    uploads       Media[]        @relation("UserUploads")
 
-    medias Media[] @relation("UserUploads")
+    sentMessages Message[] @relation("MessageSender")
 
-    // Indexes
-    @@index([status])
+    createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
+    createdCampaigns    NotificationCampaign[] @relation("CampaignCreatedBy")
+    auditLogs           AuditLog[]
+
+    createdDoctorProfiles  DoctorProfile[] @relation("DoctorProfileCreatedBy")
+    verifiedDoctorProfiles DoctorProfile[] @relation("DoctorProfileVerifiedBy")
+
+    assignedConversations Conversation[]      @relation("ConversationAssignedTo")
+    processedRefunds      Refund[]            @relation("RefundProcessedBy")
+    campaignRecipients    CampaignRecipient[]
+
     @@index([role])
-    @@index([email, isEmailVerified])
-    @@index([phone, isPhoneVerified])
+    @@index([status])
+    @@index([deletedAt])
+}
+
+model PatientProfile {
+    id String @id @default(ulid())
+
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    preferredBranchId String?
+    preferredBranch   Branch? @relation("PreferredBranch", fields: [preferredBranchId], references: [id], onDelete: SetNull)
+
+    identificationDocumentId String?
+    identificationDocument   Media?  @relation("PatientIdentificationDocument", fields: [identificationDocumentId], references: [id], onDelete: SetNull)
+
+    birthDate DateTime?
+    gender    Gender?
+
+    address    String?
+    occupation String?
+
+    emergencyContactName   String?
+    emergencyContactNumber String? @db.VarChar(20)
+
+    insuranceProvider     String?
+    insurancePolicyNumber String?
+
+    allergies            String?
+    currentMedication    String?
+    familyMedicalHistory String?
+    pastMedicalHistory   String?
+
+    identificationType   IdentificationType?
+    identificationNumber String?
+
+    appointments  Appointment[]
+    conversations Conversation[] @relation("PatientConversations")
+    cart          Cart?
+    orders        Order[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([preferredBranchId])
+}
+
+model DoctorProfile {
+    id String @id @default(ulid())
+
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    branchId String
+    branch   Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+    createdById String?
+    createdBy   User?   @relation("DoctorProfileCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+    verifiedById String?
+    verifiedBy   User?   @relation("DoctorProfileVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+    identificationDocumentId String?
+    identificationDocument   Media?  @relation("DoctorIdentificationDocument", fields: [identificationDocumentId], references: [id], onDelete: SetNull)
+
+    licenseDocumentId String?
+    licenseDocument   Media?  @relation("DoctorLicenseDocument", fields: [licenseDocumentId], references: [id], onDelete: SetNull)
+
+    slug      String? @unique
+    title     String?
+    specialty String?
+    bio       String?
+
+    licenseNumber   String?  @unique
+    yearsExperience Int?
+    education       String?
+    qualifications  String?
+    languages       String[]
+
+    consultationFee   Decimal? @db.Decimal(10, 2)
+    commissionPercent Decimal? @db.Decimal(5, 2)
+
+    identificationType   IdentificationType?
+    identificationNumber String?
+
+    verificationStatus DoctorVerificationStatus @default(pending)
+    verifiedAt         DateTime?
+    rejectionReason    String?
+
+    isAvailable Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    availabilityRules DoctorAvailability[]
+    blockedSlots      DoctorBlockedTime[]
+    appointments      Appointment[]
+
+    @@index([branchId])
+    @@index([verificationStatus])
+    @@index([isAvailable])
+}
+
+model DoctorAvailability {
+    id String @id @default(ulid())
+
+    doctorId String
+    doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+    weekday   Weekday
+    startTime String
+    endTime   String
+
+    slotDurationMinute Int     @default(30)
+    isActive           Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([doctorId, weekday, startTime, endTime])
+    @@index([doctorId, weekday, isActive])
+}
+
+model DoctorBlockedTime {
+    id String @id @default(ulid())
+
+    doctorId String
+    doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+    startAt DateTime
+    endAt   DateTime
+    reason  String?
+
+    createdAt DateTime @default(now())
+
+    @@index([doctorId, startAt, endAt])
+}
+
+model Appointment {
+    id                String @id @default(ulid())
+    appointmentNumber String @unique
+
+    branchId String
+    branch   Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+    patientId String
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+    doctorId String
+    doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+
+    createdById String?
+    createdBy   User?   @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+    status             AppointmentStatus              @default(booked)
+    cancellationSource AppointmentCancellationSource?
+    bookingSource      BookingSource                  @default(app)
+    channel            AppointmentChannel             @default(inPerson)
+
+    paymentStatus PaymentStatus @default(pending)
+
+    scheduledStartAt DateTime
+    scheduledEndAt   DateTime
+    timezone         String
+
+    patientNotes       String?
+    doctorNotes        String?
+    adminNotes         String?
+    cancellationReason String?
+
+    bookedAt       DateTime  @default(now())
+    confirmedAt    DateTime?
+    cancelledAt    DateTime?
+    completedAt    DateTime?
+    paidAt         DateTime?
+    reminderSentAt DateTime?
+
+    payments     Payment[]
+    conversation Conversation?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([branchId, scheduledStartAt])
+    @@index([doctorId, scheduledStartAt])
+    @@index([patientId, scheduledStartAt])
+    @@index([status, scheduledStartAt])
+}
+
+model Conversation {
+    id String @id @default(ulid())
+
+    branchId String?
+    branch   Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+    patientId String
+    patient   PatientProfile @relation("PatientConversations", fields: [patientId], references: [id], onDelete: Cascade)
+
+    appointmentId String?      @unique
+    appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+    assignedToId String?
+    assignedTo   User?   @relation("ConversationAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+    type    ConversationType
+    status  ConversationStatus @default(open)
+    subject String?
+
+    lastMessageAt DateTime?
+
+    messages Message[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([branchId, type, status])
+    @@index([patientId, status])
+    @@index([assignedToId, status])
+}
+
+model Message {
+    id String @id @default(ulid())
+
+    conversationId String
+    conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+    senderId String
+    sender   User   @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+    body   String?
+    readAt DateTime?
+
+    attachments MessageAttachment[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([conversationId, createdAt])
+    @@index([senderId])
+}
+
+model MessageAttachment {
+    id String @id @default(ulid())
+
+    messageId String
+    message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+    mediaId String
+    media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([messageId, mediaId])
+    @@index([messageId])
+    @@index([mediaId])
+}
+
+model ProductCategory {
+    id String @id @default(ulid())
+
+    name        String
+    slug        String  @unique
+    description String?
+
+    isActive Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    products Product[]
+
+    @@index([isActive])
+}
+
+model Product {
+    id String @id @default(ulid())
+
+    categoryId String?
+    category   ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+    imageId String?
+    image   Media?  @relation("ProductImage", fields: [imageId], references: [id], onDelete: SetNull)
+
+    name        String
+    slug        String  @unique
+    sku         String  @unique
+    description String?
+
+    price     Decimal  @db.Decimal(10, 2)
+    salePrice Decimal? @db.Decimal(10, 2)
+
+    stockQuantity Int @default(0)
+
+    isActive Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    cartItems  CartItem[]
+    orderItems OrderItem[]
+
+    @@index([categoryId])
+    @@index([isActive])
+}
+
+model Cart {
+    id String @id @default(ulid())
+
+    patientId String         @unique
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+    items CartItem[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model CartItem {
+    id String @id @default(ulid())
+
+    cartId String
+    cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+    productId String
+    product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+    quantity   Int
+    unitPrice  Decimal @db.Decimal(10, 2)
+    totalPrice Decimal @db.Decimal(10, 2)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([cartId, productId])
+}
+
+model Order {
+    id          String @id @default(ulid())
+    orderNumber String @unique
+
+    patientId String
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+    status        OrderStatus   @default(pending)
+    paymentStatus PaymentStatus @default(pending)
+
+    shippingAddress Json?
+    billingAddress  Json?
+    notes           String?
+
+    subtotalAmount Decimal @db.Decimal(10, 2)
+    shippingAmount Decimal @default(0) @db.Decimal(10, 2)
+    totalAmount    Decimal @db.Decimal(10, 2)
+
+    paidAt      DateTime?
+    cancelledAt DateTime?
+    deliveredAt DateTime?
+
+    items    OrderItem[]
+    payments Payment[]
+    shipment Shipment?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([patientId, status])
+}
+
+model OrderItem {
+    id String @id @default(ulid())
+
+    orderId String
+    order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+    productId String?
+    product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+    name       String
+    sku        String?
+    quantity   Int
+    unitPrice  Decimal @db.Decimal(10, 2)
+    totalPrice Decimal @db.Decimal(10, 2)
+
+    createdAt DateTime @default(now())
+
+    @@index([orderId])
+}
+
+model Shipment {
+    id String @id @default(ulid())
+
+    orderId String @unique
+    order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+    status ShipmentStatus @default(pending)
+
+    carrier        String?
+    trackingNumber String?
+    trackingUrl    String?
+
+    notes String?
+
+    shippedAt   DateTime?
+    deliveredAt DateTime?
+    returnedAt  DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Payment {
+    id String @id @default(ulid())
+
+    appointmentId String?
+    appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+    orderId String?
+    order   Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+    provider   PaymentProvider
+    methodType PaymentMethodType
+    status     PaymentStatus     @default(pending)
+
+    amount Decimal @db.Decimal(10, 2)
+
+    transactionId  String?
+    failureMessage String?
+
+    paidAt     DateTime?
+    refundedAt DateTime?
+
+    metadata Json?
+
+    commissionAmount Decimal? @db.Decimal(10, 2)
+    doctorNetAmount  Decimal? @db.Decimal(10, 2)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    refunds Refund[]
+
+    @@index([appointmentId, createdAt])
+    @@index([orderId, createdAt])
+    @@index([status, createdAt])
+    @@index([transactionId])
+}
+
+model Refund {
+    id String @id @default(ulid())
+
+    paymentId String
+    payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+    processedById String?
+    processedBy   User?   @relation("RefundProcessedBy", fields: [processedById], references: [id], onDelete: SetNull)
+
+    amount   Decimal      @db.Decimal(10, 2)
+    reason   String?
+    status   RefundStatus @default(pending)
+    metadata Json?
+
+    requestedAt DateTime  @default(now())
+    processedAt DateTime?
+
+    @@index([paymentId, status])
+}
+
+model NotificationCampaign {
+    id String @id @default(ulid())
+
+    createdById String
+    createdBy   User   @relation("CampaignCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+    title   String
+    subject String?
+    message String
+    channel NotificationChannel
+
+    audience CampaignAudience
+    status   CampaignStatus   @default(draft)
+
+    scheduledAt DateTime?
+    sentAt      DateTime?
+
+    recipients CampaignRecipient[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([status, scheduledAt])
+}
+
+model CampaignRecipient {
+    id String @id @default(ulid())
+
+    campaignId String
+    campaign   NotificationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    sentAt DateTime?
+
+    @@unique([campaignId, userId])
+}
+
+model Notification {
+    id String @id @default(ulid())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    title     String
+    message   String
+    recipient String
+    meta      Json?
+
+    purpose  NotificationPurpose
+    channels NotificationChannel[]
+    status   NotificationStatus    @default(pending)
+
+    readAt    DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    @@index([userId, readAt])
+}
+
+model Media {
+    id String @id @default(ulid())
+
+    uploadedById String
+    uploadedBy   User   @relation("UserUploads", fields: [uploadedById], references: [id])
+
+    publicId     String @unique
+    url          String @unique
+    mimeType     String
+    resourceType String
+    size         Int
+    hash         String @unique
+
+    name       String
+    altText    String?
+    type       MediaType
+    visibility MediaVisibility @default(private)
+    notes      String?
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    users                          User[]              @relation("UserImage")
+    productImages                  Product[]           @relation("ProductImage")
+    messageAttachments             MessageAttachment[]
+    patientIdentificationDocuments PatientProfile[]    @relation("PatientIdentificationDocument")
+    doctorIdentificationDocuments  DoctorProfile[]     @relation("DoctorIdentificationDocument")
+    doctorLicenseDocuments         DoctorProfile[]     @relation("DoctorLicenseDocument")
+    businessProfileFavicons        BusinessProfile[]   @relation("BusinessProfileFavicon")
+    businessProfileLogos           BusinessProfile[]   @relation("BusinessProfileLogo")
+    businessProfileCovers          BusinessProfile[]   @relation("BusinessProfileCoverImage")
+
+    @@index([name])
+    @@index([type])
+    @@index([uploadedById])
+    @@index([createdAt])
     @@index([deletedAt])
 }
 
@@ -191,14 +915,14 @@ model Session {
     refreshTokenHash String
     status           SessionStatus @default(active)
 
-    ip       String
-    location String
+    ip       String?
+    location String?
     isp      String?
-    timezone String
+    timezone String?
 
-    deviceId   String
-    deviceType String
-    deviceInfo String
+    deviceId   String?
+    deviceType String?
+    deviceInfo String?
 
     isTrusted  Boolean   @default(false)
     lastSeenAt DateTime?
@@ -217,84 +941,24 @@ model Session {
 }
 
 model Otp {
-    id        String     @id @default(ulid())
-    userId    String
-    user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-    purpose   OtpPurpose
-    type      OtpType    @default(numericCode)
-    secret    String
-    meta      Json?
+    id String @id @default(ulid())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    purpose OtpPurpose
+    type    OtpType    @default(numericCode)
+    secret  String
+    meta    Json?
+
     expiresAt DateTime
     usedAt    DateTime?
-    createdAt DateTime   @default(now())
-    updatedAt DateTime   @updatedAt
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
 
     @@index([userId, purpose])
     @@index([expiresAt])
 }
-
-model Notification {
-    id     String @id @default(ulid())
-    userId String
-    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    purpose  NotificationPurpose
-    channels NotificationChannel[]
-    priority NotificationPriority
-
-    subject   String
-    message   String
-    recipient String
-    meta      Json?
-
-    status NotificationStatus @default(failed)
-
-    viewedAt  DateTime?
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-
-    @@index([userId])
-    @@index([status, createdAt])
-}
-
-model Media {
-    id String @id @default(ulid())
-
-    uploadedById String
-    uploadedBy   User   @relation("UserUploads", fields: [uploadedById], references: [id])
-
-    url      String @unique
-    filename String
-    mimeType String
-    size     Int
-    hash     String @unique
-
-    title      String
-    altText    String?
-    type       MediaType
-    visibility MediaVisibility @default(private)
-
-    notes String?
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
-
-    users            User[]            @relation("UserImage")
-    businessLogos    BusinessProfile[] @relation("BusinessProfileLogo")
-    businessCovers   BusinessProfile[] @relation("BusinessProfileCoverImage")
-    businessFavIcons BusinessProfile[] @relation("BusinessProfileFavicon")
-
-    @@index([type])
-    @@index([filename])
-    @@index([uploadedById])
-    @@index([createdAt])
-    @@index([deletedAt])
-}
-
-//
-// SYSTEM
-//
 
 model AuditLog {
     id String @id @default(ulid())
@@ -317,142 +981,4 @@ model AuditLog {
     @@index([userId])
     @@index([entityType, entityId])
     @@index([createdAt])
-}
-
-model ContactMessage {
-    id String @id @default(cuid())
-
-    trafficSourceId String?
-    trafficSource   TrafficSource? @relation(fields: [trafficSourceId], references: [id])
-
-    fullName String
-    email    String
-    phone    String
-    message  String
-
-    status ContactMessageStatus @default(pending)
-    notes  String?
-
-    viewedAt  DateTime?
-    repliedAt DateTime?
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
-
-    @@index([createdAt])
-    @@index([status])
-    @@index([email])
-}
-
-model NewsletterSubscriber {
-    id String @id @default(ulid())
-
-    trafficSourceId String?
-    trafficSource   TrafficSource? @relation(fields: [trafficSourceId], references: [id])
-
-    name  String
-    email String @unique @db.VarChar(255)
-
-    isActive Boolean @default(true)
-
-    subscribedAt   DateTime  @default(now())
-    unsubscribedAt DateTime?
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
-
-    @@index([email])
-    @@index([createdAt])
-    @@index([isActive])
-}
-
-model TrafficSource {
-    id String @id @default(ulid())
-
-    utmSource   String?
-    utmMedium   String?
-    utmCampaign String?
-    utmTerm     String?
-    utmContent  String?
-
-    referrer    String?
-    landingPage String?
-
-    ip        String?
-    userAgent String?
-
-    createdAt DateTime @default(now())
-
-    contactMessages ContactMessage[]
-    newsletterSubs  NewsletterSubscriber[]
-}
-
-model BusinessPhone {
-    id    String @id @default(ulid())
-    label String
-    value String @db.VarChar(20)
-
-    whatsappProfile BusinessProfile? @relation("BusinessProfileWhatsapp")
-
-    phoneProfileId String?
-    phoneProfile   BusinessProfile? @relation("BusinessProfilePhones", fields: [phoneProfileId], references: [id], onDelete: Cascade)
-
-    faxProfileId String?
-    faxProfile   BusinessProfile? @relation("BusinessProfileFax", fields: [faxProfileId], references: [id], onDelete: Cascade)
-}
-
-model BusinessAddress {
-    id      String @id @default(ulid())
-    label   String
-    line1   String
-    city    String
-    state   String
-    zip     String
-    country String
-
-    businessProfileId String?
-    businessProfile   BusinessProfile? @relation("BusinessProfileAddresses", fields: [businessProfileId], references: [id], onDelete: Cascade)
-}
-
-model BusinessProfile {
-    id String @id @default(ulid())
-
-    name        String
-    legalName   String
-    description String
-
-    faviconId String
-    favicon   Media  @relation("BusinessProfileFavicon", fields: [faviconId], references: [id])
-
-    logoId String
-    logo   Media  @relation("BusinessProfileLogo", fields: [logoId], references: [id])
-
-    coverId String?
-    cover   Media?  @relation("BusinessProfileCoverImage", fields: [coverId], references: [id])
-
-    email String @db.VarChar(255)
-
-    whatsappId String        @unique
-    whatsapp   BusinessPhone @relation("BusinessProfileWhatsapp", fields: [whatsappId], references: [id])
-
-    website   String
-    facebook  String
-    instagram String
-    twitter   String
-    linkedin  String
-
-    fax       BusinessPhone[]   @relation("BusinessProfileFax")
-    phones    BusinessPhone[]   @relation("BusinessProfilePhones")
-    addresses BusinessAddress[] @relation("BusinessProfileAddresses")
-
-    officeHoursDays String?
-    officeHoursTime String?
-
-    metaTitle       String
-    metaDescription String
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
 }
