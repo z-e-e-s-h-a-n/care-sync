@@ -14,6 +14,7 @@ import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { useSession } from "@workspace/ui/hooks/auth";
 import { formatDate } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const getDeviceIcon = (deviceType?: string) => {
   if (!deviceType) return Monitor;
@@ -94,13 +95,13 @@ const UserSessions = () => {
                     </p>
 
                     {i === 0 && (
-                      <Badge variant="secondary" className="text-green-700">
+                      <Badge variant={getStatusVariant("active")} className="text-green-700">
                         Current
                       </Badge>
                     )}
 
                     {s.status !== "active" && (
-                      <Badge variant="destructive">Revoked</Badge>
+                      <Badge variant={getStatusVariant("revoked")}>Revoked</Badge>
                     )}
                   </div>
 
@@ -111,7 +112,7 @@ const UserSessions = () => {
                     <span className="text-muted-foreground">-</span>
                     {s.isTrusted && (
                       <Badge
-                        variant="secondary"
+                        variant={getStatusVariant("verified")}
                         className="bg-green-700/10 text-green-700"
                       >
                         Trusted

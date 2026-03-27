@@ -29,6 +29,7 @@ import useUser from "@workspace/ui/hooks/user";
 import UserSessions from "./UserSessions";
 import type { UserResponse } from "@workspace/contracts/user";
 import type { OtpPurpose } from "@workspace/contracts";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 type IdentifierType = "email" | "phone";
 
@@ -352,7 +353,7 @@ const AccountSection = ({ user }: AccountSectionProps) => {
                   {user.preferredMfa ? (
                     <div className="flex items-center gap-2">
                       <Badge
-                        variant="secondary"
+                        variant={getStatusVariant("verified")}
                         className="text-green-700 bg-green-700/30"
                       >
                         Enabled

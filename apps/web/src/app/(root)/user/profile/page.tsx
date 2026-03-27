@@ -5,7 +5,7 @@ import SectionHeader from "@/components/SectionHeader";
 
 const ProfilePage = () => {
   return (
-    <section className="section-wrapper section-container">
+    <section className="section">
       <SectionHeader
         subtitle="Profile"
         title="Patient profile"

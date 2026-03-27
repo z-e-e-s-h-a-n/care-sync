@@ -16,6 +16,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const sections: SectionConfig<UserResponse>[] = [
   {
@@ -28,12 +29,12 @@ const sections: SectionConfig<UserResponse>[] = [
       {
         label: "Role",
         accessor: "role",
-        render: (value) => <Badge variant="outline">{value}</Badge>,
+        render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>,
       },
       {
         label: "Status",
         accessor: "status",
-        render: (value) => <Badge variant="outline">{value}</Badge>,
+        render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>,
       },
     ],
     columns: 3,
@@ -45,7 +46,7 @@ const sections: SectionConfig<UserResponse>[] = [
         label: "Email Verified",
         accessor: "isEmailVerified",
         render: (value) => (
-          <Badge variant={value ? "default" : "outline"}>
+          <Badge variant={getStatusVariant(value ? "verified" : "pending")}>
             {value ? "Verified" : "Pending"}
           </Badge>
         ),
@@ -90,7 +91,7 @@ const renderHeader = (data: UserResponse) => (
       <p className="text-muted-foreground">{data.email}</p>
       <div className="flex items-center gap-2 mt-2">
         <Badge variant="outline">{data.role}</Badge>
-        <Badge variant={data.status === "active" ? "default" : "outline"}>
+        <Badge variant={getStatusVariant(data.status)}>
           {data.status}
         </Badge>
       </div>

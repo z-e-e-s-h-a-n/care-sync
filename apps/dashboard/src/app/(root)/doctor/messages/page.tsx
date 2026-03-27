@@ -6,6 +6,7 @@ import PageIntro from "@/components/dashboard/PageIntro";
 import { useAppointments } from "@/hooks/healthcare";
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -52,7 +53,10 @@ const DoctorMessagesPage = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="capitalize">
+                  <Badge
+                    variant={getStatusVariant(appointment.status)}
+                    className="capitalize"
+                  >
                     {appointment.status}
                   </Badge>
                   <Link

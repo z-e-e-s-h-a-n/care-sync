@@ -23,9 +23,9 @@ const HomePage = () => {
 
   return (
     <>
-      <section className="section-wrapper relative overflow-hidden ">
+      <section className="section relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(245,158,11,0.14),transparent_24%)]" />
-        <div className="section-container grid lg:grid-cols-[1.1fr_0.9fr] gap-4">
+        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="relative space-y-7">
             <div className="inline-flex rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-800">
               Patient booking, messaging, and care follow-up in one place
@@ -94,7 +94,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="section-wrapper section-container">
+      <section className="section">
         <SectionHeader
           subtitle="Featured Providers"
           title=" Start with a trusted doctor"

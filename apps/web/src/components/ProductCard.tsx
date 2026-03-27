@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 interface ProductCardProps {
   product: ProductResponse;
@@ -29,7 +30,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
               {product.category?.name ?? "Healthcare product"}
             </p>
           </div>
-          <Badge variant="outline" className="capitalize">
+          <Badge
+            variant={getStatusVariant(product.isActive ? "active" : "draft")}
+            className="capitalize"
+          >
             {product.isActive ? "Available" : "Hidden"}
           </Badge>
         </div>

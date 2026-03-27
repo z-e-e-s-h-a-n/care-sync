@@ -2,7 +2,7 @@
 import React from "react";
 import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
 
-import { cn } from "@workspace/ui/lib/utils";
+import { cn, getStatusVariant } from "@workspace/ui/lib/utils";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -65,11 +65,11 @@ const GenericFormTable = <TData extends BaseResponse>({
                     #{index + 1}
                   </span>
                   {isDraft ? (
-                    <Badge variant="outline" className="bg-yellow-50">
+                    <Badge variant={getStatusVariant("draft")} className="bg-yellow-50">
                       Draft
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="bg-green-50">
+                    <Badge variant={getStatusVariant("completed")} className="bg-green-50">
                       Saved
                     </Badge>
                   )}
@@ -141,14 +141,14 @@ const GenericFormTable = <TData extends BaseResponse>({
                 <TableCell>
                   {isDraft ? (
                     <Badge
-                      variant="outline"
+                      variant={getStatusVariant("draft")}
                       className="bg-yellow-700/10 text-yellow-700"
                     >
                       Draft
                     </Badge>
                   ) : (
                     <Badge
-                      variant="outline"
+                      variant={getStatusVariant("completed")}
                       className="bg-green-700/10 text-green-700"
                     >
                       Saved

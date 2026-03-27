@@ -35,6 +35,7 @@ import { SwitchField } from "@workspace/ui/components/switch-field";
 
 import { useMediaLibrary } from "@workspace/ui/hooks/media";
 import { useTheme } from "@workspace/ui/hooks/theme";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 interface ProfileFormProps {
   user: UserResponse;
@@ -103,7 +104,7 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
 
               <div className="mt-2 flex gap-2">
                 <Badge variant="secondary">{user.role}</Badge>
-                <Badge variant="outline" className="text-green-600">
+                <Badge variant={getStatusVariant("verified")} className="text-green-600">
                   Email verified
                 </Badge>
               </div>

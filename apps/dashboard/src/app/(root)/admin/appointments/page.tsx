@@ -7,22 +7,14 @@ import type {
   AppointmentQueryType,
   AppointmentResponse,
 } from "@workspace/contracts/appointment";
-import { Badge, type BadgeVariantProps } from "@workspace/ui/components/badge";
-import type { AppointmentStatus } from "@workspace/db";
+import { Badge } from "@workspace/ui/components/badge";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
   timeStyle: "short",
 });
 
-const BadgeVariantMap: Record<AppointmentStatus, BadgeVariantProps["variant"]> =
-  {
-    booked: "default",
-    cancelled: "destructive",
-    completed: "secondary",
-    confirmed: "secondary",
-    noShow: "destructive",
-  };
 
 const columns: ColumnConfig<AppointmentResponse, AppointmentQueryType>[] = [
   {
@@ -49,7 +41,7 @@ const columns: ColumnConfig<AppointmentResponse, AppointmentQueryType>[] = [
   {
     header: "Status",
     accessor: (appointment) => (
-      <Badge variant={BadgeVariantMap[appointment.status]}>
+      <Badge variant={getStatusVariant(appointment.status)}>
         {appointment.status}
       </Badge>
     ),

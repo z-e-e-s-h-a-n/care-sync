@@ -9,6 +9,7 @@ import {
   CardHeader,
 } from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 interface DoctorCardProps {
   doctor: DoctorProfileResponse;
@@ -27,7 +28,10 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
               {doctor.specialty ?? "Care provider"}
             </p>
           </div>
-          <Badge variant="outline" className="capitalize">
+          <Badge
+            variant={getStatusVariant(doctor.verificationStatus)}
+            className="capitalize"
+          >
             {doctor.verificationStatus}
           </Badge>
         </div>
@@ -35,7 +39,9 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
           <Badge variant="secondary">
             {doctor.branch?.name ?? "Independent"}
           </Badge>
-          <Badge variant="secondary">
+          <Badge
+            variant={getStatusVariant(doctor.isAvailable ? "active" : "closed")}
+          >
             {doctor.isAvailable ? "Available" : "Unavailable"}
           </Badge>
         </div>

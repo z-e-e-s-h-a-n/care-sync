@@ -15,21 +15,21 @@ const RequestSuccess = ({ searchParams }: AppPageProps) => {
   if (!appointment) return null;
 
   return (
-    <div className="section-wrapper section-container space-y-8 my-8">
+    <section className="section space-y-8">
       <section className="flex flex-col items-center">
         <Image src="/gifs/success.gif" height={300} width={280} alt="success" />
-        <h2 className="text-3xl md:text-4xl mb-6 max-w-150 text-center">
+        <h2 className="mb-6 max-w-150 text-center text-3xl md:text-4xl">
           Your <span className="text-green-500">appointment request</span> has
           been successfully submitted!
         </h2>
         <p>We&apos;ll be in touch shortly to confirm.</p>
       </section>
 
-      <section className="flex flex-col items-center w-full gap-8 p-8 rounded-2xl md:w-fit md:flex-row m-auto bg-card">
-        <p>Requested appointment details: </p>
+      <section className="flex w-full flex-col items-center gap-8 rounded-2xl bg-card p-8 md:m-auto md:w-fit md:flex-row">
+        <p>Requested appointment details:</p>
         <div className="flex items-center gap-3">
           <Image
-            src={"/images/dr-cruz.png"}
+            src="/images/dr-cruz.png"
             alt="doctor"
             width={100}
             height={100}
@@ -38,11 +38,11 @@ const RequestSuccess = ({ searchParams }: AppPageProps) => {
           <p className="whitespace-nowrap">Dr. Sarah Khan</p>
         </div>
         <div className="flex items-center gap-2">
-          <IconCalendar className="size-" />
-          <p> {formatDate(appointment?.scheduledStartAt, "datetime")}</p>
+          <IconCalendar className="size-4" />
+          <p>{formatDate(appointment.scheduledStartAt, "datetime")}</p>
         </div>
       </section>
-    </div>
+    </section>
   );
 };
 

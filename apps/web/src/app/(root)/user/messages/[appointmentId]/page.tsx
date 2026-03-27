@@ -8,6 +8,7 @@ import { useAppointment } from "@/hooks/healthcare";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -49,7 +50,7 @@ const MessageThreadPage = () => {
             </div>
             <div>
               <p className="text-muted-foreground">Status</p>
-              <Badge variant="outline" className="mt-1 capitalize">{appointment.status}</Badge>
+              <Badge variant={getStatusVariant(appointment.status)} className="mt-1 capitalize">{appointment.status}</Badge>
             </div>
           </CardContent>
         </Card>

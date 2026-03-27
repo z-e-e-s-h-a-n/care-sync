@@ -13,13 +13,14 @@ import {
 } from "@workspace/ui/shared/GenericDetailsPage";
 import { useBranch } from "@/hooks/healthcare";
 import { formatDate } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatDateTime = (value?: string | null) =>
   value ? formatDate(value) : "Not recorded";
 
-const renderBadge = (value: string) => (
-  <Badge variant="outline" className="capitalize">
-    {value}
+const renderBadge = (status: string, label = status) => (
+  <Badge variant={getStatusVariant(status)} className="capitalize">
+    {label}
   </Badge>
 );
 
@@ -41,7 +42,7 @@ const sections: SectionConfig<BranchResponse>[] = [
       {
         label: "Status",
         accessor: "isActive",
-        render: (value) => renderBadge(value ? "Active" : "Inactive"),
+        render: (value) => renderBadge(value ? "active" : "closed", value ? "Active" : "Inactive"),
       },
       {
         label: "Email",
@@ -127,7 +128,7 @@ const renderHeader = (data: BranchResponse) => (
   <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        {renderBadge(data.isActive ? "Active" : "Inactive")}
+        {renderBadge(data.isActive ? "active" : "closed", data.isActive ? "Active" : "Inactive")}
         {data.timezone ? (
           <Badge variant="outline">{data.timezone}</Badge>
         ) : null}

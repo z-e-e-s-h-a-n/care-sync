@@ -10,6 +10,7 @@ import useUser from "@workspace/ui/hooks/user";
 import type { UserQueryType } from "@workspace/contracts/admin";
 import type { UserResponse } from "@workspace/contracts/user";
 import { SafeUserRoleEnum } from "@workspace/contracts";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const columns: ColumnConfig<UserResponse, UserQueryType>[] = [
   {
@@ -39,7 +40,7 @@ const columns: ColumnConfig<UserResponse, UserQueryType>[] = [
   {
     header: "Status",
     accessor: (user) => (
-      <Badge variant={user.status === "active" ? "secondary" : "outline"}>
+      <Badge variant={getStatusVariant(user.status)}>
         {user.status}
       </Badge>
     ),

@@ -25,8 +25,7 @@ const StorePage = () => {
 
   return (
     <>
-      <section className="section-wrapper">
-        <div className="section-container space-y-8">
+      <section className="section space-y-8">
           <SectionHeader
             subtitle="Store"
             title=" Care products and wellness essentials"
@@ -55,7 +54,6 @@ const StorePage = () => {
               No products matched your current filters.
             </div>
           )}
-        </div>
       </section>
     </>
   );

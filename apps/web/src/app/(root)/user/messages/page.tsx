@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAppointments, useMyPatientProfile } from "@/hooks/healthcare";
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -45,7 +46,7 @@ const MessagesPage = () => {
                     {appointment.doctor?.specialty ?? "Care provider"}
                   </p>
                 </div>
-                <Badge variant="outline" className="capitalize">{appointment.status}</Badge>
+                <Badge variant={getStatusVariant(appointment.status)} className="capitalize">{appointment.status}</Badge>
               </CardHeader>
               <CardContent className="flex items-center justify-between gap-4 text-sm">
                 <span className="text-muted-foreground">{formatter.format(new Date(appointment.scheduledStartAt))}</span>

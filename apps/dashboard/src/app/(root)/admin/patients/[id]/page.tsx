@@ -19,9 +19,10 @@ import {
   GenericDetailsPage,
 } from "@workspace/ui/shared/GenericDetailsPage";
 import { formatDate } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const renderBadge = (value?: string | null) => (
-  <Badge variant="outline" className="capitalize">
+  <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
     {value ?? "Not set"}
   </Badge>
 );

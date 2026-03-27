@@ -20,13 +20,14 @@ import {
 } from "@workspace/ui/shared/GenericDetailsPage";
 import { formatDate, formatPrice } from "@workspace/shared/utils";
 import Link from "next/link";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatDateTime = (value?: string) =>
   value ? formatDate(value, "datetime") : "Not recorded";
 
-const renderStatusBadge = (value?: string | null) => (
-  <Badge variant="outline" className="capitalize">
-    {value ?? "Not set"}
+const renderStatusBadge = (value?: string | null, label?: string) => (
+  <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
+    {label ?? value ?? "Not set"}
   </Badge>
 );
 
@@ -159,7 +160,7 @@ const sections: SectionConfig<DoctorProfileResponse>[] = [
         label: "Availability",
         accessor: "isAvailable",
         render: (value) =>
-          renderStatusBadge(value ? "Available" : "Unavailable"),
+          renderStatusBadge(value ? "active" : "closed", value ? "Available" : "Unavailable"),
       },
       {
         label: "Verified At",
@@ -229,7 +230,7 @@ const renderHeader = (data: DoctorProfileResponse) => {
 
           <div className="flex flex-wrap gap-2">
             {renderStatusBadge(data.verificationStatus)}
-            {renderStatusBadge(data.isAvailable ? "Available" : "Unavailable")}
+            {renderStatusBadge(data.isAvailable ? "active" : "closed", data.isAvailable ? "Available" : "Unavailable")}
             {data.title ? <Badge variant="outline">{data.title}</Badge> : null}
           </div>
         </div>

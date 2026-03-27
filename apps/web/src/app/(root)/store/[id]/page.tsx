@@ -10,6 +10,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -54,7 +55,7 @@ const ProductDetailPage = () => {
         <div className="space-y-6">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
-              <Badge variant="outline" className="capitalize">{product.isActive ? "active" : "inactive"}</Badge>
+              <Badge variant={getStatusVariant(product.isActive ? "active" : "draft")} className="capitalize">{product.isActive ? "active" : "inactive"}</Badge>
             </div>
             <div>
               <h1 className="text-4xl font-semibold tracking-tight">{product.name}</h1>
@@ -105,4 +106,3 @@ const ProductDetailPage = () => {
 };
 
 export default ProductDetailPage;
-

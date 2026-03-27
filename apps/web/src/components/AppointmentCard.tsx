@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 interface AppointmentCardProps {
   appointment: AppointmentResponse;
@@ -29,7 +30,10 @@ const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
             {appointment.doctor?.specialty ?? "Care provider"}
           </p>
         </div>
-        <Badge variant="outline" className="capitalize">
+        <Badge
+          variant={getStatusVariant(appointment.status)}
+          className="capitalize"
+        >
           {appointment.status}
         </Badge>
       </CardHeader>

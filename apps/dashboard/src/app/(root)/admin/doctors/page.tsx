@@ -8,6 +8,7 @@ import type {
   DoctorQueryType,
 } from "@workspace/contracts/doctor";
 import { Badge } from "@workspace/ui/components/badge";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const columns: ColumnConfig<DoctorProfileResponse, DoctorQueryType>[] = [
   {
@@ -27,7 +28,7 @@ const columns: ColumnConfig<DoctorProfileResponse, DoctorQueryType>[] = [
   {
     header: "Status",
     accessor: (doctor) => (
-      <Badge variant={doctor.isAvailable ? "secondary" : "destructive"}>
+      <Badge variant={getStatusVariant(doctor.isAvailable ? "active" : "closed")}>
         {doctor.isAvailable ? "available" : "unavailable"}
       </Badge>
     ),

@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -51,7 +52,10 @@ const PaymentsPage = () => {
                   {payment.methodType}
                 </p>
               </div>
-              <Badge variant="outline" className="capitalize">
+              <Badge
+                variant={getStatusVariant(payment.status)}
+                className="capitalize"
+              >
                 {payment.status}
               </Badge>
             </CardHeader>

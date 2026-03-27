@@ -28,8 +28,7 @@ const DoctorsPage = () => {
 
   return (
     <>
-      <section className="section-wrapper">
-        <div className="section-container space-y-8">
+      <section className="section space-y-8">
           <SectionHeader
             subtitle="Doctors"
             title="Browse care providers"
@@ -69,7 +68,6 @@ const DoctorsPage = () => {
               No doctors matched your current filters.
             </div>
           )}
-        </div>
       </section>
     </>
   );

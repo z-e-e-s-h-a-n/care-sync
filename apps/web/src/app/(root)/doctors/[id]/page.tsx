@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 import type { AppPageProps } from "@workspace/contracts";
 import React from "react";
 import { formatPrice } from "@workspace/shared/utils";
@@ -17,19 +18,18 @@ const DoctorDetailPage = ({ params }: AppPageProps) => {
   const { data: doctor } = useDoctor(id);
 
   if (!doctor) {
-    return (
-      <div className="section-wrapper section-container">
-        Loading doctor profile...
-      </div>
-    );
+    return <div className="section">Loading doctor profile...</div>;
   }
 
   return (
-    <section className="section-wrapper section-container grid xl:grid-cols-[1fr_0.9fr]">
+    <section className="section grid xl:grid-cols-[1fr_0.9fr]">
       <div className="space-y-6">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Badge variant="outline" className="capitalize">
+            <Badge
+              variant={getStatusVariant(doctor.verificationStatus)}
+              className="capitalize"
+            >
               {doctor.verificationStatus}
             </Badge>
             <Badge variant="secondary">

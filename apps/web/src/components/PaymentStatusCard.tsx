@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 interface PaymentStatusCardProps {
   appointment: AppointmentResponse;
@@ -53,7 +54,10 @@ const PaymentStatusCard = ({ appointment }: PaymentStatusCardProps) => {
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-muted-foreground">Current status</span>
-          <Badge variant="outline" className="capitalize">
+          <Badge
+            variant={getStatusVariant(latestPayment?.status ?? "pending")}
+            className="capitalize"
+          >
             {latestPayment?.status ?? "not created"}
           </Badge>
         </div>

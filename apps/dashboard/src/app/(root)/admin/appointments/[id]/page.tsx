@@ -15,6 +15,7 @@ import {
 } from "@workspace/ui/shared/GenericDetailsPage";
 import { useAppointment } from "@/hooks/healthcare";
 import { formatDate } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -32,7 +33,7 @@ const formatLabel = (value?: string | null) =>
     : "Not set";
 
 const renderBadge = (value?: string | null) => (
-  <Badge variant="outline" className="capitalize">
+  <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
     {formatLabel(value)}
   </Badge>
 );

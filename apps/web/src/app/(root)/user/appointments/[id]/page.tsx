@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -114,7 +115,10 @@ const AppointmentDetailPage = () => {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant="outline" className="capitalize">
+                <Badge
+                  variant={getStatusVariant(appointment.status)}
+                  className="capitalize"
+                >
                   {appointment.status}
                 </Badge>
               </div>

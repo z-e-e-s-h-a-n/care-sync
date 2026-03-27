@@ -23,6 +23,7 @@ import {
 } from "@workspace/ui/shared/GenericDetailsPage";
 import { usePayment, useUpdatePayment } from "@/hooks/healthcare";
 import { formatDate, formatPrice } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatCurrency = (value?: number) =>
   value ? formatPrice(value) : "Not set";
@@ -38,7 +39,7 @@ const formatLabel = (value?: string | null) =>
     : "Not set";
 
 const renderBadge = (value?: string | null) => (
-  <Badge variant="outline" className="capitalize">
+  <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
     {formatLabel(value)}
   </Badge>
 );
