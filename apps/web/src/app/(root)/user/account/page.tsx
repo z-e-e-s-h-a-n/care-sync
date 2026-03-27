@@ -34,7 +34,7 @@ const RUUserProfileForm = () => {
   }
 
   return (
-    <section className="space-y-6 my-4">
+    <section className="section space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Account Management</h1>
         <p className="text-muted-foreground mt-2">

@@ -93,6 +93,8 @@ export function useDoctorSlots(
 }
 
 export function useMyPatientProfile() {
+  const queryClient = useQueryClient();
+
   const query = useQuery({
     queryKey: ["patient", "me"],
     queryFn: patient.getMyPatientProfile,
@@ -104,17 +106,6 @@ export function useMyPatientProfile() {
     retry: false,
   });
 
-  return {
-    data: query.data,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    fetchError: query.error as ApiException | null,
-  };
-}
-
-export function useUpsertMyPatientProfile() {
-  const queryClient = useQueryClient();
-
   const mutation = useMutation({
     mutationFn: (data: PatientProfileType) =>
       patient.upsertMyPatientProfile(data),
@@ -124,9 +115,14 @@ export function useUpsertMyPatientProfile() {
   });
 
   return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchError: query.error as ApiException | null,
+
     saveProfile: mutation.mutateAsync,
     isPending: mutation.isPending,
-    error: mutation.error as ApiException | null,
+    mutateError: mutation.error as ApiException | null,
   };
 }
 

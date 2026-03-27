@@ -1,17 +1,18 @@
-import Link from "next/link";
 import type { AppointmentResponse } from "@workspace/contracts/appointment";
+import { formatDate } from "@workspace/shared/utils";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 
 interface AppointmentCardProps {
   appointment: AppointmentResponse;
 }
-
-const formatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
   const latestPayment = appointment.payments?.[0];
@@ -20,9 +21,11 @@ const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
     <Card className="rounded-3xl border-border/60 shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <div>
-          <CardTitle className="text-lg">{appointment.appointmentNumber}</CardTitle>
+          <CardTitle className="text-lg">
+            {appointment.appointmentNumber}
+          </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            {appointment.doctor?.user?.displayName ?? "Doctor"} · {" "}
+            {appointment.doctor?.user?.displayName ?? "Doctor"} ·{" "}
             {appointment.doctor?.specialty ?? "Care provider"}
           </p>
         </div>
@@ -34,7 +37,7 @@ const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Scheduled</span>
           <span className="font-medium">
-            {formatter.format(new Date(appointment.scheduledStartAt))}
+            {formatDate(appointment.scheduledStartAt)}
           </span>
         </div>
         <div className="flex items-center justify-between">
@@ -55,11 +58,15 @@ const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
         </div>
       </CardContent>
       <CardFooter className="flex gap-3">
-        <Button asChild variant="outline" className="flex-1">
-          <Link href={`/appointments/${appointment.id}`}>Details</Link>
+        <Button
+          href={`/user/appointments/${appointment.id}`}
+          variant="outline"
+          className="flex-1"
+        >
+          Details
         </Button>
-        <Button asChild className="flex-1">
-          <Link href={`/messages/${appointment.id}`}>Messages</Link>
+        <Button href={`/user/messages/${appointment.id}`} className="flex-1">
+          Messages
         </Button>
       </CardFooter>
     </Card>

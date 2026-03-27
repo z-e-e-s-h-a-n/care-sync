@@ -9,7 +9,12 @@ import {
   useSendMessage,
 } from "@/hooks/healthcare";
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { Textarea } from "@workspace/ui/components/textarea";
 
 interface ConversationPanelProps {
@@ -45,12 +50,12 @@ const ConversationPanel = ({ appointmentId }: ConversationPanelProps) => {
   };
 
   return (
-    <Card className="rounded-[2rem] border-border/60 shadow-sm">
+    <Card>
       <CardHeader>
         <CardTitle>Care conversation</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="max-h-[460px] space-y-3 overflow-y-auto rounded-3xl border border-border/60 bg-muted/20 p-4">
+        <div className="max-h-115 space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-muted/20 p-4">
           {messagesQuery.data.length ? (
             messagesQuery.data.map((message) => (
               <div
@@ -85,7 +90,10 @@ const ConversationPanel = ({ appointmentId }: ConversationPanelProps) => {
             placeholder="Ask a follow-up question or share an update for your doctor."
           />
           <div className="flex justify-end">
-            <Button onClick={submit} disabled={!conversationId || !body.trim() || isPending}>
+            <Button
+              onClick={submit}
+              disabled={!conversationId || !body.trim() || isPending}
+            >
               {isPending ? "Sending..." : "Send message"}
             </Button>
           </div>

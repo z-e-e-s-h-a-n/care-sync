@@ -6,17 +6,17 @@ import type { AppointmentResponse } from "@workspace/contracts/appointment";
 import { useCreatePayment } from "@/hooks/healthcare";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
+import { formatPrice } from "@workspace/shared/utils";
 
 interface PaymentStatusCardProps {
   appointment: AppointmentResponse;
 }
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
 
 const PaymentStatusCard = ({ appointment }: PaymentStatusCardProps) => {
   const { createPayment, isPending } = useCreatePayment();
@@ -40,7 +40,7 @@ const PaymentStatusCard = ({ appointment }: PaymentStatusCardProps) => {
   };
 
   return (
-    <Card className="rounded-[2rem] border-border/60 shadow-sm">
+    <Card>
       <CardHeader>
         <CardTitle>Payment status</CardTitle>
       </CardHeader>
@@ -48,7 +48,7 @@ const PaymentStatusCard = ({ appointment }: PaymentStatusCardProps) => {
         <div className="flex items-center justify-between gap-4">
           <span className="text-muted-foreground">Amount</span>
           <span className="font-medium">
-            {amount > 0 ? currencyFormatter.format(amount) : "No charge listed"}
+            {amount > 0 ? formatPrice(amount) : "No charge listed"}
           </span>
         </div>
         <div className="flex items-center justify-between gap-4">
@@ -65,7 +65,11 @@ const PaymentStatusCard = ({ appointment }: PaymentStatusCardProps) => {
         </div>
 
         {!latestPayment && amount > 0 && (
-          <Button className="w-full" onClick={createIntent} disabled={isPending}>
+          <Button
+            className="w-full"
+            onClick={createIntent}
+            disabled={isPending}
+          >
             {isPending ? "Preparing payment..." : "Create payment record"}
           </Button>
         )}

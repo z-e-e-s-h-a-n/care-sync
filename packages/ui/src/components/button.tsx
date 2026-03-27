@@ -20,6 +20,11 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 [--pulse-color:var(--secondary)]",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        success:
+          "bg-success text-success-foreground shadow-xs hover:bg-success/90 [--pulse-color:var(--success)]",
+        warning:
+          "bg-warning text-warning-foreground shadow-xs hover:bg-warning/90 [--pulse-color:var(--warning)]",
+        info: "bg-info text-info-foreground shadow-xs hover:bg-info/90 [--pulse-color:var(--info)]",
         gradient:
           "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xs hover:opacity-90 cta-shine [--pulse-color:var(--primary)]",
       },
@@ -37,8 +42,9 @@ const buttonVariants = cva(
   },
 );
 
-export type ButtonVariants = VariantProps<typeof buttonVariants>;
-export type ButtonProps = React.ComponentProps<"button"> &
+type ButtonVariants = VariantProps<typeof buttonVariants>;
+
+type ButtonProps = React.ComponentProps<"button"> &
   ButtonVariants & {
     asChild?: boolean;
     pulseDelay?: number;
@@ -84,4 +90,4 @@ function Button({
   );
 }
 
-export { Button, buttonVariants };
+export { Button, buttonVariants, type ButtonVariants, type ButtonProps };

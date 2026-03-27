@@ -4,7 +4,12 @@ import Link from "next/link";
 import type { CartResponse } from "@workspace/contracts/commerce";
 
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 
 interface CartSummaryCardProps {
   cart?: CartResponse | null;
@@ -22,7 +27,7 @@ const CartSummaryCard = ({ cart }: CartSummaryCardProps) => {
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <Card className="rounded-[2rem] border-border/60 shadow-sm">
+    <Card>
       <CardHeader>
         <CardTitle>Cart summary</CardTitle>
       </CardHeader>

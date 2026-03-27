@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "sonner";
+import type { BadgeVariants } from "../components/badge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -41,4 +42,37 @@ export const getBackPath = (pathname: string, count = 1) => {
   return (
     "/" + segments.slice(0, Math.max(segments.length - count, 0)).join("/")
   );
+};
+
+export const getStatusVariant = (status: string): BadgeVariants["variant"] => {
+  const map: Record<string, BadgeVariants["variant"]> = {
+    pending: "outline",
+    active: "success",
+    suspended: "destructive",
+    verified: "success",
+    rejected: "destructive",
+    booked: "info",
+    confirmed: "info",
+    cancelled: "destructive",
+    completed: "success",
+    noShow: "warning",
+    succeeded: "success",
+    failed: "destructive",
+    refunded: "warning",
+    processed: "success",
+    paid: "success",
+    processing: "info",
+    shipped: "info",
+    delivered: "success",
+    draft: "outline",
+    scheduled: "success",
+    sent: "success",
+    partial: "warning",
+    open: "info",
+    closed: "destructive",
+    revoked: "destructive",
+    expired: "warning",
+  };
+
+  return map[status] ?? "secondary";
 };
