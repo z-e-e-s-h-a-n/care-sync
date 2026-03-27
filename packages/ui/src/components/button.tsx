@@ -11,15 +11,17 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 [--pulse-color:var(--primary)]",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-white shadow-xs hover:bg-destructive/90 [--pulse-color:var(--destructive)]",
         outline:
           "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 [--pulse-color:var(--secondary)]",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        gradient:
+          "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xs hover:opacity-90 cta-shine [--pulse-color:var(--primary)]",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -32,14 +34,18 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
 export type ButtonVariants = VariantProps<typeof buttonVariants>;
 export type ButtonProps = React.ComponentProps<"button"> &
   ButtonVariants & {
     asChild?: boolean;
+    pulseDelay?: number;
+    target?: React.HTMLAttributeAnchorTarget;
     href?: string;
+    rel?: string;
+    prefetch?: boolean;
   };
 
 function Button({
@@ -48,14 +54,21 @@ function Button({
   size,
   asChild = false,
   href,
+  pulseDelay,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
 
+  const classes = cn(
+    pulseDelay && "cta-pulse",
+    buttonVariants({ variant, size, className }),
+  );
+
   return href ? (
     <Slot
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={classes}
+      style={pulseDelay ? { animationDelay: `${pulseDelay}ms` } : undefined}
       {...props}
     >
       <Link href={href}>{props.children}</Link>
@@ -64,9 +77,11 @@ function Button({
     <Comp
       data-slot="button"
       type="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={classes}
+      style={pulseDelay ? { animationDelay: `${pulseDelay}ms` } : undefined}
       {...props}
     />
   );
 }
+
 export { Button, buttonVariants };

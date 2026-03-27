@@ -24,9 +24,7 @@ export const DatePickerField = <TFormData,>({
     <FormField {...props}>
       {({ isInvalid, ...field }) => {
         const dateValue = field.value ? new Date(field.value) : undefined;
-        const disableDate = disableBefore
-          ? new Date(disableBefore)
-          : new Date();
+        const disableDate = disableBefore ? new Date(disableBefore) : undefined;
 
         return (
           <Popover open={open} onOpenChange={setOpen}>
@@ -48,13 +46,21 @@ export const DatePickerField = <TFormData,>({
               <Calendar
                 mode="single"
                 selected={dateValue}
-                defaultMonth={disableBefore ? disableDate : dateValue}
+                defaultMonth={disableDate ?? dateValue}
                 showOutsideDays={false}
                 onSelect={(date) => {
-                  field.onChange(date?.toISOString());
+                  if (!date) {
+                    field.onChange(undefined);
+                    setOpen(false);
+                    return;
+                  }
+
+                  const nextDate = new Date(date);
+                  nextDate.setHours(12, 0, 0, 0);
+                  field.onChange(nextDate.toISOString());
                   setOpen(false);
                 }}
-                disabled={{ before: disableDate }}
+                disabled={disableDate ? { before: disableDate } : undefined}
               />
             </PopoverContent>
           </Popover>

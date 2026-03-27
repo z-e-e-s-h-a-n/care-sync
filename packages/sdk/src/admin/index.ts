@@ -7,31 +7,29 @@ import type {
 import type { UserResponse } from "@workspace/contracts/user";
 
 export const createUser = (data: CUUserType) => {
-  return executeApi<UserResponse>(() => apiClient.post("/admin/users", data));
+  return executeApi<UserResponse>(() => apiClient.post("/users", data));
 };
 
 export const findAllUsers = (params?: UserQueryType) => {
   return executeApi<UserQueryResponse>(() =>
-    apiClient.get("/admin/users", { params }),
+    apiClient.get("/users", { params }),
   );
 };
 
 export const findUser = (id: string) => {
-  return executeApi<UserResponse>(() => apiClient.get(`/admin/users/${id}`));
+  return executeApi<UserResponse>(() => apiClient.get(`/users/${id}`));
 };
 
 export const updateUser = (id: string, data: CUUserType) => {
-  return executeApi<UserResponse>(() =>
-    apiClient.put(`/admin/users/${id}`, data),
-  );
+  return executeApi<UserResponse>(() => apiClient.put(`/users/${id}`, data));
 };
 
 export const deleteUser = (id: string, force?: boolean) => {
   return executeApi<null>(() =>
-    apiClient.delete(`/admin/users/${id}`, { params: { force } }),
+    apiClient.delete(`/users/${id}`, { params: { force } }),
   );
 };
 
 export const restoreUser = (id: string) => {
-  return executeApi<null>(() => apiClient.post(`/admin/users/${id}/restore`));
+  return executeApi<null>(() => apiClient.post(`/users/${id}/restore`));
 };

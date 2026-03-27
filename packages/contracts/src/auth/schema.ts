@@ -4,7 +4,7 @@ import { identifierSchema, nameSchema, passwordSchema } from "../lib/schema";
 
 export const signInSchema = z.object({
   identifier: identifierSchema,
-  password: passwordSchema.optional(),
+  password: passwordSchema,
 });
 
 export const signUpSchema = signInSchema.extend({

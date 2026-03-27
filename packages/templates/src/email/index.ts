@@ -6,6 +6,13 @@ export { UpdatePassword } from "./updatePassword";
 export { VerifyIdentifier } from "./verifyIdentifier";
 export { UpdateIdentifier } from "./updateIdentifier";
 export { UserStatus } from "./userStatus";
-export { Newsletter } from "./newsletter";
-export { ContactMessage } from "./contactMessage";
 export { SecurityAlert } from "./securityAlert";
+export {
+  AppointmentStatus,
+  AppointmentReminder,
+  NewChatMessage,
+  PaymentStatus,
+  RefundStatus,
+  OrderStatus,
+  Campaign,
+} from "./careEvent";

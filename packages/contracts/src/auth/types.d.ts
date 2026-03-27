@@ -1,6 +1,7 @@
 import type z from "zod";
 import * as schema from "./schema";
 import type { Session } from "@workspace/db/browser";
+import type { Sanitize, UserRole } from "../lib/types";
 
 export type SignInType = z.input<typeof schema.signInSchema>;
 export type SignUpType = z.input<typeof schema.signUpSchema>;
@@ -22,7 +23,7 @@ export interface ValidateOtpResponse {
 }
 
 export type SessionResponse = Pick<
-  Session,
+  Sanitize<Session>,
   | "id"
   | "ip"
   | "isp"

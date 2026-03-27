@@ -1,5 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { cn } from "../lib/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./card";
 import {
   Field,
   FieldDescription,
@@ -60,6 +66,12 @@ interface FormProps<TFormData> {
   className?: string;
 }
 
+interface FormSectionProps {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}
+
 export interface BaseFieldProps<
   TFormData,
   TName extends DeepKeys<TFormData> = DeepKeys<TFormData>,
@@ -114,6 +126,20 @@ export const Form = <TFormData,>({
     </section>
   );
 };
+
+export const FormSection = ({
+  title,
+  description,
+  children,
+}: FormSectionProps) => (
+  <Card className="shadow-sm">
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+      {description && <CardDescription>{description}</CardDescription>}
+    </CardHeader>
+    <CardContent className="grid gap-4 md:grid-cols-2">{children}</CardContent>
+  </Card>
+);
 
 export const FormField = <TFormData,>({
   name,

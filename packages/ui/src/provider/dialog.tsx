@@ -7,12 +7,14 @@ import {
   DialogDescription,
   DialogContent,
 } from "@workspace/ui/components/dialog";
+import { cn } from "../lib/utils";
 
 /* ========== Types ========== */
 export type DialogOptions = {
   title: string;
   description?: string;
   content: React.ReactNode;
+  className?: string;
 };
 
 type DialogContextType = {
@@ -42,7 +44,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       <Dialog open={_openDialog} onOpenChange={_setOpenDialog}>
-        <DialogContent className="gap-8">
+        <DialogContent className={cn("gap-8", options?.className)}>
           {options && (
             <>
               <div className="sr-only">

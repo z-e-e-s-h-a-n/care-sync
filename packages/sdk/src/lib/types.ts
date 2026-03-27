@@ -1,9 +1,13 @@
-import type { AuthActions } from "@workspace/contracts";
+export type AuthAction =
+  | "verifyIdentifier"
+  | "verifyMfa"
+  | "setPassword"
+  | "updateIdentifier";
 
 export interface BaseApiResponse {
   status: number;
   message: string;
-  action?: AuthActions;
+  action?: AuthAction;
   meta?: Record<string, any>;
 }
 
@@ -21,14 +25,14 @@ export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
 export class ApiException extends Error {
   status: number;
-  action?: AuthActions;
+  action?: AuthAction;
   errorCode?: string;
   meta?: Record<string, any>;
 
   constructor(payload: {
     message?: string;
     status?: number;
-    action?: AuthActions;
+    action?: AuthAction;
     errorCode?: string;
     meta?: Record<string, any>;
   }) {

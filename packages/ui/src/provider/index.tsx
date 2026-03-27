@@ -7,21 +7,22 @@ import { ConfirmProvider } from "./confirm-dialog";
 import { Toaster } from "../components/sonner";
 import { TooltipProvider } from "../components/tooltip";
 import { DialogProvider } from "./dialog";
+import { MediaLibraryProvider } from "./media-library";
 
 const ProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <ReactQueryProvider>
       <ThemeProvider>
-        <TooltipProvider>
+        <DialogProvider>
           <ConfirmProvider>
-            <DialogProvider>
+            <TooltipProvider>
               <Suspense fallback={null}>
                 <Toaster />
               </Suspense>
-              {children}
-            </DialogProvider>
+              <MediaLibraryProvider>{children}</MediaLibraryProvider>
+            </TooltipProvider>
           </ConfirmProvider>
-        </TooltipProvider>
+        </DialogProvider>
       </ThemeProvider>
     </ReactQueryProvider>
   );

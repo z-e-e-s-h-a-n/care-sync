@@ -1,6 +1,8 @@
 import z from "zod";
 import type { userProfileSchema } from "./schema";
-import { type Media, type User } from "@workspace/db/browser";
+import type { Media, User } from "@workspace/db/browser";
+import type { Sanitize, StrictOmit } from "../lib/types";
+import type { MediaResponse } from "../media/types";
 
 export type UserProfileType = z.input<typeof userProfileSchema>;
 

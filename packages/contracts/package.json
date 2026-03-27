@@ -26,13 +26,49 @@
       "import": "./dist/admin.js",
       "types": "./dist/admin.d.ts"
     },
-    "./audit": {
-      "import": "./dist/audit.js",
-      "types": "./dist/audit.d.ts"
-    },
     "./business": {
       "import": "./dist/business.js",
       "types": "./dist/business.d.ts"
+    },
+    "./branch": {
+      "import": "./dist/branch.js",
+      "types": "./dist/branch.d.ts"
+    },
+    "./patient": {
+      "import": "./dist/patient.js",
+      "types": "./dist/patient.d.ts"
+    },
+    "./doctor": {
+      "import": "./dist/doctor.js",
+      "types": "./dist/doctor.d.ts"
+    },
+    "./availability": {
+      "import": "./dist/availability.js",
+      "types": "./dist/availability.d.ts"
+    },
+    "./appointment": {
+      "import": "./dist/appointment.js",
+      "types": "./dist/appointment.d.ts"
+    },
+    "./chat": {
+      "import": "./dist/chat.js",
+      "types": "./dist/chat.d.ts"
+    },
+    "./payment": {
+      "import": "./dist/payment.js",
+      "types": "./dist/payment.d.ts"
+    },
+    "./commerce": {
+      "import": "./dist/commerce.js",
+      "types": "./dist/commerce.d.ts"
+    },
+    "./campaign": {
+      "import": "./dist/campaign.js",
+      "types": "./dist/campaign.d.ts"
+    },
+    "./audit": {
+      "import": "./dist/audit.js",
+      "types": "./dist/audit.d.ts"
     },
     "./dashboard": {
       "import": "./dist/dashboard.js",
@@ -45,14 +81,6 @@
     "./notification": {
       "import": "./dist/notification.js",
       "types": "./dist/notification.d.ts"
-    },
-    "./lead": {
-      "import": "./dist/lead.js",
-      "types": "./dist/lead.d.ts"
-    },
-    "./traffic": {
-      "import": "./dist/traffic.js",
-      "types": "./dist/traffic.d.ts"
     }
   },
   "dependencies": {

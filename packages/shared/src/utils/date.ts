@@ -135,3 +135,10 @@ export const endOfDay = (date: Date | string): Date => {
   const d = typeof date === "string" ? parseISO(date) : date;
   return new Date(d.setHours(23, 59, 59, 999));
 };
+
+export const addDays = (dateString?: string, days = 0) => {
+  if (!dateString) return undefined;
+  const date = new Date(dateString);
+  date.setDate(date.getDate() + days);
+  return date.toISOString();
+};

@@ -1,5 +1,5 @@
-import { API_URL, apiClient, executeApi } from "../lib";
 import type { OAuthProvider } from "@workspace/contracts";
+import { API_URL, apiClient, executeApi } from "../lib";
 import type {
   RequestOtpType,
   SessionResponse,
@@ -81,4 +81,4 @@ export const revokeSession = (id: string) =>
   executeApi(() => apiClient.delete(`/auth/sessions/${id}`));
 
 export const validateSession = () =>
-  executeApi(() => apiClient.get("/auth/session/validate"));
+  executeApi<SignInResponse>(() => apiClient.get("/auth/session/validate"));
