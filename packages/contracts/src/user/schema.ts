@@ -9,7 +9,5 @@ export const userProfileSchema = z.object({
   imageId: z.string().optional(),
 
   preferredTheme: ThemeModeEnum.default("system"),
-
-  pushNotifications: z.boolean().optional(),
   loginAlerts: z.boolean().default(true),
 });

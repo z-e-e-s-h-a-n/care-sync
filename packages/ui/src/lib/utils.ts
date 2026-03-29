@@ -49,7 +49,7 @@ export const getStatusVariant = (status: string): BadgeVariants["variant"] => {
     pending: "outline",
     active: "success",
     suspended: "destructive",
-    verified: "success",
+    verified: "default",
     rejected: "destructive",
     booked: "info",
     confirmed: "info",

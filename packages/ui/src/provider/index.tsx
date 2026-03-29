@@ -8,6 +8,7 @@ import { Toaster } from "../components/sonner";
 import { TooltipProvider } from "../components/tooltip";
 import { DialogProvider } from "./dialog";
 import { MediaLibraryProvider } from "./media-library";
+import PushNotificationsBootstrap from "./push-notifications";
 
 const ProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -19,6 +20,7 @@ const ProviderWrapper = ({ children }: { children: React.ReactNode }) => {
               <Suspense fallback={null}>
                 <Toaster />
               </Suspense>
+              <PushNotificationsBootstrap />
               <MediaLibraryProvider>{children}</MediaLibraryProvider>
             </TooltipProvider>
           </ConfirmProvider>

@@ -80,6 +80,7 @@ export class AuthService {
     }
 
     this.checkUserStatus(user.status);
+    await this.client.assertRoleAccess(req, user.role);
     await this.checkVerificationStatus(user, key, value, "unverified");
 
     if (user.preferredMfa) {
@@ -93,8 +94,6 @@ export class AuthService {
         action: "verifyMfa",
       };
     }
-
-    await this.client.assertRoleAccess(req, user.role);
 
     await this.tokenService.createAuthSession(req, res, {
       id: user.id,

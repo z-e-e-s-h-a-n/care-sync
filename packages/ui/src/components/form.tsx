@@ -85,6 +85,10 @@ export interface BaseFieldProps<
   disabled?: boolean;
   validators?: FieldValidatorsFor<TFormData, TName>;
   listeners?: FieldListeners<TFormData, TName, DeepValue<TFormData, TName>>;
+  handleChange?: (
+    value: DeepValue<TFormData, TName>,
+    commit: (value: DeepValue<TFormData, TName>) => void,
+  ) => void | Promise<void>;
 }
 
 export interface FieldChildrenProps<TFormData> {
@@ -152,6 +156,7 @@ export const FormField = <TFormData,>({
   validators,
   disabled,
   listeners,
+  handleChange,
 }: FormFieldProps<TFormData> & {
   listeners?: any;
 }) => {
@@ -168,7 +173,16 @@ export const FormField = <TFormData,>({
           placeholder,
           value: field.state.value,
           onBlur: field.handleBlur,
-          onChange: (e: any) => field.handleChange(e?.target?.value ?? e),
+          onChange: async (e: any) => {
+            const value = e?.target?.value ?? e;
+
+            if (handleChange) {
+              await handleChange(value, field.handleChange);
+              return;
+            }
+
+            field.handleChange(value);
+          },
           isInvalid,
           disabled,
         };

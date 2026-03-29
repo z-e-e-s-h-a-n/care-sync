@@ -1,8 +1,10 @@
 import axios from "axios";
+import qs from "qs";
 import type { AxiosInstance, AxiosResponse } from "axios";
 import { ApiException, type ApiResponse, type ApiSuccess } from "./types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+export const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -11,6 +13,7 @@ export const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "repeat" }),
 });
 
 export const setClientUrl = (url: string) => {
@@ -18,12 +21,14 @@ export const setClientUrl = (url: string) => {
 };
 
 apiClient.interceptors.request.use((config) => {
-  if (config.headers) {
-    if (typeof window !== "undefined") {
-      config.headers["x-client-url"] = window.location.origin;
+  config.headers = config.headers ?? {};
+  config.headers["x-client-url"] = APP_URL;
 
-      if (window.location.pathname === "/auth/sign-in")
-        config.headers["x-trusted-device"] = config.data?.rememberDevice;
+  if (typeof window !== "undefined") {
+    if (window.location.pathname === "/auth/sign-in") {
+      config.headers["x-trusted-device"] = String(
+        config.data?.rememberDevice ?? false,
+      );
     }
   }
 
@@ -48,6 +53,13 @@ export const executeApi = async <T = null>(
     }
 
     if (axios.isAxiosError(err)) {
+      if (err.code === "ERR_CANCELED") {
+        throw new ApiException({
+          message: "Request canceled",
+          status: 499,
+        });
+      }
+
       const res = err.response?.data;
 
       throw new ApiException({

@@ -1,14 +1,8 @@
 import KeyvRedis from "@keyv/redis";
 import { CacheModule as NestCacheModule } from "@nestjs/cache-manager";
-import {
-  Global,
-  Module,
-  type MiddlewareConsumer,
-  type NestModule,
-} from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 
 import { CacheService } from "./cache.service";
-import { CacheContextMiddleware } from "@/middleware/cache.middleware";
 
 @Global()
 @Module({
@@ -21,8 +15,4 @@ import { CacheContextMiddleware } from "@/middleware/cache.middleware";
   providers: [CacheService],
   exports: [CacheService],
 })
-export class CacheModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CacheContextMiddleware).forRoutes("*");
-  }
-}
+export class CacheModule {}

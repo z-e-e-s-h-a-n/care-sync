@@ -30,6 +30,8 @@ import { DatePickerField } from "@workspace/ui/components/date-field";
 import { ComboboxField } from "@workspace/ui/components/combobox-field";
 import { Field } from "@workspace/ui/components/field";
 import { IconClock } from "@tabler/icons-react";
+import useUser from "@workspace/ui/hooks/user";
+import { InfoNotice } from "@workspace/ui/shared/InfoNotice";
 
 interface AppointmentFormProps {
   doctorId?: string;
@@ -48,6 +50,7 @@ const AppointmentForm = ({
 }: AppointmentFormProps) => {
   const router = useRouter();
   const { data: patientProfile } = useMyPatientProfile();
+  const { currentUser } = useUser();
   const { createAppointment, isPending } = useCreateAppointment();
 
   const defaultValues = useMemo<Partial<AppointmentFormValues>>(
@@ -109,12 +112,17 @@ const AppointmentForm = ({
         </CardHeader>
 
         <CardContent className="space-y-8">
-          {!patientProfile && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Complete your date of birth, gender, and emergency contact details
-              before confirming a booking.
-            </div>
-          )}
+          {!currentUser ||
+            (!patientProfile && (
+              <InfoNotice
+                variant="warning"
+                message={
+                  !currentUser
+                    ? "Please sign in first to continue."
+                    : "Complete your profile to continue booking an appointment."
+                }
+              />
+            ))}
 
           <ComboboxField
             form={form}

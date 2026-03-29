@@ -267,7 +267,7 @@ model User {
 
     firstName   String
     lastName    String?
-    displayName String?
+    displayName String
     password    String? @db.VarChar(255)
 
     email String? @unique @db.VarChar(255)

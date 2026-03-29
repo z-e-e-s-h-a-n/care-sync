@@ -1,7 +1,7 @@
 import apiClient, { executeApi } from "../lib/api-client";
 import type {
+  ConfigurePushNotificationsType,
   NotificationResponse,
-  RegisterPushTokenType,
 } from "@workspace/contracts/notification";
 
 export const getAllNotification = () =>
@@ -10,5 +10,5 @@ export const getAllNotification = () =>
 export const markAsRead = (id: string) =>
   executeApi(() => apiClient.put(`/notifications/${id}`));
 
-export const registerPushToken = (data: RegisterPushTokenType) =>
+export const updatePushNotifications = (data: ConfigurePushNotificationsType) =>
   executeApi(() => apiClient.post("/notifications/push/register", data));

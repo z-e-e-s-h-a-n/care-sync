@@ -5,4 +5,4 @@ export const getCurrentUser = () =>
   executeApi<UserResponse>(() => apiClient.get("/user"));
 
 export const updateProfile = (data: UserProfileType) =>
-  executeApi<null>(() => apiClient.post("/user", data));
+  executeApi<null>(() => apiClient.put("/user", data));

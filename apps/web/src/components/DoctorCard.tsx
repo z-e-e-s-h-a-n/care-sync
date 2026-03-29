@@ -10,6 +10,7 @@ import {
 } from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import Image from "next/image";
 
 interface DoctorCardProps {
   doctor: DoctorProfileResponse;
@@ -20,13 +21,20 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
     <Card className="h-full rounded-3xl border-border/60 shadow-sm">
       <CardHeader className="space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-lg font-semibold">
-              {doctor.user?.displayName ?? doctor.slug ?? doctor.id}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {doctor.specialty ?? "Care provider"}
-            </p>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/images/dr-green.png"
+              alt={doctor.user.displayName}
+              width={100}
+              height={100}
+              className="size-14"
+            />
+            <div>
+              <p className="text-lg font-semibold">{doctor.user.displayName}</p>
+              <p className="text-sm text-muted-foreground">
+                {doctor.specialty ?? "Care provider"}
+              </p>
+            </div>
           </div>
           <Badge
             variant={getStatusVariant(doctor.verificationStatus)}
@@ -36,12 +44,8 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
           </Badge>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">
-            {doctor.branch?.name ?? "Independent"}
-          </Badge>
-          <Badge
-            variant={getStatusVariant(doctor.isAvailable ? "active" : "closed")}
-          >
+          <Badge variant="info">{doctor.branch?.name ?? "Independent"}</Badge>
+          <Badge variant={doctor.isAvailable ? "success" : "destructive"}>
             {doctor.isAvailable ? "Available" : "Unavailable"}
           </Badge>
         </div>

@@ -1,5 +1,5 @@
 import { Controller, Put, Param, Post, Body, Get } from "@nestjs/common";
-import { RegisterPushTokenDto } from "@workspace/contracts/notification";
+import { ConfigurePushNotificationsDto } from "@workspace/contracts/notification";
 
 import { User } from "@/decorators/user.decorator";
 import { PrismaService } from "@/modules/prisma/prisma.service";
@@ -44,14 +44,30 @@ export class NotificationController {
   }
 
   @Post("push/register")
-  async registerPushToken(
-    @Body() dto: RegisterPushTokenDto,
-    @User("sessionId") sessionId: string,
+  async configurePushNotifications(
+    @Body() dto: ConfigurePushNotificationsDto,
+    @User() user: Express.User,
   ) {
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { pushToken: dto.token, pushProvider: dto.provider },
+    return await this.prisma.$transaction(async (tx) => {
+      await tx.session.update({
+        where: { id: user.sessionId },
+        data: dto.enabled
+          ? { pushToken: dto.token, pushProvider: dto.provider }
+          : { pushToken: null, pushProvider: null },
+      });
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          pushNotifications: dto.enabled,
+        },
+      });
+
+      return {
+        message: dto.enabled
+          ? "Push notifications enabled."
+          : "Push notifications disabled.",
+      };
     });
-    return { message: "Push Token registered to session" };
   }
 }

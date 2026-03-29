@@ -14,7 +14,7 @@ import useUser from "@workspace/ui/hooks/user";
 import AccountSection from "@workspace/ui/shared/UserAccountSection";
 import ProfileSection from "@workspace/ui/shared/UserProfileSection";
 
-const RUUserProfileForm = () => {
+const UserProfileForm = () => {
   const { currentUser, isLoading, updateProfile, isUpdatePending } = useUser();
 
   if (isLoading) {
@@ -72,4 +72,4 @@ const RUUserProfileForm = () => {
   );
 };
 
-export default RUUserProfileForm;
+export default UserProfileForm;

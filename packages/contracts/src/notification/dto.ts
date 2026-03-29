@@ -1,6 +1,6 @@
 import { createZodDto } from "nestjs-zod";
-import { registerPushTokenSchema } from "./schema";
+import { configurePushNotificationsSchema } from "./schema";
 
-export class RegisterPushTokenDto extends createZodDto(
-  registerPushTokenSchema,
+export class ConfigurePushNotificationsDto extends createZodDto(
+  configurePushNotificationsSchema,
 ) {}
