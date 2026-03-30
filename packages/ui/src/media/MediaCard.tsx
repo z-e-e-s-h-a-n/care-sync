@@ -16,8 +16,8 @@ import {
   Info,
 } from "lucide-react";
 
-import { useDialog } from "@workspace/ui/hooks/dialog";
-import { useConfirm } from "@workspace/ui/hooks/confirm";
+import { useDialog } from "@workspace/ui/hooks/use-dialog";
+import { useConfirm } from "@workspace/ui/hooks/use-confirm";
 import { cn, handleDownload } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/button";
 
@@ -30,7 +30,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 
 import MediaDetails from "./MediaDetails";
-import { useDeleteMedia, useUpdateMedia } from "@workspace/ui/hooks/media";
+import { useDeleteMedia, useUpdateMedia } from "@workspace/ui/hooks/use-media";
 import MediaForm from "@workspace/ui/forms/MediaForm";
 
 interface MediaCardProps {
@@ -133,7 +133,7 @@ export function MediaCard({ media, onSelect }: MediaCardProps) {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  handleDownload({ url: media.url, filename: media.name })
+                  handleDownload({ url: media.url, name: media.name })
                 }
               >
                 <Download />

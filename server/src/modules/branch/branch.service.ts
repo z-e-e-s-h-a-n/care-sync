@@ -33,7 +33,7 @@ export class BranchService {
           include: {
             user: {
               omit: { password: true },
-              include: { image: true },
+              include: { avatar: true },
             },
           },
         },
@@ -72,7 +72,7 @@ export class BranchService {
             include: {
               user: {
                 omit: { password: true },
-                include: { image: true },
+                include: { avatar: true },
               },
             },
           },

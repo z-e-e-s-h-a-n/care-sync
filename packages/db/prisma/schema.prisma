@@ -262,8 +262,8 @@ model Branch {
 model User {
     id String @id @default(ulid())
 
-    imageId String?
-    image   Media?  @relation("UserImage", fields: [imageId], references: [id], onDelete: SetNull)
+    avatarId String?
+    avatar   Media?  @relation("UserAvatar", fields: [avatarId], references: [id], onDelete: SetNull)
 
     firstName   String
     lastName    String?
@@ -863,7 +863,7 @@ model Media {
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
-    users                          User[]              @relation("UserImage")
+    users                          User[]              @relation("UserAvatar")
     productImages                  Product[]           @relation("ProductImage")
     messageAttachments             MessageAttachment[]
     patientIdentificationDocuments PatientProfile[]    @relation("PatientIdentificationDocument")

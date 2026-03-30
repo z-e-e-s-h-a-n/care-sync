@@ -10,14 +10,14 @@ import {
 import {
   baseQuerySchema,
   idSchema,
-  moneySchema,
+  numberSchema,
   nullableStringSchema,
 } from "../lib/schema";
 
 export const createPaymentIntentSchema = z.object({
   appointmentId: idSchema.optional(),
   orderId: idSchema.optional(),
-  amount: moneySchema,
+  amount: numberSchema,
   provider: PaymentProviderEnum.default("stripe"),
   methodType: PaymentMethodTypeEnum.default("card"),
 });
@@ -31,7 +31,7 @@ export const updatePaymentStatusSchema = z.object({
 
 export const createRefundSchema = z.object({
   paymentId: idSchema,
-  amount: moneySchema,
+  amount: numberSchema,
   reason: nullableStringSchema,
 });
 

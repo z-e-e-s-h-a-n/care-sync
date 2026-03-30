@@ -4,7 +4,7 @@ import type { UserProfileType } from "@workspace/contracts/user";
 import { signOut } from "@workspace/sdk/auth";
 import { getCurrentUser, updateProfile } from "@workspace/sdk/user";
 import { parseDuration } from "@workspace/shared/utils";
-import { useAuth } from "./auth";
+import { useAuth } from "./use-auth";
 
 const SLATE_TIME = parseDuration("15m");
 

@@ -603,7 +603,7 @@ export class AuthService {
   userView = {
     omit: { password: true },
     include: {
-      image: { include: { uploadedBy: { omit: { password: true } } } },
+      avatar: { include: { uploadedBy: { omit: { password: true } } } },
     },
   };
 }

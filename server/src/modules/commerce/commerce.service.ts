@@ -466,7 +466,7 @@ export class CommerceService {
     payments: true,
     patient: {
       include: {
-        user: { omit: { password: true }, include: { image: true } },
+        user: { omit: { password: true }, include: { avatar: true } },
       },
     },
   } satisfies Prisma.OrderInclude;

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button, type ButtonProps } from "@workspace/ui/components/button";
-import { useTheme } from "@workspace/ui/hooks/theme";
+import { useTheme } from "@workspace/ui/hooks/use-theme";
 import { cn } from "../lib/utils";
 
 type ThemeSwitchProps = {

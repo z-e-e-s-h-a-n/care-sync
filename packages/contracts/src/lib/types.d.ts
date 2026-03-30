@@ -76,6 +76,7 @@ export type AuthFormType =
 export type ClientApp = "web" | "dashboard";
 export type IdentifierType = "email" | "phone";
 export type OAuthProvider = "google";
+
 export type SortOrderType = z.infer<typeof enums.SortOrderEnum>;
 export type ChartRangeType = z.infer<typeof enums.ChartRangeEnum>;
 export type ThemeMode = z.infer<typeof enums.ThemeModeEnum>;
@@ -122,6 +123,10 @@ export type SafeUserRole = z.infer<typeof enums.SafeUserRoleEnum>;
 export type UserStatus = z.infer<typeof enums.UserStatusEnum>;
 export type Gender = z.infer<typeof enums.GenderEnum>;
 export type IdentificationType = z.infer<typeof enums.IdentificationTypeEnum>;
+export type AuditAction = z.infer<typeof enums.AuditActionEnum>;
+
+export type MediaType = z.infer<typeof enums.MediaTypeEnum>;
+export type MediaVisibility = z.infer<typeof enums.MediaVisibilityEnum>;
 
 export type Weekday = z.infer<typeof enums.WeekdayEnum>;
 export type AppointmentChannel = z.infer<typeof enums.AppointmentChannelEnum>;
@@ -143,7 +148,3 @@ export type CampaignAudience = z.infer<typeof enums.CampaignAudienceEnum>;
 export type DoctorVerificationStatus = z.infer<
   typeof enums.DoctorVerificationStatusEnum
 >;
-
-export type MediaType = z.infer<typeof enums.MediaTypeEnum>;
-export type MediaVisibility = z.infer<typeof enums.MediaVisibilityEnum>;
-export type AuditAction = z.infer<typeof enums.AuditActionEnum>;

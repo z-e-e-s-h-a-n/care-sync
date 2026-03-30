@@ -168,7 +168,7 @@ const renderHeader = (data: PatientProfileResponse) => {
       <div className="flex items-start gap-4">
         <Avatar className="size-20 border border-border/60">
           <AvatarImage
-            src={data.user?.image?.url ?? undefined}
+            src={data.user?.avatar?.url ?? undefined}
             alt={data.user?.displayName ?? "Patient"}
             width={200}
             height={200}

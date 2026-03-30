@@ -25,7 +25,10 @@ export class ChatService {
     });
 
     await this.assertConversationAccess(conversation, currentUser);
-    return { message: "Conversation fetched successfully.", data: conversation };
+    return {
+      message: "Conversation fetched successfully.",
+      data: conversation,
+    };
   }
 
   async listMessages(conversationId: string, currentUser: Express.User) {
@@ -93,7 +96,10 @@ export class ChatService {
 
     const updated = await this.prisma.conversation.update({
       where: { id: conversationId },
-      data: { status: dto.status, subject: dto.subject ?? conversation.subject },
+      data: {
+        status: dto.status,
+        subject: dto.subject ?? conversation.subject,
+      },
       include: this.conversationInclude,
     });
 
@@ -132,16 +138,23 @@ export class ChatService {
     return { message: "Message marked as read.", data: updated };
   }
 
-  private async assertConversationAccess(conversation: any, currentUser: Express.User) {
+  private async assertConversationAccess(
+    conversation: any,
+    currentUser: Express.User,
+  ) {
     if (currentUser.role === "admin") return;
 
     if (currentUser.role === "doctor") {
-      const doctor = await this.doctorService.findByUserIdOrThrow(currentUser.id);
+      const doctor = await this.doctorService.findByUserIdOrThrow(
+        currentUser.id,
+      );
       if (
         conversation.assignedToId !== currentUser.id &&
         conversation.appointment?.doctorId !== doctor.id
       ) {
-        throw new ForbiddenException("You can only access your own conversations.");
+        throw new ForbiddenException(
+          "You can only access your own conversations.",
+        );
       }
       return;
     }
@@ -151,7 +164,9 @@ export class ChatService {
     });
 
     if (conversation.patientId !== patient.id) {
-      throw new ForbiddenException("You can only access your own conversations.");
+      throw new ForbiddenException(
+        "You can only access your own conversations.",
+      );
     }
   }
 
@@ -159,20 +174,24 @@ export class ChatService {
     branch: true,
     patient: {
       include: {
-        user: { omit: { password: true }, include: { image: true } },
+        user: { omit: { password: true }, include: { avatar: true } },
       },
     },
     assignedTo: {
       omit: { password: true },
-      include: { image: true },
+      include: { avatar: true },
     },
     appointment: {
       include: {
         doctor: {
-          include: { user: { omit: { password: true }, include: { image: true } } },
+          include: {
+            user: { omit: { password: true }, include: { avatar: true } },
+          },
         },
         patient: {
-          include: { user: { omit: { password: true }, include: { image: true } } },
+          include: {
+            user: { omit: { password: true }, include: { avatar: true } },
+          },
         },
       },
     },
@@ -181,7 +200,7 @@ export class ChatService {
   private messageInclude = {
     sender: {
       omit: { password: true },
-      include: { image: true },
+      include: { avatar: true },
     },
     attachments: {
       include: { media: true },

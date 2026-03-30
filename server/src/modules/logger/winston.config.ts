@@ -1,5 +1,4 @@
 import * as winston from "winston";
-import "winston-daily-rotate-file";
 import { utilities } from "nest-winston";
 import { appName } from "@workspace/shared/constants";
 
@@ -14,33 +13,5 @@ export const winstonConfig = {
         utilities.format.nestLike(appName.short, { prettyPrint: true }),
       ),
     }),
-
-    new winston.transports.DailyRotateFile({
-      dirname: "logs",
-      filename: "app-%DATE%.log",
-      datePattern: "DD-MM-YYYY",
-      zippedArchive: true,
-      maxSize: "20m",
-      maxFiles: "14d",
-      level: "info",
-    }),
-
-    new winston.transports.DailyRotateFile({
-      dirname: "logs",
-      filename: "error-%DATE%.log",
-      datePattern: "DD-MM-YYYY",
-      zippedArchive: true,
-      maxSize: "20m",
-      maxFiles: "30d",
-      level: "error",
-    }),
-  ],
-
-  exceptionHandlers: [
-    new winston.transports.File({ filename: "logs/exceptions.log" }),
-  ],
-
-  rejectionHandlers: [
-    new winston.transports.File({ filename: "logs/rejections.log" }),
   ],
 };

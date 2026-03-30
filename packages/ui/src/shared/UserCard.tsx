@@ -27,7 +27,7 @@ const UserCard = ({
     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
       <Avatar className={cn("size-8 rounded-lg", avatarSize)}>
         <AvatarImage
-          src={currentUser.image?.url}
+          src={currentUser.avatar?.url}
           alt={currentUser.displayName}
         />
         <AvatarFallback

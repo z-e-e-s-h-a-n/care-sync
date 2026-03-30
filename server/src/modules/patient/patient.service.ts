@@ -131,7 +131,7 @@ export class PatientService {
   private patientInclude = {
     user: {
       omit: { password: true },
-      include: { image: true },
+      include: { avatar: true },
     },
     preferredBranch: true,
     identificationDocument: true,

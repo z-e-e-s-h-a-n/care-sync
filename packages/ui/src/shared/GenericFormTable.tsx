@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
 
@@ -65,11 +64,17 @@ const GenericFormTable = <TData extends BaseResponse>({
                     #{index + 1}
                   </span>
                   {isDraft ? (
-                    <Badge variant={getStatusVariant("draft")} className="bg-yellow-50">
+                    <Badge
+                      variant={getStatusVariant("draft")}
+                      className="bg-yellow-50"
+                    >
                       Draft
                     </Badge>
                   ) : (
-                    <Badge variant={getStatusVariant("completed")} className="bg-green-50">
+                    <Badge
+                      variant={getStatusVariant("completed")}
+                      className="bg-green-50"
+                    >
                       Saved
                     </Badge>
                   )}

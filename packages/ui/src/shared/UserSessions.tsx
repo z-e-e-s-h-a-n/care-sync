@@ -12,7 +12,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { useSession } from "@workspace/ui/hooks/auth";
+import { useSession } from "@workspace/ui/hooks/use-auth";
 import { formatDate } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 
@@ -95,13 +95,15 @@ const UserSessions = () => {
                     </p>
 
                     {i === 0 && (
-                      <Badge variant={getStatusVariant("active")} className="text-green-700">
+                      <Badge variant={getStatusVariant("active")}>
                         Current
                       </Badge>
                     )}
 
                     {s.status !== "active" && (
-                      <Badge variant={getStatusVariant("revoked")}>Revoked</Badge>
+                      <Badge variant={getStatusVariant("revoked")}>
+                        Revoked
+                      </Badge>
                     )}
                   </div>
 

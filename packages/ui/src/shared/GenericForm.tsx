@@ -117,7 +117,7 @@ export function GenericForm<
     <Form
       form={form}
       header={
-        <div className="mb-8">
+        <div>
           <div className="flex items-center gap-4">
             <h2 className="text-3xl font-bold mb-3">
               {title ??
@@ -142,7 +142,7 @@ export function GenericForm<
         />
       )}
 
-      {children?.(form, formType)}
+      {children?.(form, formType, data)}
 
       <div className="flex items-center justify-between">
         <Button

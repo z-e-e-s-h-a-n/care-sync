@@ -29,12 +29,16 @@ const sections: SectionConfig<UserResponse>[] = [
       {
         label: "Role",
         accessor: "role",
-        render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>,
+        render: (value) => (
+          <Badge variant={getStatusVariant(value)}>{value}</Badge>
+        ),
       },
       {
         label: "Status",
         accessor: "status",
-        render: (value) => <Badge variant={getStatusVariant(value)}>{value}</Badge>,
+        render: (value) => (
+          <Badge variant={getStatusVariant(value)}>{value}</Badge>
+        ),
       },
     ],
     columns: 3,
@@ -72,10 +76,10 @@ const sections: SectionConfig<UserResponse>[] = [
 
 const renderHeader = (data: UserResponse) => (
   <div className="flex items-center gap-4">
-    {data.image && (
+    {data.avatar && (
       <Avatar className="size-20">
         <AvatarImage
-          src={data.image.url}
+          src={data.avatar.url}
           alt={data.displayName!}
           width={200}
           height={200}
@@ -91,9 +95,7 @@ const renderHeader = (data: UserResponse) => (
       <p className="text-muted-foreground">{data.email}</p>
       <div className="flex items-center gap-2 mt-2">
         <Badge variant="outline">{data.role}</Badge>
-        <Badge variant={getStatusVariant(data.status)}>
-          {data.status}
-        </Badge>
+        <Badge variant={getStatusVariant(data.status)}>{data.status}</Badge>
       </div>
     </div>
   </div>

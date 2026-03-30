@@ -28,7 +28,7 @@ import { LoaderCircle } from "lucide-react";
 import { useAdminUser } from "@/hooks/admin";
 import CUFormSkeleton from "@/components/skeleton/CUFormSkeleton";
 import type { UserResponse } from "@workspace/contracts/user";
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 
 interface CUUserFormProps extends BaseCUFormProps {
   onSuccess?: (user: UserResponse) => void;

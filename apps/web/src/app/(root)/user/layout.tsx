@@ -1,6 +1,6 @@
 "use client";
 import { redirect } from "next/navigation";
-import { useAuth } from "@workspace/ui/hooks/auth";
+import { useAuth } from "@workspace/ui/hooks/use-auth";
 import type { AppLayoutProps } from "@workspace/contracts";
 import { Loader2 } from "lucide-react";
 

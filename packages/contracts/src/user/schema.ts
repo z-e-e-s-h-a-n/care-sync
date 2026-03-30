@@ -6,7 +6,7 @@ export const userProfileSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema.optional(),
   displayName: nameSchema,
-  imageId: z.string().optional(),
+  avatarId: z.string().optional(),
 
   preferredTheme: ThemeModeEnum.default("system"),
   loginAlerts: z.boolean().default(true),

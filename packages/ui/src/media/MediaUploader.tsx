@@ -1,20 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import Image from "next/image";
-import { X, Upload } from "lucide-react";
-import { type Accept, useDropzone } from "react-dropzone";
+import { ulid } from "ulid";
+import { Edit, Upload } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
+import { createMedia } from "@workspace/sdk/media";
 import {
   MediaTypeEnum,
   type MediaType,
   type MediaVisibility,
 } from "@workspace/contracts";
-import { cn } from "@workspace/ui/lib/utils";
-import { Input } from "@workspace/ui/components/input";
+import type {
+  MediaResponse,
+  MediaUpdateType,
+} from "@workspace/contracts/media";
 import { Button } from "@workspace/ui/components/button";
-import { Textarea } from "@workspace/ui/components/textarea";
 import {
   Select,
   SelectContent,
@@ -23,208 +25,375 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { useCreateMedia } from "@workspace/ui/hooks/media";
+import { useConfirm } from "@workspace/ui/hooks/use-confirm";
+import { useDialog } from "@workspace/ui/hooks/use-dialog";
+import MediaForm from "@workspace/ui/forms/MediaForm";
+import {
+  MediaUploadPlaceholder,
+  MediaUploadQueueItem,
+  type MediaUploadQueueItemData,
+} from "./media-upload-surface";
 
-const MAX_FILES = 1;
+const MAX_FILES = 10;
 const MAX_SIZE = 2 * 1024 * 1024;
-const ACCEPT: Accept = { "image/*": [] };
+const ACCEPT = "image/*";
 
 const PUBLIC_TYPES: MediaType[] = [];
 
-function formatSize(bytes: number) {
-  return bytes < 1024 * 1024
-    ? `${(bytes / 1024).toFixed(2)} KB`
-    : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+type UploadQueueItem = MediaUploadQueueItemData & {
+  uploadedMedia?: MediaResponse;
+  metadata: MediaUpdateType;
+};
+
+interface MediaUploaderProps {
+  onSelect?: (media: MediaResponse) => void;
 }
 
-function MediaUploader() {
-  const { createAsync, isCreating } = useCreateMedia();
-  const [files, setFiles] = useState<File[]>([]);
+function MediaUploader({ onSelect }: MediaUploaderProps) {
+  const queryClient = useQueryClient();
+  const { openDialog, closeDialog } = useDialog();
+  const { confirm } = useConfirm();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllersRef = useRef(new Map<string, AbortController>());
+
+  const [items, setItems] = useState<UploadQueueItem[]>([]);
   const [type, setType] = useState<MediaType>("other");
-  const [title, setTitle] = useState("");
-  const [altText, setAltText] = useState("");
-  const [notes, setNotes] = useState("");
 
   const visibility: MediaVisibility = PUBLIC_TYPES.includes(type)
     ? "public"
     : "private";
 
-  const onDrop = (acceptedFiles: File[]) => {
-    setFiles(acceptedFiles.slice(0, MAX_FILES));
-  };
+  const isUploading = items.some((item) => item.status === "uploading");
+  const hasQueuedItems = items.some(
+    (item) => item.status === "pending" || item.status === "error",
+  );
+  const canAddMore = items.length < MAX_FILES;
 
-  const uploadSequentially = async () => {
-    for (const file of files) {
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("type", type);
-        formData.append("visibility", visibility);
-        if (title.trim()) formData.append("title", title.trim());
-        if (altText.trim()) formData.append("altText", altText.trim());
-        if (notes.trim()) formData.append("notes", notes.trim());
+  const description = useMemo(
+    () =>
+      `Only images • Max ${MAX_FILES} files • ${MAX_SIZE / (1024 * 1024)}MB each`,
+    [],
+  );
 
-        await createAsync(formData);
+  const addFiles = (files: File[]) => {
+    const accepted: UploadQueueItem[] = [];
+    const availableSlots = MAX_FILES - items.length;
 
-        toast.success(`${file.name} uploaded`);
-        setFiles([]);
-        setTitle("");
-        setAltText("");
-        setNotes("");
-      } catch (err: any) {
-        if (err?.status === 409) {
-          toast.error("Upload failed", {
-            description: `${file.name} already exists`,
-          });
-        } else {
-          toast.error(`${file.name} failed`, {
-            description: err?.message,
-          });
-        }
+    if (availableSlots <= 0) {
+      toast.error(`You can upload up to ${MAX_FILES} files at a time.`);
+      return;
+    }
+
+    for (const file of files.slice(0, availableSlots)) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image.`);
+        continue;
       }
+
+      if (file.size > MAX_SIZE) {
+        toast.error(
+          `${file.name} is larger than ${MAX_SIZE / (1024 * 1024)}MB.`,
+        );
+        continue;
+      }
+
+      accepted.push({
+        id: ulid(),
+        file,
+        progress: 0,
+        status: "pending",
+        displayName: file.name,
+        metadata: {
+          name: file.name,
+          altText: "",
+          notes: "",
+        },
+      });
+    }
+
+    if (files.length > availableSlots) {
+      toast.error(
+        `Only ${availableSlots} more file(s) can be added right now.`,
+      );
+    }
+
+    if (accepted.length > 0) {
+      setItems((prev) => [...prev, ...accepted]);
     }
   };
 
-  const removeFile = (file: File) => {
-    setFiles((prev) => prev.filter((f) => f !== file));
+  const updateItemMetadata = (itemId: string, metadata: MediaUpdateType) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              metadata,
+              displayName: metadata.name,
+            }
+          : item,
+      ),
+    );
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: ACCEPT,
-    maxFiles: MAX_FILES,
-    maxSize: MAX_SIZE,
-    multiple: false,
-    disabled: files.length > 0,
-  });
+  const openEditDialog = (item: UploadQueueItem) => {
+    openDialog({
+      title: "Edit Upload Details",
+      content: (
+        <MediaForm
+          media={item.metadata}
+          isPublic
+          title="Upload Details"
+          description="Save a custom file name, alt text, and notes for this queued upload."
+          submitLabel="Save Details"
+          onSubmit={(data) => {
+            updateItemMetadata(item.id, data);
+            closeDialog();
+          }}
+        />
+      ),
+    });
+  };
 
-  const maxSizeMB = Math.round(MAX_SIZE / (1024 * 1024));
+  const uploadItem = async (itemId: string) => {
+    const currentItem = items.find((item) => item.id === itemId);
+    if (!currentItem || currentItem.status === "uploading") {
+      return;
+    }
+
+    const abortController = new AbortController();
+    abortControllersRef.current.set(itemId, abortController);
+
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? { ...item, status: "uploading", progress: 0 }
+          : item,
+      ),
+    );
+
+    try {
+      const formData = new FormData();
+      formData.append("file", currentItem.file);
+      formData.append("type", type);
+      formData.append("visibility", visibility);
+      formData.append("name", currentItem.metadata.name.trim());
+
+      if (currentItem.metadata.altText?.trim()) {
+        formData.append("altText", currentItem.metadata.altText.trim());
+      }
+
+      if (currentItem.metadata.notes?.trim()) {
+        formData.append("notes", currentItem.metadata.notes.trim());
+      }
+
+      const result = await createMedia(formData, {
+        signal: abortController.signal,
+        onUploadProgress: (event) => {
+          const total = event.total ?? currentItem.file.size;
+          const progress = total
+            ? Math.min(100, Math.round((event.loaded / total) * 100))
+            : 0;
+
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === itemId ? { ...item, progress } : item,
+            ),
+          );
+        },
+      });
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                status: "success",
+                progress: 100,
+                uploadedMedia: result.data,
+              }
+            : item,
+        ),
+      );
+
+      await queryClient.invalidateQueries({ queryKey: ["mediaList"] });
+      toast.success(`${currentItem.metadata.name} uploaded`);
+    } catch (err: any) {
+      if (err?.status === 499) {
+        return;
+      }
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, status: "error", progress: 0 } : item,
+        ),
+      );
+
+      if (err?.status === 409) {
+        toast.error("Upload failed", {
+          description: `${currentItem.metadata.name} already exists`,
+        });
+      } else {
+        toast.error(`${currentItem.metadata.name} failed`, {
+          description: err?.message,
+        });
+      }
+    } finally {
+      abortControllersRef.current.delete(itemId);
+    }
+  };
+
+  const uploadAll = async () => {
+    const targetIds = items
+      .filter((item) => item.status === "pending" || item.status === "error")
+      .map((item) => item.id);
+
+    await Promise.all(targetIds.map((itemId) => uploadItem(itemId)));
+  };
+
+  const removeItem = async (itemId: string) => {
+    const item = items.find((entry) => entry.id === itemId);
+    if (!item) {
+      return;
+    }
+
+    if (item.status === "uploading") {
+      const ok = await confirm({
+        title: "Cancel this upload?",
+        description:
+          "The current file upload will be aborted immediately.",
+        confirmText: "Cancel upload",
+        cancelText: "Keep uploading",
+      });
+
+      if (!ok) {
+        return;
+      }
+
+      abortControllersRef.current.get(itemId)?.abort();
+      toast.success(`${item.metadata.name} upload canceled`);
+    }
+
+    setItems((prev) => prev.filter((item) => item.id !== itemId));
+  };
+
+  const clearCompleted = () => {
+    setItems((prev) => prev.filter((item) => item.status !== "success"));
+  };
 
   return (
     <div className="space-y-4">
-      {/* TYPE SELECT */}
-      <div className="flex items-center gap-4">
-        <p className="text-sm text-muted-foreground font-medium">Media Type:</p>
-        <Select value={type} onValueChange={(val) => setType(val as MediaType)}>
-          <SelectTrigger className="capitalize">
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {MediaTypeEnum.options.map((option) => (
-                <SelectItem key={option} value={option} className="capitalize">
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* FILE LIST */}
-      {files.length > 0 && (
-        <div className="space-y-4">
-          <div className="grid gap-4 rounded-lg border p-4 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <p className="text-sm font-medium">Media Details</p>
-              <p className="text-xs text-muted-foreground">
-                Add optional metadata now to keep the media library organized.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="media-title">
-                Title
-              </label>
-              <Input
-                id="media-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Hero banner, office logo, team photo..."
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="media-alt-text">
-                Alt Text
-              </label>
-              <Input
-                id="media-alt-text"
-                value={altText}
-                onChange={(e) => setAltText(e.target.value)}
-                placeholder="Short accessible description"
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium" htmlFor="media-notes">
-                Notes
-              </label>
-              <Textarea
-                id="media-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional internal notes for this media asset"
-              />
-            </div>
+      <div className="flex flex-col gap-4 rounded-lg border p-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="flex items-center gap-4 md:min-w-0">
+            <p className="text-sm font-medium text-muted-foreground">
+              Media Type:
+            </p>
+            <Select
+              value={type}
+              onValueChange={(value) => setType(value as MediaType)}
+            >
+              <SelectTrigger className="capitalize md:w-52">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {MediaTypeEnum.options.map((option) => (
+                    <SelectItem
+                      key={option}
+                      value={option}
+                      className="capitalize"
+                    >
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
 
-          {files.map((file) => (
-            <div
-              key={file.name}
-              className="flex items-center justify-between rounded-lg border px-4 py-3"
-            >
-              <div className="flex items-center gap-4">
-                <Image
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  width={200}
-                  height={200}
-                  className="size-12 object-cover rounded-md"
-                />
-                <div>
-                  <p className="text-sm font-medium truncate">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatSize(file.size)}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => removeFile(file)}
-                disabled={isCreating}
-                className="text-muted-foreground hover:text-foreground"
+          <div className="flex flex-1 items-center justify-end gap-2">
+            {items.length > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={clearCompleted}
+                disabled={isUploading}
               >
-                <X className="size-4" />
-              </button>
-            </div>
-          ))}
+                Clear Uploaded
+              </Button>
+            ) : null}
 
-          <div className="flex justify-end">
-            <Button onClick={uploadSequentially} disabled={isCreating}>
-              {isCreating ? "Uploading..." : "Upload"}
+            <Button
+              type="button"
+              onClick={uploadAll}
+              disabled={!hasQueuedItems}
+            >
+              <Upload />
+              Upload All
             </Button>
           </div>
         </div>
-      )}
 
-      {/* DROPZONE */}
-      {files.length === 0 && (
-        <div
-          {...getRootProps()}
-          className={cn(
-            "flex flex-col items-center justify-center gap-2 rounded-lg border-[1.5px] border-dashed px-6 py-10 text-center cursor-pointer transition",
-            "border-muted hover:border-primary hover:bg-primary/10",
-            isDragActive && "border-primary bg-primary/10",
-          )}
-        >
-          <Input {...getInputProps()} />
-          <Upload className="size-8 text-muted-foreground" />
-          <p className="text-sm font-medium">
-            Click to upload or drag and drop
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Only images • Max 1 file • {maxSizeMB}MB
-          </p>
-        </div>
-      )}
+        <MediaUploadPlaceholder
+          onClick={() => inputRef.current?.click()}
+          onDropFiles={addFiles}
+          disabled={!canAddMore}
+          description={description}
+        />
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            addFiles(files);
+            event.currentTarget.value = "";
+          }}
+        />
+      </div>
+
+      {items.length > 0 ? (
+        <>
+          <div className="rounded-lg border px-4 py-3 text-sm text-muted-foreground">
+            Each upload keeps its own details. Use{" "}
+            <span className="inline-flex items-center gap-1 font-medium text-foreground">
+              <Edit className="size-4" />
+              Edit
+            </span>{" "}
+            on a row before uploading if you want a custom name, alt text, or
+            notes.
+          </div>
+
+          <div className="space-y-3">
+            {items.map((item) => (
+              <MediaUploadQueueItem
+                key={item.id}
+                item={item}
+                leftActionLabel="Edit"
+                onLeftAction={() => openEditDialog(item)}
+                leftActionDisabled={
+                  item.status === "uploading" || item.status === "success"
+                }
+                onStart={() => uploadItem(item.id)}
+                onRetry={() => uploadItem(item.id)}
+                onRemove={() => removeItem(item.id)}
+                actionLabel={
+                  item.uploadedMedia && onSelect ? "Select" : undefined
+                }
+                onAction={
+                  item.uploadedMedia && onSelect
+                    ? () => onSelect(item.uploadedMedia!)
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

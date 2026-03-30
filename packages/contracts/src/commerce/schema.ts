@@ -11,7 +11,7 @@ import {
 import {
   baseQuerySchema,
   idSchema,
-  moneySchema,
+  numberSchema,
   nullableStringSchema,
   slugSchema,
 } from "../lib/schema";
@@ -30,8 +30,8 @@ export const productSchema = z.object({
   slug: slugSchema,
   sku: z.string().min(2),
   description: nullableStringSchema,
-  price: moneySchema,
-  salePrice: moneySchema.optional(),
+  price: numberSchema,
+  salePrice: numberSchema.optional(),
   stockQuantity: z.coerce.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 });

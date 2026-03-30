@@ -50,19 +50,19 @@ export const envSchema = z.object({
   REFRESH_TOKEN_EXP: zMsString,
 
   // ==============================
+  // OAuth Providers
+  // ==============================
+  GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(),
+  GOOGLE_CALLBACK_URL: z.string(),
+
+  // ==============================
   // Email Delivery
   // ==============================
   SMTP_HOST: z.string(),
   SMTP_PORT: z.coerce.number(),
   SMTP_USER: z.string(),
   SMTP_PASS: z.string(),
-
-  // ==============================
-  // OAuth Providers
-  // ==============================
-  GOOGLE_CLIENT_ID: z.string(),
-  GOOGLE_CLIENT_SECRET: z.string(),
-  GOOGLE_CALLBACK_URL: z.string(),
 
   // ==============================
   // SMS / WhatsApp (Twilio)

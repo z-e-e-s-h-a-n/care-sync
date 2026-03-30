@@ -361,13 +361,13 @@ export class AppointmentService {
     branch: true,
     doctor: {
       include: {
-        user: { omit: { password: true }, include: { image: true } },
+        user: { omit: { password: true }, include: { avatar: true } },
         branch: true,
       },
     },
     patient: {
       include: {
-        user: { omit: { password: true }, include: { image: true } },
+        user: { omit: { password: true }, include: { avatar: true } },
       },
     },
     conversation: true,

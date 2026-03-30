@@ -69,13 +69,14 @@ export class OAuthService implements OnModuleInit {
 
     const user = await this.prisma.user.findUnique({
       where: { email: normalized.email },
+      include: { avatar: true },
     });
 
     if (!user) {
       throw new NotFoundException("User Not Found");
     }
 
-    if (normalized.imageUrl) {
+    if (normalized.imageUrl && user.avatar?.url !== normalized.imageUrl) {
       await this.prisma.media.upsert({
         where: {
           url: normalized.imageUrl,
@@ -88,11 +89,10 @@ export class OAuthService implements OnModuleInit {
           resourceType: "image",
           publicId: normalized.imageUrl,
           size: 0,
-          hash: crypto.randomUUID(),
+          hash: normalized.imageUrl,
           uploadedById: user.id,
         },
         update: {
-          url: normalized.imageUrl,
           name: `${slugify(normalized.displayName)}-avatar`,
           uploadedById: user.id,
         },

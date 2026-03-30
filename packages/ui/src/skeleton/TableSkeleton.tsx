@@ -17,20 +17,51 @@ const TableSkeleton = ({
   columnCount = 5,
   rowCount = 10,
 }: TableSkeletonProps) => {
+  const mobileRowCount = Math.min(rowCount, 4);
+  const mobileDetailCount = Math.max(Math.min(columnCount - 1, 4), 2);
+
   return (
     <section className="space-y-4 animate-pulse">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-1 items-center gap-2">
-          <Skeleton className="h-10 w-37.5" />
-          <Skeleton className="h-10 w-full max-w-75" />{" "}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <Skeleton className="h-10 w-full sm:w-37.5" />
+          <Skeleton className="h-10 w-full sm:max-w-75" />
         </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-25" />
-          <Skeleton className="h-10 w-30" />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Skeleton className="h-10 w-full sm:w-25" />
+          <Skeleton className="h-10 w-full sm:w-30" />
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border">
+      <div className="space-y-3 md:hidden">
+        {Array.from({ length: mobileRowCount }).map((_, rowIndex) => (
+          <div
+            key={rowIndex}
+            className="rounded-lg border bg-background p-4 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-5 w-40 max-w-full" />
+                <Skeleton className="h-4 w-28 max-w-full" />
+              </div>
+              <Skeleton className="size-8 shrink-0 rounded-md" />
+            </div>
+
+            <div className="mt-4 space-y-3 border-t pt-4">
+              {Array.from({ length: mobileDetailCount }).map(
+                (_, detailIndex) => (
+                  <div key={detailIndex} className="space-y-2">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-4 w-full max-w-40" />
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-lg border md:block">
         <Table>
           <TableHeader className="bg-muted">
             <TableRow>
@@ -53,7 +84,7 @@ const TableSkeleton = ({
                   </TableCell>
                 ))}
                 <TableCell>
-                  <Skeleton className="h-8 w-8 rounded-md" />{" "}
+                  <Skeleton className="h-8 w-8 rounded-md" />
                 </TableCell>
               </TableRow>
             ))}
@@ -61,7 +92,7 @@ const TableSkeleton = ({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between px-2">
+      <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between">
         <Skeleton className="h-4 w-40" />
         <div className="flex gap-2">
           <Skeleton className="h-8 w-8" />

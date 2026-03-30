@@ -12,10 +12,7 @@ export const copyToClipboard = async (text: string, label: string) => {
   toast.success(`${label} copied to clipboard`);
 };
 
-export const handleDownload = async (media: {
-  url: string;
-  filename: string;
-}) => {
+export const handleDownload = async (media: { url: string; name: string }) => {
   try {
     const response = await fetch(media.url);
     const blob = await response.blob();
@@ -23,7 +20,7 @@ export const handleDownload = async (media: {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = media.filename;
+    a.download = media.name;
     document.body.appendChild(a);
     a.click();
     a.remove();

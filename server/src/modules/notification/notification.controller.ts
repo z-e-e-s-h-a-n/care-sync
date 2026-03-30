@@ -1,4 +1,4 @@
-import { Controller, Put, Param, Post, Body, Get } from "@nestjs/common";
+import { Controller, Put, Post, Param, Body, Get } from "@nestjs/common";
 import { ConfigurePushNotificationsDto } from "@workspace/contracts/notification";
 
 import { User } from "@/decorators/user.decorator";
@@ -43,7 +43,7 @@ export class NotificationController {
     return { message: "Notification read successfully." };
   }
 
-  @Post("push/register")
+  @Post("push/configure")
   async configurePushNotifications(
     @Body() dto: ConfigurePushNotificationsDto,
     @User() user: Express.User,

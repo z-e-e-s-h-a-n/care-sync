@@ -33,9 +33,9 @@ import { InputField } from "@workspace/ui/components/input-field";
 import { SelectField } from "@workspace/ui/components/select-field";
 import { SwitchField } from "@workspace/ui/components/switch-field";
 
-import { useMediaLibrary } from "@workspace/ui/hooks/media";
-import { useNotificationActions } from "@workspace/ui/hooks/notification";
-import { useTheme } from "@workspace/ui/hooks/theme";
+import { useMediaLibrary } from "@workspace/ui/hooks/use-media";
+import { useNotificationActions } from "@workspace/ui/hooks/use-notification";
+import { useTheme } from "@workspace/ui/hooks/use-theme";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 interface ProfileFormProps {
@@ -46,7 +46,7 @@ interface ProfileFormProps {
 
 const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
   const { onMediaSelect } = useMediaLibrary();
-  const [userImage, setUserImage] = useState(user.image);
+  const [userImage, setUserImage] = useState(user.avatar);
   const { syncTheme } = useTheme();
   const { updatePushNotificationsAsync, isPushPending } =
     useNotificationActions();
@@ -56,7 +56,7 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
       firstName: user.firstName,
       lastName: user.lastName || undefined,
       displayName: user.displayName,
-      imageId: user.imageId ?? undefined,
+      avatarId: user.avatarId ?? undefined,
       preferredTheme: user.preferredTheme,
       pushNotifications: user.pushNotifications,
       loginAlerts: user.loginAlerts,
@@ -72,7 +72,7 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
     validators: { onSubmit: userProfileSchema },
     onSubmit: async ({ value }) => {
       try {
-        await onUpdate({ ...value, imageId: userImage?.id });
+        await onUpdate({ ...value, avatarId: userImage?.id });
         toast.success("Profile updated successfully");
       } catch (error: any) {
         toast.error(error.message || "Failed to update profile");
@@ -102,7 +102,7 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex-1 flex items-start justify-between">
+          <div className="flex-1 flex flex-col items-start gap-4 sm:flex-row justify-between">
             <div>
               <p className="text-lg font-semibold">{user.displayName}</p>
               <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -113,8 +113,19 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
                   Email verified
                 </Badge>
               </div>
+            </div>
 
-              <div className="mt-2 text-xs text-muted-foreground">
+            <div className="space-y-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onMediaSelect(setUserImage)}
+              >
+                <Camera className="mr-2 size-4" />
+                Change photo
+              </Button>
+
+              <div className="text-xs text-muted-foreground">
                 <p>Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
                 {user.lastLoginAt && (
                   <p>
@@ -124,15 +135,6 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
                 )}
               </div>
             </div>
-
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => onMediaSelect(setUserImage)}
-            >
-              <Camera className="mr-2 size-4" />
-              Change photo
-            </Button>
           </div>
         </CardContent>
       </Card>

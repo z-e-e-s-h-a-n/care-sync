@@ -208,7 +208,7 @@ export class CampaignService {
       include: {
         user: {
           omit: { password: true },
-          include: { image: true },
+          include: { avatar: true },
         },
       },
     },

@@ -164,7 +164,7 @@ export class DoctorService {
   private doctorInclude = {
     user: {
       omit: { password: true },
-      include: { image: true },
+      include: { avatar: true },
     },
     branch: true,
     identificationDocument: true,

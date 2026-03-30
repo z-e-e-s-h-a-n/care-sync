@@ -6,11 +6,11 @@ import {
   SidebarProvider,
 } from "@workspace/ui/components/sidebar";
 
-import { useAuth } from "@workspace/ui/hooks/auth";
+import { useAuth } from "@workspace/ui/hooks/use-auth";
 import RootLayoutSkeleton from "@/components/skeleton/RootLayoutSkeleton";
 import type { AppLayoutProps } from "@workspace/contracts";
 import AppSidebar from "@workspace/ui/shared/AppSidebar";
-import SidebarHeader from "@workspace/ui/shared/AppSidebarHeader";
+import Header from "@/components/dashboard/Header";
 import { getSidebarMenu, footerSidebarMenu } from "@/lib/constants";
 
 const DashboardLayout = ({ children }: AppLayoutProps) => {
@@ -38,7 +38,7 @@ const DashboardLayout = ({ children }: AppLayoutProps) => {
         footerMenu={footerSidebarMenu}
       />
       <SidebarInset>
-        <SidebarHeader appType="dashboard" />
+        <Header />
         <div className="section-wrapper sm:py-6 md:py-8">{children}</div>
       </SidebarInset>
     </SidebarProvider>

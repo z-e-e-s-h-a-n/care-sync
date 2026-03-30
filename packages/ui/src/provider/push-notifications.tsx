@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { primePushNotifications } from "@workspace/ui/hooks/notification";
+import { primePushNotifications } from "@workspace/ui/hooks/use-notification";
 
 const PushNotificationsBootstrap = () => {
   useEffect(() => {

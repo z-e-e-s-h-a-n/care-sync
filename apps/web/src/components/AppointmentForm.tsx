@@ -30,7 +30,7 @@ import { DatePickerField } from "@workspace/ui/components/date-field";
 import { ComboboxField } from "@workspace/ui/components/combobox-field";
 import { Field } from "@workspace/ui/components/field";
 import { IconClock } from "@tabler/icons-react";
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 import { InfoNotice } from "@workspace/ui/shared/InfoNotice";
 
 interface AppointmentFormProps {

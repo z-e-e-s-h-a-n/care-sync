@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { FormField, type BaseFieldProps } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import Image from "next/image";
 import { toast } from "sonner";
-import { useMediaLibrary } from "@workspace/ui/hooks/media";
+import { useMediaLibrary } from "@workspace/ui/hooks/use-media";
 import type { MediaResponse } from "@workspace/contracts/media";
+import { MediaUploadPlaceholder } from "./media-upload-surface";
 
 export interface MediaFieldProps<TFormData> extends BaseFieldProps<TFormData> {
   label?: string;
@@ -79,17 +80,15 @@ export const MediaField = <TFormData,>({
                 </div>
               </div>
             ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-md hover:bg-muted"
+              <MediaUploadPlaceholder
                 onClick={selectMedia}
-              >
-                <ImageIcon className="size-12 text-muted-foreground mb-2" />
-                <span className="text-sm font-medium text-muted-foreground">
-                  Click to select media
-                </span>
-              </Button>
+                title={
+                  <>
+                    <em>Click to open</em> media library
+                  </>
+                }
+                description="Choose an image from the library or upload a new one there."
+              />
             )}
           </div>
         );

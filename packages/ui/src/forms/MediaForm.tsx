@@ -19,10 +19,20 @@ import {
 interface MediaFormProps {
   media: MediaUpdateType;
   isPublic?: boolean;
+  title?: string;
+  description?: string;
+  submitLabel?: string;
   onSubmit: (data: MediaUpdateType) => void;
 }
 
-const MediaForm = ({ isPublic = true, media, onSubmit }: MediaFormProps) => {
+const MediaForm = ({
+  isPublic = true,
+  media,
+  title = "Media Details",
+  description = "Update the file name, accessibility text, and internal notes.",
+  submitLabel = "Update Media",
+  onSubmit,
+}: MediaFormProps) => {
   const form = useForm({
     defaultValues: media,
     validators: {
@@ -37,10 +47,8 @@ const MediaForm = ({ isPublic = true, media, onSubmit }: MediaFormProps) => {
     <Form form={form}>
       <Card>
         <CardHeader>
-          <CardTitle>Media Details</CardTitle>
-          <CardDescription>
-            Update the file name, accessibility text, and internal notes.
-          </CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -70,7 +78,7 @@ const MediaForm = ({ isPublic = true, media, onSubmit }: MediaFormProps) => {
                     Sending...
                   </>
                 ) : (
-                  <>Update Media</>
+                  <>{submitLabel}</>
                 )}
               </Button>
             )}

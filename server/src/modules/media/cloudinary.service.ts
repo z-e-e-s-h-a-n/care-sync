@@ -22,6 +22,7 @@ export class CloudinaryService {
   async uploadFile(
     file: Express.Multer.File,
     subFolder: string,
+    abortSignal?: AbortSignal,
   ): Promise<{ data: UploadApiResponse; hash: string }> {
     if (!file) throw new BadRequestException("No file provided");
 
@@ -38,6 +39,28 @@ export class CloudinaryService {
     const assetFolder = `${this.rootFolder}/${subFolder}`;
 
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      let settled = false;
+      const sourceStream = streamifier.createReadStream(file.buffer);
+      const cleanupUpload = (upload: UploadApiResponse) => {
+        void this.deleteFile(upload.public_id, upload.resource_type).catch(
+          () => undefined,
+        );
+      };
+
+      const resolveOnce = (value: UploadApiResponse) => {
+        if (settled) return;
+        settled = true;
+        abortSignal?.removeEventListener("abort", handleAbort);
+        resolve(value);
+      };
+
+      const rejectOnce = (error: unknown) => {
+        if (settled) return;
+        settled = true;
+        abortSignal?.removeEventListener("abort", handleAbort);
+        reject(error);
+      };
+
       const uploadStream = this.cloudinary.uploader.upload_stream(
         {
           asset_folder: assetFolder,
@@ -48,13 +71,29 @@ export class CloudinaryService {
           tags: [this.rootFolder, subFolder],
         },
         (error, res) => {
-          if (error) return reject(error);
-          if (!res) return reject(new BadRequestException("Upload failed"));
-          resolve(res);
+          if (error) return rejectOnce(error);
+          if (!res) {
+            return rejectOnce(new BadRequestException("Upload failed"));
+          }
+          if (settled || abortSignal?.aborted) {
+            cleanupUpload(res);
+            return;
+          }
+          resolveOnce(res);
         },
       );
 
-      streamifier.createReadStream(file.buffer).pipe(uploadStream);
+      const handleAbort = () => {
+        const abortError = new BadRequestException("Upload cancelled");
+        sourceStream.destroy(abortError);
+        uploadStream.destroy(abortError);
+        rejectOnce(abortError);
+      };
+
+      abortSignal?.addEventListener("abort", handleAbort, { once: true });
+      sourceStream.on("error", rejectOnce);
+      uploadStream.on("error", rejectOnce);
+      sourceStream.pipe(uploadStream);
     });
 
     return { data: result, hash };

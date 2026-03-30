@@ -14,9 +14,9 @@ export type BaseUserResponse = Sanitize<
 >;
 
 export type SafeUser = StrictOmit<User, "password"> & {
-  image?: Media | null;
+  avatar?: Media | null;
 };
 
 export type UserResponse = StrictOmit<Sanitize<User>, "password"> & {
-  image?: MediaResponse;
+  avatar?: MediaResponse;
 };

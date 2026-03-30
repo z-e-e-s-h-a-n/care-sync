@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { SignInType, SignUpType } from "@workspace/contracts/auth";
+import type { SignInType } from "@workspace/contracts/auth";
 import type { ApiError } from "@workspace/sdk";
 import * as auth from "@workspace/sdk/auth";
 import { parseDuration } from "@workspace/shared/utils";
@@ -41,10 +41,6 @@ export const useAuthActions = () => {
     },
   });
 
-  const signUpMutation = useMutation({
-    mutationFn: (data: SignUpType) => auth.signUp(data),
-  });
-
   const signOutMutation = useMutation({
     mutationFn: auth.signOut,
     onSuccess: () => {
@@ -56,15 +52,10 @@ export const useAuthActions = () => {
 
   return {
     signIn: signInMutation.mutateAsync,
-    signUp: signUpMutation.mutateAsync,
     signOut: signOutMutation.mutateAsync,
-    isPending:
-      signInMutation.isPending ||
-      signUpMutation.isPending ||
-      signOutMutation.isPending,
+    isPending: signInMutation.isPending || signOutMutation.isPending,
     error:
       (signInMutation.error as ApiError | null) ??
-      (signUpMutation.error as ApiError | null) ??
       (signOutMutation.error as ApiError | null),
   };
 };

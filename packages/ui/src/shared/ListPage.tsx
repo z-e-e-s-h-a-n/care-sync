@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { ApiException } from "@workspace/sdk";
-import { useConfirm } from "@workspace/ui/hooks/confirm";
+import { useConfirm } from "@workspace/ui/hooks/use-confirm";
 import GenericTable, { type ColumnConfig } from "./GenericTable";
 import type { ListFilterConfig, SearchByOption } from "./SearchToolbar";
 import type {
@@ -100,7 +100,7 @@ function ListPage<
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div>
       <div className="mb-6">
         <h1 className="text-3xl font-bold capitalize">
           {entityType} Management

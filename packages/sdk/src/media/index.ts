@@ -1,4 +1,5 @@
 import apiClient, { executeApi } from "../lib/api-client";
+import type { AxiosRequestConfig } from "axios";
 import type {
   MediaQueryResponse,
   MediaQueryType,
@@ -6,12 +7,16 @@ import type {
   MediaUpdateType,
 } from "@workspace/contracts/media";
 
-export const createMedia = (data: FormData) =>
+export const createMedia = (
+  data: FormData,
+  config?: AxiosRequestConfig<FormData>,
+) =>
   executeApi<MediaResponse>(() =>
     apiClient.post("/media", data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      ...config,
     }),
   );
 

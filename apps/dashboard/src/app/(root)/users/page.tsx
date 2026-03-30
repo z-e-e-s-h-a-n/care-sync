@@ -6,7 +6,7 @@ import { LoaderCircle } from "lucide-react";
 import ListPage from "@workspace/ui/shared/ListPage";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
 import { useAdminMutations, useAdminUsers } from "@/hooks/admin";
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 import type { UserQueryType } from "@workspace/contracts/admin";
 import type { UserResponse } from "@workspace/contracts/user";
 import { SafeUserRoleEnum } from "@workspace/contracts";
@@ -40,9 +40,7 @@ const columns: ColumnConfig<UserResponse, UserQueryType>[] = [
   {
     header: "Status",
     accessor: (user) => (
-      <Badge variant={getStatusVariant(user.status)}>
-        {user.status}
-      </Badge>
+      <Badge variant={getStatusVariant(user.status)}>{user.status}</Badge>
     ),
     sortKey: "status",
   },

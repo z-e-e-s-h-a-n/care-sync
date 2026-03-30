@@ -12,7 +12,7 @@ import {
 
 import { MediaGrid } from "./MediaGrid";
 import MediaUploader from "./MediaUploader";
-import { useMedias } from "@workspace/ui/hooks/media";
+import { useMedias } from "@workspace/ui/hooks/use-media";
 import Pagination from "@workspace/ui/shared/Pagination";
 import SearchToolbar from "@workspace/ui/shared/SearchToolbar";
 
@@ -25,7 +25,7 @@ function MediaLibrary({ onSelect }: MediaLibraryProps) {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [searchBy, setSearchBy] = useState<MediaQueryType["searchBy"]>("name");
-  const [sortBy, setSortBy] = useState<MediaQueryType["sortBy"]>("name");
+  const [sortBy, setSortBy] = useState<MediaQueryType["sortBy"]>("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [filter, setFilter] = useState<string>();
 
@@ -40,9 +40,9 @@ function MediaLibrary({ onSelect }: MediaLibraryProps) {
 
   return (
     <Tabs asChild defaultValue="library">
-      <section className="space-y-16">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <TabsList className="bg-transparent gap-4 border w-1/2">
+      <section className="space-y-8 overflow-hidden">
+        <div className="flex max-lg:flex-wrap items-center justify-between gap-4">
+          <TabsList className="bg-transparent gap-4 border w-full lg:w-1/2">
             <TabsTrigger value="upload">
               <Upload /> Upload
             </TabsTrigger>
@@ -70,7 +70,7 @@ function MediaLibrary({ onSelect }: MediaLibraryProps) {
           />
         </div>
         <TabsContent value="upload">
-          <MediaUploader />
+          <MediaUploader onSelect={onSelect} />
         </TabsContent>
         <TabsContent value="library" className="space-y-6">
           <MediaGrid

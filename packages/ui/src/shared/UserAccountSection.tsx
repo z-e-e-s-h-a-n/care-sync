@@ -25,7 +25,7 @@ import OtpModal, { type OtpMeta } from "@workspace/ui/components/otp-modal";
 import { SelectField } from "@workspace/ui/components/select-field";
 import { MfaMethodEnum } from "@workspace/contracts";
 import { Badge } from "@workspace/ui/components/badge";
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 import UserSessions from "./UserSessions";
 import type { UserResponse } from "@workspace/contracts/user";
 import type { OtpPurpose } from "@workspace/contracts";
@@ -169,7 +169,7 @@ const AccountSection = ({ user }: AccountSectionProps) => {
         <CardContent className="space-y-4">
           {/* Email Section */}
           <div className="space-y-4 p-4 rounded-lg border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center flex-wrap justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Mail className="size-5 text-muted-foreground" />
                 <div>
@@ -245,7 +245,7 @@ const AccountSection = ({ user }: AccountSectionProps) => {
 
           {/* Phone Section */}
           <div className="space-y-4 p-4 rounded-lg border">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center flex-wrap justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Phone className="size-5 text-muted-foreground" />
                 <div>

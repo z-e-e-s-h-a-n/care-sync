@@ -9,8 +9,11 @@ import {
   Delete,
   Param,
   Body,
+  Req,
+  Res,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import type { Request, Response } from "express";
 import {
   MediaCreateDto,
   MediaUpdateDto,
@@ -33,12 +36,39 @@ export class MediaController {
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  createMedia(
+  async createMedia(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: MediaCreateDto,
     @User("id") userId: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.mediaService.createMedia(file, dto, userId);
+    const abortController = new AbortController();
+
+    const handleAbort = () => {
+      abortController.abort(new Error("Client disconnected"));
+    };
+
+    const handleClose = () => {
+      if (!res.writableEnded) {
+        abortController.abort(new Error("Connection closed"));
+      }
+    };
+
+    req.once("aborted", handleAbort);
+    res.once("close", handleClose);
+
+    try {
+      return await this.mediaService.createMedia(
+        file,
+        dto,
+        userId,
+        abortController.signal,
+      );
+    } finally {
+      req.off("aborted", handleAbort);
+      res.off("close", handleClose);
+    }
   }
 
   @Get()

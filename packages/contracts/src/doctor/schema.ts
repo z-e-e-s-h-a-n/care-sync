@@ -8,7 +8,7 @@ import {
 import {
   baseQuerySchema,
   idSchema,
-  moneySchema,
+  numberSchema,
   nullableStringSchema,
   slugSchema,
 } from "../lib/schema";
@@ -30,8 +30,8 @@ export const doctorProfileSchema = z.object({
   identificationNumber: nullableStringSchema,
   identificationDocumentId: idSchema.optional(),
   licenseDocumentId: idSchema.optional(),
-  consultationFee: moneySchema.optional(),
-  commissionPercent: moneySchema.optional(),
+  consultationFee: numberSchema.optional(),
+  commissionPercent: numberSchema.optional(),
   isAvailable: z.boolean().default(true),
 });
 

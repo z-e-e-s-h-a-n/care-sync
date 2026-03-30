@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import type { BaseQueryType, SortOrderType } from "@workspace/contracts";
+import { cn } from "../lib/utils";
 
 export interface ListFilterConfig<TQuery> {
   key: keyof TQuery;
@@ -69,7 +70,12 @@ function SearchToolbar<TQuery extends BaseQueryType>({
   const pathname = usePathname();
 
   return (
-    <div className="flex items-center flex-wrap gap-3 justify-between">
+    <div
+      className={cn(
+        "flex items-center gap-3 justify-between",
+        filterConfig ? "flex-wrap" : "",
+      )}
+    >
       <div className="flex gap-2 items-center">
         <Input
           placeholder="Search..."

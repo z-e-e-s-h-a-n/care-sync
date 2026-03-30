@@ -87,7 +87,7 @@ export function GenericDetailsPage<TData extends BaseResponse>({
 
   if (fetchError || !data) {
     return (
-      <div className="container mx-auto p-6">
+      <section>
         <div className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="icon" href={backPath}>
             <ArrowLeft className="h-4 w-4" />
@@ -106,7 +106,7 @@ export function GenericDetailsPage<TData extends BaseResponse>({
             </div>
           </CardContent>
         </Card>
-      </div>
+      </section>
     );
   }
 
@@ -145,9 +145,9 @@ export function GenericDetailsPage<TData extends BaseResponse>({
     typeof description === "function" ? description(data) : description;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+    <section className="space-y-6">
+      <div className="flex flex-col gap-8 mb-8">
+        <div className="flex justify-between gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-3">
             <Button
               variant="ghost"
@@ -181,24 +181,21 @@ export function GenericDetailsPage<TData extends BaseResponse>({
           </div>
         </div>
 
-        <Card className="overflow-hidden border-border/70 bg-linear-to-br from-background via-primary/5 to-secondary/10 shadow-sm">
+        <Card className="overflow-hidden bg-linear-to-br from-primary/10 via-secondary/10 to-accent/10 shadow-sm">
           <CardContent className="p-6">{renderHeader(data)}</CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6">
         {sections.map(({ title, description, fields, columns }, index) => (
-          <Card
-            key={index}
-            className="overflow-hidden border-border/70 shadow-sm"
-          >
+          <Card key={index} className="overflow-hidden">
             <CardHeader className="border-b bg-muted/20">
               <CardTitle className="text-lg">{title}</CardTitle>
               {description && (
                 <CardDescription>{description(data)}</CardDescription>
               )}
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent>
               <div className={cn("grid gap-4", getGridColumns(columns))}>
                 {fields.map((field, fieldIndex) => {
                   const Icon = field.icon;
@@ -209,7 +206,7 @@ export function GenericDetailsPage<TData extends BaseResponse>({
                       <div
                         key={fieldIndex}
                         className={cn(
-                          "rounded-2xl border border-border/60 bg-card/60 p-4 shadow-xs",
+                          "rounded-lg border bg-background p-4 shadow-xs",
                           field.className,
                         )}
                       >
@@ -242,14 +239,11 @@ export function GenericDetailsPage<TData extends BaseResponse>({
         }
 
         return (
-          <Card
-            key={index}
-            className="overflow-hidden border-border/70 shadow-sm"
-          >
+          <Card key={index} className="overflow-hidden">
             <CardHeader className="border-b bg-muted/20">
               <CardTitle className="text-lg">{related.title}</CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent>
               <div className="overflow-hidden rounded-lg border">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
@@ -304,6 +298,6 @@ export function GenericDetailsPage<TData extends BaseResponse>({
           </Card>
         );
       })}
-    </div>
+    </section>
   );
 }

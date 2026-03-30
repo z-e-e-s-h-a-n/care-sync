@@ -12,7 +12,7 @@ function DetailsPageSkeleton<TData>({
   sections,
 }: DetailsPageSkeletonProps<TData>) {
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <section className="section space-y-6">
       {/* Header Skeleton */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -57,7 +57,7 @@ function DetailsPageSkeleton<TData>({
           </Card>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

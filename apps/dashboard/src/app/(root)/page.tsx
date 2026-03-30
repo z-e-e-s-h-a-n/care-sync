@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 
 const DashboardEntryPage = () => {
   const { currentUser, isLoading } = useUser();

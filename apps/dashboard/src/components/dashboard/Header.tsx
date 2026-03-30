@@ -5,13 +5,9 @@ import { appName } from "@workspace/shared/constants";
 import { Button } from "@workspace/ui/components/button";
 import { Bell } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
-import { useNotifications } from "@workspace/ui/hooks/notification";
+import { useNotifications } from "@workspace/ui/hooks/use-notification";
 
-interface SidebarHeaderProps {
-  appType: "web" | "dashboard";
-}
-
-const SidebarHeader = ({ appType }: SidebarHeaderProps) => {
+const SidebarHeader = () => {
   const { unreadCount } = useNotifications();
 
   return (
@@ -26,7 +22,7 @@ const SidebarHeader = ({ appType }: SidebarHeaderProps) => {
 
         <div className="flex items-center gap-2">
           <Button
-            href={appType === "web" ? "/user/notifications" : "/notifications"}
+            href={"/notifications"}
             aria-label="Open notifications"
             variant="ghost"
             size="icon"

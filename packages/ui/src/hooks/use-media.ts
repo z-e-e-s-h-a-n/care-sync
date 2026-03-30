@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import * as media from "@workspace/sdk/media";
-import { createCrudHooks } from "./crud";
+import { createCrudHooks } from "./use-crud";
 import { MediaLibraryContext } from "../provider/media-library";
 
 export function useMediaLibrary() {

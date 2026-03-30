@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import type {
   MediaCreateDto,
   MediaQueryDto,
@@ -20,28 +20,45 @@ export class MediaService {
     file: Express.Multer.File,
     dto: MediaCreateDto,
     userId: string,
+    abortSignal?: AbortSignal,
   ) {
-    const { data, hash } = await this.cloudinary.uploadFile(file, dto.type);
+    const uploaded = await this.cloudinary.uploadFile(
+      file,
+      dto.type,
+      abortSignal,
+    );
 
-    const media = await this.prisma.media.create({
-      data: {
-        ...dto,
-        hash,
-        name: dto.name ?? data.original_filename,
-        url: data.secure_url,
-        publicId: data.public_id,
-        uploadedById: userId,
-        size: data.bytes,
-        resourceType: data.resource_type,
-        mimeType: `${data.resource_type}/${data.format}`,
-      },
-      include: this.mediaInclude,
-    });
+    try {
+      if (abortSignal?.aborted) {
+        throw new BadRequestException("Upload cancelled");
+      }
 
-    return {
-      message: "Media uploaded successfully",
-      data: media,
-    };
+      const media = await this.prisma.media.create({
+        data: {
+          ...dto,
+          hash: uploaded.hash,
+          name: dto.name ?? uploaded.data.original_filename,
+          url: uploaded.data.secure_url,
+          publicId: uploaded.data.public_id,
+          uploadedById: userId,
+          size: uploaded.data.bytes,
+          resourceType: uploaded.data.resource_type,
+          mimeType: `${uploaded.data.resource_type}/${uploaded.data.format}`,
+        },
+        include: this.mediaInclude,
+      });
+
+      return {
+        message: "Media uploaded successfully",
+        data: media,
+      };
+    } catch (error) {
+      await this.cloudinary
+        .deleteFile(uploaded.data.public_id, uploaded.data.resource_type)
+        .catch(() => undefined);
+
+      throw error;
+    }
   }
 
   async findAllMedia(query: MediaQueryDto) {

@@ -29,7 +29,7 @@ const queryDefaults = {
   retry: false,
 };
 
-export function useNotifications(enabled = false) {
+export function useNotifications(enabled = true) {
   const query = useQuery({
     queryKey: ["notifications"],
     queryFn: notification.getAllNotification,

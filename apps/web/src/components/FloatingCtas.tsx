@@ -2,7 +2,7 @@
 
 import { IconCalendar } from "@tabler/icons-react";
 import { Button } from "@workspace/ui/components/button";
-import { useDialog } from "@workspace/ui/hooks/dialog";
+import { useDialog } from "@workspace/ui/hooks/use-dialog";
 import AppointmentForm from "./AppointmentForm";
 
 export function FloatingCtas() {

@@ -4,7 +4,7 @@ import {
   DialogContent,
 } from "@workspace/ui/components/dialog";
 import type { MediaResponse } from "@workspace/contracts/media";
-import MediaLibrary from "./layout";
+import MediaLibrary from "./library";
 
 interface LibraryPopupProps {
   open: boolean;

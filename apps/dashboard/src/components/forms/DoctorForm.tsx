@@ -26,7 +26,7 @@ import { MediaField } from "@workspace/ui/media/mediaField";
 import CUFormSkeleton from "@/components/skeleton/CUFormSkeleton";
 import CUUserForm from "@/components/forms/CUUserForm";
 import { useBranches, useDoctor, useSaveDoctor } from "@/hooks/healthcare";
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 
 const languageOptions = [
   { label: "Arabic", value: "Arabic" },

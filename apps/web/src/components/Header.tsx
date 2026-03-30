@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { IconLogout } from "@tabler/icons-react";
 
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
@@ -21,7 +21,7 @@ import { redirect } from "next/navigation";
 import { Bell } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import ThemeSwitch from "@workspace/ui/components/theme-toggle";
-import { useNotifications } from "@workspace/ui/hooks/notification";
+import { useNotifications } from "@workspace/ui/hooks/use-notification";
 import HeaderActionsSkeleton from "./skeletons/HeaderActions";
 
 const Header = () => {

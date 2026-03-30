@@ -160,7 +160,10 @@ const sections: SectionConfig<DoctorProfileResponse>[] = [
         label: "Availability",
         accessor: "isAvailable",
         render: (value) =>
-          renderStatusBadge(value ? "active" : "closed", value ? "Available" : "Unavailable"),
+          renderStatusBadge(
+            value ? "active" : "closed",
+            value ? "Available" : "Unavailable",
+          ),
       },
       {
         label: "Verified At",
@@ -206,7 +209,7 @@ const renderHeader = (data: DoctorProfileResponse) => {
       <div className="flex items-start gap-4">
         <Avatar className="size-20 border border-border/60">
           <AvatarImage
-            src={data.user?.image?.url ?? undefined}
+            src={data.user?.avatar?.url ?? undefined}
             alt={data.user?.displayName ?? "Doctor"}
             width={200}
             height={200}
@@ -230,7 +233,10 @@ const renderHeader = (data: DoctorProfileResponse) => {
 
           <div className="flex flex-wrap gap-2">
             {renderStatusBadge(data.verificationStatus)}
-            {renderStatusBadge(data.isAvailable ? "active" : "closed", data.isAvailable ? "Available" : "Unavailable")}
+            {renderStatusBadge(
+              data.isAvailable ? "active" : "closed",
+              data.isAvailable ? "Available" : "Unavailable",
+            )}
             {data.title ? <Badge variant="outline">{data.title}</Badge> : null}
           </div>
         </div>

@@ -18,7 +18,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import {
   useNotificationActions,
   useNotifications,
-} from "@workspace/ui/hooks/notification";
+} from "@workspace/ui/hooks/use-notification";
 
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString(undefined, {

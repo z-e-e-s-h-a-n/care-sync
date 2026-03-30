@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 
-import useUser from "@workspace/ui/hooks/user";
+import useUser from "@workspace/ui/hooks/use-user";
 import SidebarNav from "@workspace/ui/shared/AppSidebarNav";
 import UserCard from "@workspace/ui/shared/UserCard";
 import type { NavGroup } from "@workspace/contracts";

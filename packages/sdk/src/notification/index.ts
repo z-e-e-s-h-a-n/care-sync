@@ -11,4 +11,4 @@ export const markAsRead = (id: string) =>
   executeApi(() => apiClient.put(`/notifications/${id}`));
 
 export const updatePushNotifications = (data: ConfigurePushNotificationsType) =>
-  executeApi(() => apiClient.post("/notifications/push/register", data));
+  executeApi(() => apiClient.post("/notifications/push/configure", data));
