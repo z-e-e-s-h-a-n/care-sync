@@ -41,7 +41,8 @@ FROM installer AS builder
 WORKDIR /app
 
 # Build only the server
-RUN pnpm build:server
+ENV NODE_OPTIONS=--max-old-space-size=4096
+RUN pnpm build:server -- --concurrency=1
 
 # ---------- RUNNER ----------
 FROM node:24-alpine AS runner
