@@ -197,7 +197,9 @@ async function seedFoundation() {
   return { admin, doctors, patients, doctorSeeds };
 }
 
-async function seedMedia(foundation: Awaited<ReturnType<typeof seedFoundation>>) {
+async function seedMedia(
+  foundation: Awaited<ReturnType<typeof seedFoundation>>,
+) {
   console.log("Seeding media...");
 
   const adminAvatar = await prisma.media.create({
@@ -525,7 +527,9 @@ async function seedProfiles(
   return { patients, doctors };
 }
 
-async function seedAvailability(profiles: Awaited<ReturnType<typeof seedProfiles>>) {
+async function seedAvailability(
+  profiles: Awaited<ReturnType<typeof seedProfiles>>,
+) {
   console.log("Seeding doctor availability...");
 
   const weekdays = [
@@ -622,8 +626,11 @@ async function seedAppointments(
               ? new Date()
               : null,
           completedAt:
-            status === AppointmentStatus.completed ? hoursAfter(start, 0, 30) : null,
-          cancelledAt: status === AppointmentStatus.cancelled ? new Date() : null,
+            status === AppointmentStatus.completed
+              ? hoursAfter(start, 0, 30)
+              : null,
+          cancelledAt:
+            status === AppointmentStatus.cancelled ? new Date() : null,
           cancellationSource:
             status === AppointmentStatus.cancelled
               ? AppointmentCancellationSource.patient
@@ -832,14 +839,14 @@ async function seedCommerce(
         productId: vitaminD.id,
         quantity: 2,
         unitPrice: vitaminD.salePrice ?? vitaminD.price,
-        totalPrice: (vitaminD.salePrice ?? vitaminD.price) * 2,
+        totalPrice: Number(vitaminD.salePrice ?? vitaminD.price) * 2,
       },
       {
         cartId: cart.id,
         productId: repairCream.id,
         quantity: 1,
         unitPrice: repairCream.salePrice ?? repairCream.price,
-        totalPrice: repairCream.salePrice ?? repairCream.price,
+        totalPrice: Number(repairCream.salePrice ?? repairCream.price),
       },
     ],
   });
@@ -858,51 +865,57 @@ async function seedCommerce(
         postalCode: "10018",
         country: "United States",
       },
+      billingAddress: {
+        name: foundation.patients[0]!.displayName,
+        line1: "500 7th Ave",
+        city: "New York",
+        state: "NY",
+        postalCode: "10018",
+        country: "United States",
+      },
       notes: "Seeded order for demo store and order tracking testing.",
-      subtotal: 41.98,
-      shippingFee: 4.99,
-      taxAmount: 3.2,
-      discountAmount: 0,
-      totalAmount: 50.17,
-    },
-  });
-
-  await prisma.orderItem.createMany({
-    data: [
-      {
-        orderId: order.id,
-        productId: vitaminD.id,
-        quantity: 2,
-        unitPrice: vitaminD.salePrice ?? vitaminD.price,
-        totalPrice: (vitaminD.salePrice ?? vitaminD.price) * 2,
+      subtotalAmount: 50.48,
+      shippingAmount: 4.99,
+      totalAmount: 55.47,
+      paidAt: new Date(),
+      items: {
+        create: [
+          {
+            productId: vitaminD.id,
+            name: vitaminD.name,
+            sku: vitaminD.sku,
+            quantity: 2,
+            unitPrice: 12.99,
+            totalPrice: 25.98,
+          },
+          {
+            productId: repairCream.id,
+            name: repairCream.name,
+            sku: repairCream.sku,
+            quantity: 1,
+            unitPrice: 16.0,
+            totalPrice: 16.0,
+          },
+          {
+            productId: wellnessTea.id,
+            name: wellnessTea.name,
+            sku: wellnessTea.sku,
+            quantity: 1,
+            unitPrice: 9.5,
+            totalPrice: 9.5,
+          },
+        ],
       },
-      {
-        orderId: order.id,
-        productId: repairCream.id,
-        quantity: 1,
-        unitPrice: repairCream.salePrice ?? repairCream.price,
-        totalPrice: repairCream.salePrice ?? repairCream.price,
+      shipment: {
+        create: {
+          status: ShipmentStatus.shipped,
+          carrier: "UPS",
+          trackingNumber: "1Z999AA10123456784",
+          trackingUrl: "https://wwwapps.ups.com/WebTracking/track",
+          notes: "Demo shipment created by seed script.",
+          shippedAt: new Date(),
+        },
       },
-      {
-        orderId: order.id,
-        productId: wellnessTea.id,
-        quantity: 1,
-        unitPrice: wellnessTea.price,
-        totalPrice: wellnessTea.price,
-      },
-    ],
-  });
-
-  await prisma.shipment.create({
-    data: {
-      orderId: order.id,
-      status: ShipmentStatus.shipped,
-      carrier: "UPS",
-      trackingNumber: "1Z999AA10123456784",
-      shippedAt: new Date(),
-      deliveredAt: null,
-      shippingCost: 4.99,
-      metadata: { demo: true },
     },
   });
 
@@ -916,23 +929,97 @@ async function seedPayments(
 ) {
   console.log("Seeding payments and refunds...");
 
+  const createdAt = (daysAgo: number, hour = 10, minute = 0) =>
+    daysFromNow(-daysAgo, hour, minute);
+
+  const bookedAppointment = appointments.find(
+    (appointment) => appointment.status === AppointmentStatus.booked,
+  );
+  const confirmedAppointment = appointments.find(
+    (appointment) => appointment.status === AppointmentStatus.confirmed,
+  );
   const completedAppointment = appointments.find(
     (appointment) => appointment.status === AppointmentStatus.completed,
   );
+  const cancelledAppointment = appointments.find(
+    (appointment) => appointment.status === AppointmentStatus.cancelled,
+  );
+
+  if (bookedAppointment) {
+    await prisma.payment.create({
+      data: {
+        appointmentId: bookedAppointment.id,
+        provider: PaymentProvider.stripe,
+        methodType: PaymentMethodType.card,
+        status: PaymentStatus.pending,
+        amount: 140,
+        createdAt: createdAt(6, 11),
+        metadata: { label: "Upcoming appointment payment", demo: true },
+      },
+    });
+  }
+
+  if (confirmedAppointment) {
+    await prisma.payment.create({
+      data: {
+        appointmentId: confirmedAppointment.id,
+        provider: PaymentProvider.paypal,
+        methodType: PaymentMethodType.wallet,
+        status: PaymentStatus.succeeded,
+        amount: 160,
+        transactionId: `PAY-APT-${confirmedAppointment.appointmentNumber}`,
+        createdAt: createdAt(5, 14),
+        paidAt: createdAt(5, 14),
+        commissionAmount: 20,
+        doctorNetAmount: 140,
+        metadata: { label: "Confirmed appointment payment", demo: true },
+      },
+    });
+  }
+
+  if (cancelledAppointment) {
+    await prisma.payment.create({
+      data: {
+        appointmentId: cancelledAppointment.id,
+        provider: PaymentProvider.stripe,
+        methodType: PaymentMethodType.card,
+        status: PaymentStatus.failed,
+        amount: 150,
+        createdAt: createdAt(4, 9),
+        failureMessage: "Card authorization failed (demo).",
+        metadata: { label: "Failed appointment payment", demo: true },
+      },
+    });
+  }
 
   if (completedAppointment) {
-    await prisma.payment.create({
+    const refundedPayment = await prisma.payment.create({
       data: {
         appointmentId: completedAppointment.id,
         provider: PaymentProvider.stripe,
         methodType: PaymentMethodType.card,
-        status: PaymentStatus.succeeded,
+        status: PaymentStatus.refunded,
         amount: 150,
         transactionId: `PAY-APT-${completedAppointment.appointmentNumber}`,
-        paidAt: new Date(),
-        metadata: { demo: true },
+        createdAt: createdAt(3, 16),
+        paidAt: createdAt(3, 16),
+        refundedAt: createdAt(2, 12),
         commissionAmount: 18.75,
         doctorNetAmount: 131.25,
+        metadata: { label: "Refunded appointment payment", demo: true },
+      },
+    });
+
+    await prisma.refund.create({
+      data: {
+        paymentId: refundedPayment.id,
+        processedById: foundation.admin.id,
+        amount: 150,
+        reason: "Demo refund for reporting coverage.",
+        status: RefundStatus.processed,
+        requestedAt: createdAt(2, 12),
+        processedAt: createdAt(2, 12),
+        metadata: { demo: true },
       },
     });
   }
@@ -943,9 +1030,10 @@ async function seedPayments(
       provider: PaymentProvider.stripe,
       methodType: PaymentMethodType.card,
       status: PaymentStatus.succeeded,
-      amount: 50.17,
+      amount: 55.47,
       transactionId: "PAY-ORD-US-2001",
-      paidAt: new Date(),
+      createdAt: createdAt(1, 13),
+      paidAt: createdAt(1, 13),
       metadata: { label: "Store order payment", demo: true },
     },
   });
@@ -957,8 +1045,8 @@ async function seedPayments(
       amount: 9.5,
       reason: "Demo partial refund",
       status: RefundStatus.processed,
-      requestedAt: new Date(),
-      processedAt: new Date(),
+      requestedAt: createdAt(0, 10),
+      processedAt: createdAt(0, 10),
       metadata: { demo: true },
     },
   });

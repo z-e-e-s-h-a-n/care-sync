@@ -17,17 +17,19 @@ interface DoctorCardProps {
 }
 
 const DoctorCard = ({ doctor }: DoctorCardProps) => {
+  const avatarUrl = doctor.user.avatar?.url ?? "/images/dr-green.png";
+
   return (
     <Card className="h-full rounded-3xl border-border/60 shadow-sm">
       <CardHeader className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <Image
-              src="/images/dr-green.png"
+              src={avatarUrl}
               alt={doctor.user.displayName}
               width={100}
               height={100}
-              className="size-14"
+              className="size-14 rounded-full object-cover"
             />
             <div>
               <p className="text-lg font-semibold">{doctor.user.displayName}</p>
