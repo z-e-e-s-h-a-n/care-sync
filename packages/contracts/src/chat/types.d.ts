@@ -7,7 +7,7 @@ import type {
 } from "./schema";
 import type { Sanitize } from "../lib/types";
 import type { AppointmentResponse } from "../appointment/types";
-import type { BranchResponse } from "../branch/types";
+import type { BranchResponse } from "../business/types";
 import type { PatientProfileResponse } from "../patient/types";
 import type { UserResponse } from "../user/types";
 import type { MediaResponse } from "../media/types";

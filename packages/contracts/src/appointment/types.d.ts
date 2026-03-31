@@ -6,7 +6,7 @@ import type {
   updateAppointmentStatusSchema,
 } from "./schema";
 import type { BaseQueryResponse, Sanitize } from "../lib/types";
-import type { BranchResponse } from "../branch/types";
+import type { BranchResponse } from "../business/types";
 import type { DoctorProfileResponse } from "../doctor/types";
 import type { PatientProfileResponse } from "../patient/types";
 import type { PaymentResponse } from "../payment/types";

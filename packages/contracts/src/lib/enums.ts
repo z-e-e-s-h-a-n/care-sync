@@ -49,6 +49,7 @@ export const CampaignAudienceEnum = z.enum($Enums.CampaignAudience);
 export const DoctorVerificationStatusEnum = z.enum(
   $Enums.DoctorVerificationStatus,
 );
+export const ContactMessageStatusEnum = z.enum($Enums.ContactMessageStatus);
 
 export const UserSearchByEnum = z.enum(["id", "email", "phone", "displayName"]);
 export const UserSortByEnum = z.enum([
@@ -119,3 +120,36 @@ export const AuditLogSearchByEnum = z.enum([
   "entityId",
 ]);
 export const AuditLogSortByEnum = z.enum(["createdAt", "entityType"]);
+
+export const ContactMessageSortByEnum = z.enum([
+  "name",
+  "email",
+  "phone",
+  "subject",
+  "repliedAt",
+]);
+
+export const ContactMessageSearchByEnum = z.enum([
+  "name",
+  "email",
+  "phone",
+  "subject",
+]);
+
+export const NewsletterSubscriberSortByEnum = z.enum([
+  "name",
+  "email",
+  "subscribedAt",
+  "unsubscribedAt",
+]);
+
+export const NewsletterSubscriberSearchByEnum = z.enum(["name", "email"]);
+
+export const TrafficSourceSearchByEnum = z.enum([
+  "utmSource",
+  "utmMedium",
+  "utmCampaign",
+  "referrer",
+  "landingPage",
+]);
+export const TrafficSourceSortByEnum = z.enum(["createdAt"]);

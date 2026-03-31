@@ -23,6 +23,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import OverviewStatCard from "@/components/dashboard/OverviewStatCard";
 import PageIntro from "@/components/dashboard/PageIntro";
 import {
   useAppointments,
@@ -33,7 +34,6 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -67,12 +67,6 @@ const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
 const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
 });
-
-const STAT_ACCENTS = {
-  default: "bg-primary/10 text-primary",
-  success: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  warning: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-} as const;
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -120,78 +114,6 @@ const titleCase = (value: string) =>
     .replace(/^./, (char) => char.toUpperCase());
 
 const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
-
-const buildSparkline = (values: number[]) =>
-  values.length ? values : [0, 0, 0, 0, 0, 0, 0];
-
-function DoctorStatCard({
-  label,
-  value,
-  helper,
-  badge,
-  trendLabel,
-  bars,
-  icon: Icon,
-  tone = "default",
-}: {
-  label: string;
-  value: string | number;
-  helper: string;
-  badge: string;
-  trendLabel: string;
-  bars: number[];
-  icon: typeof ShieldCheck;
-  tone?: keyof typeof STAT_ACCENTS;
-}) {
-  const normalizedBars = buildSparkline(bars);
-  const maxBarValue = Math.max(...normalizedBars, 0);
-
-  return (
-    <Card className="overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/30 shadow-sm">
-      <CardHeader className="gap-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
-            <span
-              className={`flex size-11 items-center justify-center rounded-2xl ${STAT_ACCENTS[tone]}`}
-            >
-              <Icon className="size-5" />
-            </span>
-            <div>
-              <CardDescription>{label}</CardDescription>
-              <CardTitle className="mt-2 text-3xl font-semibold tracking-tight">
-                {value}
-              </CardTitle>
-            </div>
-          </div>
-          <CardAction>
-            <Badge variant="secondary" className={STAT_ACCENTS[tone]}>
-              {badge}
-            </Badge>
-          </CardAction>
-        </div>
-      </CardHeader>
-      <CardFooter className="items-end justify-between gap-4 border-t border-border/50 pt-4">
-        <div className="space-y-1.5">
-          <div className="text-sm font-medium">{trendLabel}</div>
-          <p className="max-w-56 text-sm text-muted-foreground">{helper}</p>
-        </div>
-        <div className="flex h-14 items-end gap-1.5">
-          {normalizedBars.map((bar, index) => (
-            <span
-              key={`${label}-${index}`}
-              className="w-2 rounded-full"
-              style={{
-                height: `${maxBarValue > 0 ? Math.max(18, Math.round((bar / maxBarValue) * 52)) : 22}px`,
-                background:
-                  "linear-gradient(180deg, rgba(59,130,246,0.88) 0%, rgba(59,130,246,0.18) 100%)",
-              }}
-            />
-          ))}
-        </div>
-      </CardFooter>
-    </Card>
-  );
-}
 
 export default function DoctorOverviewPage() {
   const doctorQuery = useMyDoctorProfile();
@@ -347,7 +269,7 @@ export default function DoctorOverviewPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <DoctorStatCard
+        <OverviewStatCard
           label="Verification"
           value={titleCase(doctor?.verificationStatus ?? "pending")}
           helper="Current admin review state for your doctor profile."
@@ -357,7 +279,7 @@ export default function DoctorOverviewPage() {
           icon={ShieldCheck}
           tone={doctor?.verificationStatus === "verified" ? "success" : "warning"}
         />
-        <DoctorStatCard
+        <OverviewStatCard
           label="Booking access"
           value={doctor?.isAvailable ? "Open" : "Paused"}
           helper="Controls whether new patients can book from your profile."
@@ -367,7 +289,7 @@ export default function DoctorOverviewPage() {
           icon={Clock3}
           tone={doctor?.isAvailable ? "success" : "warning"}
         />
-        <DoctorStatCard
+        <OverviewStatCard
           label="Upcoming visits"
           value={compactNumberFormatter.format(activeAppointments.length)}
           helper="Future consultations currently assigned to your account."
@@ -376,7 +298,7 @@ export default function DoctorOverviewPage() {
           bars={appointmentWindowData.map((item) => item.appointments)}
           icon={CalendarRange}
         />
-        <DoctorStatCard
+        <OverviewStatCard
           label="Captured earnings"
           value={currencyFormatter.format(earnings)}
           helper="Succeeded appointment payments visible in your role scope."
@@ -653,4 +575,6 @@ export default function DoctorOverviewPage() {
     </div>
   );
 }
+
+
 

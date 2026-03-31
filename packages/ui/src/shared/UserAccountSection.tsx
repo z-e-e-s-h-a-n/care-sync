@@ -12,13 +12,7 @@ import {
   requestUpdateIdentifier,
   updateMfa,
 } from "@workspace/sdk/auth";
-import { Form } from "@workspace/ui/components/form";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Form, FormSection } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import { InputField } from "@workspace/ui/components/input-field";
 import OtpModal, { type OtpMeta } from "@workspace/ui/components/otp-modal";
@@ -157,326 +151,66 @@ const AccountSection = ({ user }: AccountSectionProps) => {
   }, [otpMeta?.token, otpMeta?.valid, refetchUser]);
 
   return (
-    <Form form={form} className="space-y-6">
+    <Form form={form}>
       {/* Account Identifiers Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <FormSection
+        title={
+          <span className="flex items-center gap-2">
             <Smartphone className="size-5" />
             Account Identifiers
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Email Section */}
-          <div className="space-y-4 p-4 rounded-lg border">
-            <div className="flex items-center flex-wrap justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <Mail className="size-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Email Address</p>
-                  {user.email ? (
-                    <>
-                      <p className="text-muted-foreground text-sm">
-                        {user.email}
-                      </p>
-                      <p className="text-xs mt-1">
-                        Status:{" "}
-                        <span
-                          className={
-                            user.isEmailVerified
-                              ? "text-green-600"
-                              : "text-amber-600"
-                          }
-                        >
-                          {user.isEmailVerified ? "Verified" : "Unverified"}
-                        </span>
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">
-                      No email added
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleOpen("updateIdentifier", "email")}
-                disabled={isLoading}
-              >
-                {user.email ? "Change Email" : "Add Email"}
-              </Button>
-            </div>
-
-            {otpMeta?.valid &&
-              otpPurpose === "updateIdentifier" &&
-              identifierType === "email" && (
-                <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                  <InputField
-                    form={form}
-                    name="newIdentifier"
-                    label={user.email ? "New Email" : "Email Address"}
-                    type="email"
-                    placeholder="Enter email address"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      className="w-full sm:w-auto"
-                      disabled={isLoading}
-                    >
-                      {user.email ? "Change Email" : "Verify Email"}
-                      {isLoading && <Loader2 className="animate-spin" />}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setOtpMeta(undefined);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-          </div>
-
-          {/* Phone Section */}
-          <div className="space-y-4 p-4 rounded-lg border">
-            <div className="flex items-center flex-wrap justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <Phone className="size-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Phone Number</p>
-                  {user.phone ? (
-                    <>
-                      <p className="text-muted-foreground text-sm">
-                        {user.phone}
-                      </p>
-                      <p className="text-xs mt-1">
-                        Status:{" "}
-                        <span
-                          className={
-                            user.isPhoneVerified
-                              ? "text-green-600"
-                              : "text-amber-600"
-                          }
-                        >
-                          {user.isPhoneVerified ? "Verified" : "Unverified"}
-                        </span>
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">
-                      No phone number added
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleOpen("updateIdentifier", "phone")}
-                disabled={isLoading}
-              >
-                {user.phone ? "Change Phone" : "Add Phone"}
-              </Button>
-            </div>
-
-            {otpMeta?.valid &&
-              otpPurpose === "updateIdentifier" &&
-              identifierType === "phone" && (
-                <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                  <InputField
-                    form={form}
-                    name="newIdentifier"
-                    label={user.phone ? "New Phone Number" : "Phone Number"}
-                    type="tel"
-                    placeholder="Enter phone number"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      className="w-full sm:w-auto"
-                      disabled={isLoading}
-                    >
-                      {user.phone ? "Change Phone" : "Verify Phone"}
-                      {isLoading && <Loader2 className="animate-spin" />}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setOtpMeta(undefined);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-          </div>
-
-          {/* Primary Identifier Info */}
-          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Current login method:</strong>{" "}
-              {primaryIdentifierType === "email" ? "Email" : "Phone number"}
-              <br />
-              <span className="text-xs">
-                You can add both email and phone for additional security and
-                recovery options.
-              </span>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security Settings Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="size-5" />
-            Security Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Multi-Factor Authentication */}
-          <div className="space-y-4">
-            {/* MFA Status */}
-            <div className="flex items-center justify-between p-4 rounded-lg border">
-              <div className="space-y-1">
-                <p className="font-medium">Multi-Factor Authentication</p>
-                <div className="text-sm text-muted-foreground">
-                  {user.preferredMfa ? (
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={getStatusVariant("verified")}
-                        className="text-green-700 bg-green-700/30"
-                      >
-                        Enabled
-                      </Badge>
-                      <Badge variant="secondary">
-                        {user.preferredMfa === "email" && <Mail />}
-                        {user.preferredMfa === "sms" && <Phone />}
-                        {user.preferredMfa === "whatsapp" && <Phone />}
-                        {user.preferredMfa === "authApp" && <Shield />}
-                        {user.preferredMfa}
-                      </Badge>
-                    </div>
-                  ) : (
-                    <span>Disabled</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                {user.preferredMfa ? (
+          </span>
+        }
+        className="md:grid-cols-1"
+      >
+        {/* Email Section */}
+        <div className="space-y-4 p-4 rounded-lg border">
+          <div className="flex items-center flex-wrap justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Mail className="size-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Email Address</p>
+                {user.email ? (
                   <>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleOpen("updateMfa")}
-                    >
-                      Change Method
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleOpen("disableMfa")}
-                    >
-                      Disable
-                    </Button>
+                    <p className="text-muted-foreground text-sm">
+                      {user.email}
+                    </p>
+                    <p className="text-xs mt-1">
+                      Status:{" "}
+                      <Badge
+                        variant={user.isPhoneVerified ? "success" : "warning"}
+                        className="opacity-80"
+                      >
+                        {user.isEmailVerified ? "Verified" : "Unverified"}
+                      </Badge>
+                    </p>
                   </>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleOpen("enableMfa")}
-                    disabled={isLoading}
-                  >
-                    Enable MFA
-                  </Button>
+                  <p className="text-muted-foreground text-sm">
+                    No email added
+                  </p>
                 )}
               </div>
             </div>
-
-            {otpMeta?.valid && otpPurpose === "updateMfa" && (
-              <div className="space-y-4 p-4 border rounded-lg">
-                <SelectField
-                  form={form}
-                  name="preferredMfa"
-                  label="Select MFA Method"
-                  options={MfaMethodEnum.options.filter(
-                    (m) => m !== user.preferredMfa,
-                  )}
-                />
-
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={isLoading}>
-                    Save MFA Settings
-                    {isLoading && <Loader2 className="animate-spin" />}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setOtpMeta(undefined);
-                      setOtpPurpose(undefined);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleOpen("updateIdentifier", "email")}
+              disabled={isLoading}
+            >
+              {user.email ? "Change Email" : "Add Email"}
+            </Button>
           </div>
 
-          {/* Password Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-              <div>
-                <p className="font-medium">Password</p>
-                <p className="text-muted-foreground text-sm">
-                  Last changed: {new Date(user.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleOpen("updatePassword")}
-                disabled={isLoading}
-              >
-                Change Password
-              </Button>
-            </div>
-
-            {otpMeta?.valid && otpPurpose === "updatePassword" && (
-              <div className="space-y-4 p-4 border rounded-lg">
+          {otpMeta?.valid &&
+            otpPurpose === "updateIdentifier" &&
+            identifierType === "email" && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
                 <InputField
                   form={form}
-                  name="newPassword"
-                  label="New Password"
-                  type="password"
-                  placeholder="Enter new password"
-                />
-                <InputField
-                  form={form}
-                  name="confirmPassword"
-                  label="Confirm Password"
-                  type="password"
-                  placeholder="Confirm new password"
-                  validators={{
-                    onChangeListenTo: ["newPassword"],
-                    onChange: ({ value, fieldApi }) =>
-                      value !== fieldApi.form.getFieldValue("newPassword")
-                        ? { message: "Passwords do not match" }
-                        : undefined,
-                  }}
+                  name="newIdentifier"
+                  label={user.email ? "New Email" : "Email Address"}
+                  type="email"
+                  placeholder="Enter email address"
                 />
                 <div className="flex gap-2">
                   <Button
@@ -484,7 +218,7 @@ const AccountSection = ({ user }: AccountSectionProps) => {
                     className="w-full sm:w-auto"
                     disabled={isLoading}
                   >
-                    Update Password
+                    {user.email ? "Change Email" : "Verify Email"}
                     {isLoading && <Loader2 className="animate-spin" />}
                   </Button>
                   <Button
@@ -492,7 +226,6 @@ const AccountSection = ({ user }: AccountSectionProps) => {
                     variant="outline"
                     onClick={() => {
                       setOtpMeta(undefined);
-                      setOtpPurpose(undefined);
                     }}
                   >
                     Cancel
@@ -500,9 +233,261 @@ const AccountSection = ({ user }: AccountSectionProps) => {
                 </div>
               </div>
             )}
+        </div>
+
+        {/* Phone Section */}
+        <div className="space-y-4 p-4 rounded-lg border">
+          <div className="flex items-center flex-wrap justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Phone className="size-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Phone Number</p>
+                {user.phone ? (
+                  <>
+                    <p className="text-muted-foreground text-sm">
+                      {user.phone}
+                    </p>
+                    <p className="text-xs mt-1">
+                      Status:{" "}
+                      <Badge
+                        variant={user.isPhoneVerified ? "success" : "warning"}
+                        className="opacity-80"
+                      >
+                        {user.isPhoneVerified ? "Verified" : "Unverified"}
+                      </Badge>
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No phone number added
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleOpen("updateIdentifier", "phone")}
+              disabled={isLoading}
+            >
+              {user.phone ? "Change Phone" : "Add Phone"}
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+
+          {otpMeta?.valid &&
+            otpPurpose === "updateIdentifier" &&
+            identifierType === "phone" && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <InputField
+                  form={form}
+                  name="newIdentifier"
+                  label={user.phone ? "New Phone Number" : "Phone Number"}
+                  type="tel"
+                  placeholder="Enter phone number"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    className="w-full sm:w-auto"
+                    disabled={isLoading}
+                  >
+                    {user.phone ? "Change Phone" : "Verify Phone"}
+                    {isLoading && <Loader2 className="animate-spin" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setOtpMeta(undefined);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+        </div>
+
+        {/* Primary Identifier Info */}
+        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            <strong>Current login method:</strong>{" "}
+            {primaryIdentifierType === "email" ? "Email" : "Phone number"}
+            <br />
+            <span className="text-xs">
+              You can add both email and phone for additional security and
+              recovery options.
+            </span>
+          </p>
+        </div>
+      </FormSection>
+
+      {/* Security Settings Section */}
+      <FormSection
+        title={
+          <span className="flex items-center gap-2">
+            <Shield className="size-5" />
+            Security Settings
+          </span>
+        }
+        className="md:grid-cols-1"
+      >
+        {/* Multi-Factor Authentication */}
+        <div className="space-y-4">
+          {/* MFA Status */}
+          <div className="flex items-center justify-between p-4 rounded-lg border">
+            <div className="space-y-1">
+              <p className="font-medium">Multi-Factor Authentication</p>
+              <div className="text-sm text-muted-foreground">
+                {user.preferredMfa ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getStatusVariant("verified")}>
+                      Enabled
+                    </Badge>
+                    <Badge variant="secondary">
+                      {user.preferredMfa === "email" && <Mail />}
+                      {user.preferredMfa === "sms" && <Phone />}
+                      {user.preferredMfa === "whatsapp" && <Phone />}
+                      {user.preferredMfa === "authApp" && <Shield />}
+                      {user.preferredMfa}
+                    </Badge>
+                  </div>
+                ) : (
+                  <span>Disabled</span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              {user.preferredMfa ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleOpen("updateMfa")}
+                  >
+                    Change Method
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleOpen("disableMfa")}
+                  >
+                    Disable
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleOpen("enableMfa")}
+                  disabled={isLoading}
+                >
+                  Enable MFA
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {otpMeta?.valid && otpPurpose === "updateMfa" && (
+            <div className="space-y-4 p-4 border rounded-lg">
+              <SelectField
+                form={form}
+                name="preferredMfa"
+                label="Select MFA Method"
+                options={MfaMethodEnum.options.filter(
+                  (m) => m !== user.preferredMfa,
+                )}
+              />
+
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isLoading}>
+                  Save MFA Settings
+                  {isLoading && <Loader2 className="animate-spin" />}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOtpMeta(undefined);
+                    setOtpPurpose(undefined);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Password Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+            <div>
+              <p className="font-medium">Password</p>
+              <p className="text-muted-foreground text-sm">
+                Last changed: {new Date(user.updatedAt).toLocaleDateString()}
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleOpen("updatePassword")}
+              disabled={isLoading}
+            >
+              Change Password
+            </Button>
+          </div>
+
+          {otpMeta?.valid && otpPurpose === "updatePassword" && (
+            <div className="space-y-4 p-4 border rounded-lg">
+              <InputField
+                form={form}
+                name="newPassword"
+                label="New Password"
+                type="password"
+                placeholder="Enter new password"
+              />
+              <InputField
+                form={form}
+                name="confirmPassword"
+                label="Confirm Password"
+                type="password"
+                placeholder="Confirm new password"
+                validators={{
+                  onChangeListenTo: ["newPassword"],
+                  onChange: ({ value, fieldApi }) =>
+                    value !== fieldApi.form.getFieldValue("newPassword")
+                      ? { message: "Passwords do not match" }
+                      : undefined,
+                }}
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto"
+                  disabled={isLoading}
+                >
+                  Update Password
+                  {isLoading && <Loader2 className="animate-spin" />}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOtpMeta(undefined);
+                    setOtpPurpose(undefined);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </FormSection>
 
       {/* User Sessions */}
       <UserSessions />

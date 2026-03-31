@@ -3,7 +3,6 @@ import type { PatientProfile } from "@workspace/db/browser";
 import type { patientProfileSchema, patientQuerySchema } from "./schema";
 import type { BaseQueryResponse, Sanitize } from "../lib/types";
 import type { UserResponse } from "../user/types";
-import type { BranchResponse } from "../branch/types";
 import type { MediaResponse } from "../media/types";
 
 export type PatientProfileType = z.input<typeof patientProfileSchema>;
@@ -12,7 +11,6 @@ export type PatientQueryType = z.input<typeof patientQuerySchema>;
 
 export type PatientProfileResponse = Sanitize<PatientProfile> & {
   user: UserResponse;
-  preferredBranch?: BranchResponse;
   identificationDocument?: MediaResponse;
 };
 

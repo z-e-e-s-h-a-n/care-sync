@@ -1,11 +1,5 @@
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import StatCard from "@workspace/ui/shared/StatCard";
 
 interface MetricCardProps {
   label: string;
@@ -27,22 +21,17 @@ const MetricCard = ({
   tone = "default",
 }: MetricCardProps) => {
   return (
-    <Card className="border-border/60 shadow-sm">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardDescription>{label}</CardDescription>
-          <CardTitle className="mt-2 text-3xl font-semibold tracking-tight">
-            {value}
-          </CardTitle>
-        </div>
+    <StatCard
+      label={label}
+      value={value}
+      helper={helper}
+      className="border-border/60 shadow-sm"
+      action={
         <Badge variant="secondary" className={toneClassMap[tone]}>
           Live
         </Badge>
-      </CardHeader>
-      <CardContent className="pt-0 text-sm text-muted-foreground">
-        {helper}
-      </CardContent>
-    </Card>
+      }
+    />
   );
 };
 

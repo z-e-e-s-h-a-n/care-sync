@@ -7,7 +7,7 @@ import type {
 } from "./schema";
 import type { BaseQueryResponse, Sanitize } from "../lib/types";
 import type { UserResponse } from "../user/types";
-import type { BranchResponse } from "../branch/types";
+import type { BranchResponse } from "../business/types";
 import type { MediaResponse } from "../media/types";
 
 export type DoctorProfileType = z.input<typeof doctorProfileSchema>;
@@ -20,7 +20,6 @@ export type DoctorProfileResponse = Sanitize<DoctorProfile> & {
   branch: BranchResponse;
   createdBy?: UserResponse;
   verifiedBy?: UserResponse;
-  identificationDocument?: MediaResponse;
   licenseDocument?: MediaResponse;
 };
 

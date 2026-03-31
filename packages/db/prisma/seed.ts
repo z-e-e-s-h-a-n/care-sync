@@ -5,6 +5,7 @@ import {
   AppointmentCancellationSource,
   AppointmentChannel,
   AppointmentStatus,
+  BookingSource,
   CampaignAudience,
   CampaignStatus,
   ConversationStatus,
@@ -24,6 +25,7 @@ import {
   PrismaClient,
   RefundStatus,
   ShipmentStatus,
+  ThemeMode,
   UserRole,
   UserStatus,
   Weekday,
@@ -54,6 +56,7 @@ const hoursAfter = (date: Date, hours: number, minutes = 0) =>
 async function clearDatabase() {
   console.log("Clearing existing seed data...");
 
+  // Delete in order of dependencies
   await prisma.messageAttachment.deleteMany();
   await prisma.message.deleteMany();
   await prisma.conversation.deleteMany();
@@ -78,38 +81,16 @@ async function clearDatabase() {
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
   await prisma.media.deleteMany();
+  await prisma.branchTiming.deleteMany();
   await prisma.branch.deleteMany();
+  await prisma.businessProfile.deleteMany();
   await prisma.user.deleteMany();
 }
 
 async function seedFoundation() {
-  console.log("Seeding branches, and users...");
+  console.log("Seeding users...");
 
   const hashedPassword = await argon2.hash(DEFAULT_PASSWORD);
-
-  const downtownBranch = await prisma.branch.create({
-    data: {
-      name: "Downtown Branch",
-      slug: "downtown",
-      email: "downtown@caresync.test",
-      phone: "+923001110001",
-      address: "12 Main Boulevard, Downtown",
-      timezone: DEFAULT_TIMEZONE,
-      isActive: true,
-    },
-  });
-
-  const northBranch = await prisma.branch.create({
-    data: {
-      name: "North Branch",
-      slug: "north",
-      email: "north@caresync.test",
-      phone: "+923001110002",
-      address: "44 North Avenue, City Center",
-      timezone: DEFAULT_TIMEZONE,
-      isActive: true,
-    },
-  });
 
   const admin = await prisma.user.create({
     data: {
@@ -123,6 +104,7 @@ async function seedFoundation() {
       status: UserStatus.active,
       isEmailVerified: true,
       isPhoneVerified: true,
+      preferredTheme: ThemeMode.system,
       pushNotifications: true,
       loginAlerts: true,
     },
@@ -222,8 +204,6 @@ async function seedFoundation() {
   });
 
   return {
-    downtownBranch,
-    northBranch,
     admin,
     doctorUser1,
     doctorUser2,
@@ -418,9 +398,55 @@ async function seedMedia(users: Awaited<ReturnType<typeof seedFoundation>>) {
     },
   });
 
+  // Business media
+  const businessLogo = await prisma.media.create({
+    data: {
+      uploadedById: users.admin.id,
+      publicId: "seed/business-logo",
+      url: "https://images.example.com/business-logo.png",
+      mimeType: "image/png",
+      resourceType: "image",
+      size: 5120,
+      hash: "seed-business-logo-hash",
+      name: "business-logo.png",
+      type: MediaType.other,
+      visibility: MediaVisibility.public,
+    },
+  });
+
+  const businessFavicon = await prisma.media.create({
+    data: {
+      uploadedById: users.admin.id,
+      publicId: "seed/business-favicon",
+      url: "https://images.example.com/favicon.ico",
+      mimeType: "image/x-icon",
+      resourceType: "image",
+      size: 1520,
+      hash: "seed-business-favicon-hash",
+      name: "favicon.ico",
+      type: MediaType.other,
+      visibility: MediaVisibility.public,
+    },
+  });
+
+  const businessCover = await prisma.media.create({
+    data: {
+      uploadedById: users.admin.id,
+      publicId: "seed/business-cover",
+      url: "https://images.example.com/business-cover.jpg",
+      mimeType: "image/jpeg",
+      resourceType: "image",
+      size: 204800,
+      hash: "seed-business-cover-hash",
+      name: "business-cover.jpg",
+      type: MediaType.other,
+      visibility: MediaVisibility.public,
+    },
+  });
+
   await prisma.user.update({
     where: { id: users.admin.id },
-    data: { imageId: adminAvatar.id },
+    data: { avatarId: adminAvatar.id },
   });
 
   return {
@@ -436,19 +462,124 @@ async function seedMedia(users: Awaited<ReturnType<typeof seedFoundation>>) {
     prescriptionImage,
     vitaminImage,
     creamImage,
+    businessLogo,
+    businessFavicon,
+    businessCover,
   };
+}
+
+async function seedBusinessAndBranches(
+  users: Awaited<ReturnType<typeof seedFoundation>>,
+  media: Awaited<ReturnType<typeof seedMedia>>,
+) {
+  console.log("Seeding business profile and branches...");
+
+  const businessProfile = await prisma.businessProfile.create({
+    data: {
+      name: "CareSync Health",
+      legalName: "CareSync Healthcare Pvt Ltd",
+      description:
+        "Integrated healthcare platform connecting patients with doctors and pharmacy.",
+      faviconId: media.businessFavicon.id,
+      logoId: media.businessLogo.id,
+      coverId: media.businessCover.id,
+      email: "contact@caresync.test",
+      phone: "+923001110000",
+      whatsapp: "+923001110000",
+      website: "https://caresync.test",
+      facebook: "caresync",
+      instagram: "caresync",
+      tiktok: "caresync",
+      twitter: "caresync",
+      linkedin: "caresync",
+      metaTitle: "CareSync - Your Health Partner",
+      metaDescription:
+        "Connecting patients with trusted doctors and quality medications.",
+    },
+  });
+
+  const downtownBranch = await prisma.branch.create({
+    data: {
+      businessProfileId: businessProfile.id,
+      name: "Downtown Branch",
+      slug: "downtown",
+      email: "downtown@caresync.test",
+      phone: "+923001110001",
+      whatsapp: "+923001110001",
+      street: "12 Main Boulevard",
+      city: "Lahore",
+      state: "Punjab",
+      postalCode: "54000",
+      country: "Pakistan",
+      timezone: DEFAULT_TIMEZONE,
+      isActive: true,
+    },
+  });
+
+  const northBranch = await prisma.branch.create({
+    data: {
+      businessProfileId: businessProfile.id,
+      name: "North Branch",
+      slug: "north",
+      email: "north@caresync.test",
+      phone: "+923001110002",
+      whatsapp: "+923001110002",
+      street: "44 North Avenue",
+      city: "Lahore",
+      state: "Punjab",
+      postalCode: "54000",
+      country: "Pakistan",
+      timezone: DEFAULT_TIMEZONE,
+      isActive: true,
+    },
+  });
+
+  // Create branch timings for downtown (Mon-Fri 9-5)
+  const weekdays = [
+    Weekday.monday,
+    Weekday.tuesday,
+    Weekday.wednesday,
+    Weekday.thursday,
+    Weekday.friday,
+  ];
+  for (const weekday of weekdays) {
+    await prisma.branchTiming.create({
+      data: {
+        branchId: downtownBranch.id,
+        weekday,
+        openTime: "09:00",
+        closeTime: "17:00",
+        isClosed: false,
+      },
+    });
+  }
+
+  // North branch timings (Mon-Fri 10-6)
+  for (const weekday of weekdays) {
+    await prisma.branchTiming.create({
+      data: {
+        branchId: northBranch.id,
+        weekday,
+        openTime: "10:00",
+        closeTime: "18:00",
+        isClosed: false,
+      },
+    });
+  }
+
+  return { businessProfile, downtownBranch, northBranch };
 }
 
 async function seedProfiles(
   users: Awaited<ReturnType<typeof seedFoundation>>,
   media: Awaited<ReturnType<typeof seedMedia>>,
+  branches: Awaited<ReturnType<typeof seedBusinessAndBranches>>,
 ) {
   console.log("Seeding patient and doctor profiles...");
 
   const patient1 = await prisma.patientProfile.create({
     data: {
       userId: users.patientUser1.id,
-      preferredBranchId: users.downtownBranch.id,
       identificationDocumentId: media.patient1IdDoc.id,
       birthDate: new Date("1992-04-12"),
       gender: Gender.female,
@@ -470,7 +601,6 @@ async function seedProfiles(
   const patient2 = await prisma.patientProfile.create({
     data: {
       userId: users.patientUser2.id,
-      preferredBranchId: users.northBranch.id,
       identificationDocumentId: media.patient2IdDoc.id,
       birthDate: new Date("1987-09-03"),
       gender: Gender.male,
@@ -492,18 +622,18 @@ async function seedProfiles(
   const patient3 = await prisma.patientProfile.create({
     data: {
       userId: users.patientUser3.id,
-      preferredBranchId: users.downtownBranch.id,
       address: "Unfinished profile testing user",
+      birthDate: new Date("2000-09-03"),
+      gender: Gender.female,
     },
   });
 
   const doctor1 = await prisma.doctorProfile.create({
     data: {
       userId: users.doctorUser1.id,
-      branchId: users.downtownBranch.id,
+      branchId: branches.downtownBranch.id,
       createdById: users.admin.id,
       verifiedById: users.admin.id,
-      identificationDocumentId: media.doctor1IdDoc.id,
       licenseDocumentId: media.doctor1LicenseDoc.id,
       slug: "dr-john-smith",
       title: "Dr.",
@@ -517,8 +647,6 @@ async function seedProfiles(
       languages: ["English", "Urdu"],
       consultationFee: 8500,
       commissionPercent: 12.5,
-      identificationType: IdentificationType.passport,
-      identificationNumber: "DOC-SMITH-01",
       verificationStatus: DoctorVerificationStatus.verified,
       verifiedAt: new Date(),
       isAvailable: true,
@@ -528,10 +656,9 @@ async function seedProfiles(
   const doctor2 = await prisma.doctorProfile.create({
     data: {
       userId: users.doctorUser2.id,
-      branchId: users.northBranch.id,
+      branchId: branches.northBranch.id,
       createdById: users.admin.id,
       verifiedById: users.admin.id,
-      identificationDocumentId: media.doctor2IdDoc.id,
       licenseDocumentId: media.doctor2LicenseDoc.id,
       slug: "dr-emily-jones",
       title: "Dr.",
@@ -545,8 +672,6 @@ async function seedProfiles(
       languages: ["English", "Urdu"],
       consultationFee: 7000,
       commissionPercent: 10,
-      identificationType: IdentificationType.driversLicense,
-      identificationNumber: "DL-JONES-77",
       verificationStatus: DoctorVerificationStatus.verified,
       verifiedAt: new Date(),
       isAvailable: true,
@@ -556,12 +681,12 @@ async function seedProfiles(
   const doctor3 = await prisma.doctorProfile.create({
     data: {
       userId: users.doctorUser3.id,
-      branchId: users.downtownBranch.id,
+      branchId: branches.downtownBranch.id,
       createdById: users.doctorUser3.id,
-      identificationDocumentId: media.doctor3IdDoc.id,
       licenseDocumentId: media.doctor3LicenseDoc.id,
       title: "Dr.",
       specialty: "General Medicine",
+      slug: users.doctorUser3.displayName,
       bio: "Pending verification doctor for admin workflow testing.",
       licenseNumber: "DOC-GEN-3001",
       yearsExperience: 4,
@@ -570,8 +695,6 @@ async function seedProfiles(
       languages: ["English", "Urdu"],
       consultationFee: 5000,
       commissionPercent: 12.5,
-      identificationType: IdentificationType.nationalId,
-      identificationNumber: "42101-1111111-3",
       verificationStatus: DoctorVerificationStatus.pending,
       isAvailable: false,
     },
@@ -630,6 +753,7 @@ async function seedAvailability(
 async function seedAppointments(
   foundation: Awaited<ReturnType<typeof seedFoundation>>,
   profiles: Awaited<ReturnType<typeof seedProfiles>>,
+  branches: Awaited<ReturnType<typeof seedBusinessAndBranches>>,
 ) {
   console.log("Seeding appointments...");
 
@@ -641,12 +765,12 @@ async function seedAppointments(
   const appointment1 = await prisma.appointment.create({
     data: {
       appointmentNumber: "APT-1001",
-      branchId: foundation.downtownBranch.id,
+      branchId: branches.downtownBranch.id,
       patientId: profiles.patient1.id,
       doctorId: profiles.doctor1.id,
       createdById: foundation.patientUser1.id,
       status: AppointmentStatus.booked,
-      bookingSource: "app",
+      bookingSource: BookingSource.app,
       channel: AppointmentChannel.inPerson,
       paymentStatus: PaymentStatus.pending,
       scheduledStartAt: bookedStart,
@@ -659,12 +783,12 @@ async function seedAppointments(
   const appointment2 = await prisma.appointment.create({
     data: {
       appointmentNumber: "APT-1002",
-      branchId: foundation.northBranch.id,
+      branchId: branches.northBranch.id,
       patientId: profiles.patient2.id,
       doctorId: profiles.doctor2.id,
       createdById: foundation.admin.id,
       status: AppointmentStatus.confirmed,
-      bookingSource: "admin",
+      bookingSource: BookingSource.admin,
       channel: AppointmentChannel.inPerson,
       paymentStatus: PaymentStatus.succeeded,
       scheduledStartAt: confirmedStart,
@@ -679,12 +803,12 @@ async function seedAppointments(
   const appointment3 = await prisma.appointment.create({
     data: {
       appointmentNumber: "APT-1003",
-      branchId: foundation.northBranch.id,
+      branchId: branches.northBranch.id,
       patientId: profiles.patient1.id,
       doctorId: profiles.doctor2.id,
       createdById: foundation.patientUser1.id,
       status: AppointmentStatus.completed,
-      bookingSource: "app",
+      bookingSource: BookingSource.app,
       channel: AppointmentChannel.virtual,
       paymentStatus: PaymentStatus.refunded,
       scheduledStartAt: completedStart,
@@ -701,13 +825,13 @@ async function seedAppointments(
   const appointment4 = await prisma.appointment.create({
     data: {
       appointmentNumber: "APT-1004",
-      branchId: foundation.downtownBranch.id,
+      branchId: branches.downtownBranch.id,
       patientId: profiles.patient2.id,
       doctorId: profiles.doctor1.id,
       createdById: foundation.patientUser2.id,
       status: AppointmentStatus.cancelled,
       cancellationSource: AppointmentCancellationSource.patient,
-      bookingSource: "app",
+      bookingSource: BookingSource.app,
       channel: AppointmentChannel.inPerson,
       paymentStatus: PaymentStatus.failed,
       scheduledStartAt: cancelledStart,
@@ -728,12 +852,13 @@ async function seedConversations(
   profiles: Awaited<ReturnType<typeof seedProfiles>>,
   appointments: Awaited<ReturnType<typeof seedAppointments>>,
   media: Awaited<ReturnType<typeof seedMedia>>,
+  branches: Awaited<ReturnType<typeof seedBusinessAndBranches>>,
 ) {
   console.log("Seeding conversations and messages...");
 
   const appointmentConversation = await prisma.conversation.create({
     data: {
-      branchId: foundation.downtownBranch.id,
+      branchId: branches.downtownBranch.id,
       patientId: profiles.patient1.id,
       appointmentId: appointments.appointment1.id,
       assignedToId: foundation.doctorUser1.id,
@@ -769,7 +894,7 @@ async function seedConversations(
 
   const supportConversation = await prisma.conversation.create({
     data: {
-      branchId: foundation.northBranch.id,
+      branchId: branches.northBranch.id,
       patientId: profiles.patient2.id,
       assignedToId: foundation.admin.id,
       type: ConversationType.support,
@@ -1027,7 +1152,7 @@ async function seedNotifications(
       subject: "Stay healthy this month",
       message:
         "Hydration, sleep, and medication timing matter. Contact us if you need guidance.",
-      channel: NotificationChannel.email,
+      channel: NotificationChannel.email, // single enum
       audience: CampaignAudience.patients,
       status: CampaignStatus.sent,
       sentAt: new Date(),
@@ -1114,10 +1239,17 @@ async function main() {
 
     const foundation = await seedFoundation();
     const media = await seedMedia(foundation);
-    const profiles = await seedProfiles(foundation, media);
+    const branches = await seedBusinessAndBranches(foundation, media);
+    const profiles = await seedProfiles(foundation, media, branches);
     await seedAvailability(profiles);
-    const appointments = await seedAppointments(foundation, profiles);
-    await seedConversations(foundation, profiles, appointments, media);
+    const appointments = await seedAppointments(foundation, profiles, branches);
+    await seedConversations(
+      foundation,
+      profiles,
+      appointments,
+      media,
+      branches,
+    );
     const commerce = await seedCommerce(foundation, profiles, media);
     await seedPayments(foundation, appointments, commerce);
     await seedNotifications(foundation);

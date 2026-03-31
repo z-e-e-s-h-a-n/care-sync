@@ -23,11 +23,6 @@ import type {
   SendMessageType,
 } from "@workspace/contracts/chat";
 import type {
-  BranchResponse,
-  BranchType,
-  BranchQueryType,
-} from "@workspace/contracts/branch";
-import type {
   DoctorQueryType,
   DoctorProfileResponse,
   ReviewDoctorType,
@@ -48,7 +43,6 @@ import * as appointment from "@workspace/sdk/appointment";
 import * as availability from "@workspace/sdk/availability";
 import * as campaign from "@workspace/sdk/campaign";
 import * as chat from "@workspace/sdk/chat";
-import * as branch from "@workspace/sdk/branch";
 import * as doctor from "@workspace/sdk/doctor";
 import * as patient from "@workspace/sdk/patient";
 import * as payment from "@workspace/sdk/payment";
@@ -238,40 +232,6 @@ export function useCreateAppointment() {
   };
 }
 
-export function useBranches(params?: BranchQueryType) {
-  const query = useQuery({
-    queryKey: ["branches", params],
-    queryFn: () => branch.listBranches(params),
-    select: (res) => res.data,
-    placeholderData: (prev) => prev,
-    ...queryDefaults,
-  });
-
-  return {
-    data: query.data,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    fetchError: query.error as ApiException | null,
-  };
-}
-
-export function useBranch(id?: string) {
-  const query = useQuery({
-    queryKey: ["branch", id],
-    queryFn: () => branch.getBranch(id!),
-    select: (res) => res.data as BranchResponse,
-    enabled: Boolean(id),
-    ...queryDefaults,
-  });
-
-  return {
-    data: query.data,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    fetchError: query.error as ApiException | null,
-  };
-}
-
 export function usePayments(params: PaymentQueryType) {
   const query = useQuery({
     queryKey: ["payments", params],
@@ -451,25 +411,6 @@ export function useVerifyDoctor(id?: string) {
 
   return {
     verifyDoctor: mutation.mutateAsync,
-    isPending: mutation.isPending,
-    error: mutation.error as ApiException | null,
-  };
-}
-
-export function useSaveBranch(id?: string) {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: (data: BranchType) =>
-      id ? branch.updateBranch(id, data) : branch.createBranch(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      queryClient.invalidateQueries({ queryKey: ["branch", id] });
-    },
-  });
-
-  return {
-    saveBranch: mutation.mutateAsync,
     isPending: mutation.isPending,
     error: mutation.error as ApiException | null,
   };

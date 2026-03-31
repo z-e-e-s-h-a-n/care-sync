@@ -1,0 +1,26 @@
+@use "sass:meta";
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
+
+@include meta.load-css("../tiptap-node/blockquote-node/blockquote-node.scss");
+@include meta.load-css("../tiptap-node/code-block-node/code-block-node.scss");
+@include meta.load-css("../tiptap-node/horizontal-rule-node/horizontal-rule-node.scss");
+@include meta.load-css("../tiptap-node/list-node/list-node.scss");
+@include meta.load-css("../tiptap-node/image-node/image-node.scss");
+@include meta.load-css("../tiptap-node/heading-node/heading-node.scss");
+@include meta.load-css("../tiptap-node/paragraph-node/paragraph-node.scss");
+
+.rich-content.tiptap.ProseMirror {
+  font-family: "DM Sans", sans-serif;
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+}

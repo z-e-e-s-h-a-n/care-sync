@@ -15,20 +15,25 @@ import {
 
 export const patientProfileSchema = z.object({
   userId: idSchema,
-  preferredBranchId: idSchema.optional(),
   identificationDocumentId: idSchema.optional(),
-  birthDate: isoDateSchema.optional(),
-  gender: GenderEnum.optional(),
+
+  birthDate: isoDateSchema,
+  gender: GenderEnum,
+
   address: nullableStringSchema,
   occupation: nullableStringSchema,
+
   emergencyContactName: nullableStringSchema,
   emergencyContactNumber: phoneSchema.optional(),
+
   insuranceProvider: nullableStringSchema,
   insurancePolicyNumber: nullableStringSchema,
+
   allergies: nullableStringSchema,
   currentMedication: nullableStringSchema,
   familyMedicalHistory: nullableStringSchema,
   pastMedicalHistory: nullableStringSchema,
+
   identificationType: IdentificationTypeEnum.optional(),
   identificationNumber: nullableStringSchema,
 });

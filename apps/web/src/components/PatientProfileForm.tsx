@@ -32,10 +32,9 @@ const formatLabel = (value: string) =>
 
 const defaultValues: PatientProfileType = {
   userId: "",
-  preferredBranchId: undefined,
   identificationDocumentId: undefined,
-  birthDate: undefined,
-  gender: undefined,
+  birthDate: "",
+  gender: "male",
   address: "",
   occupation: "",
   emergencyContactName: "",
@@ -85,7 +84,7 @@ const PatientProfileForm = () => {
   if (isLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form} className="space-y-6">
+    <Form form={form}>
       <FormSection
         title="Personal Information"
         description="Personal details, demographics, address, and emergency contacts."

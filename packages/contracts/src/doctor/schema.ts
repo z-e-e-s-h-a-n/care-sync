@@ -3,7 +3,6 @@ import {
   DoctorVerificationStatusEnum,
   DoctorSearchByEnum,
   DoctorSortByEnum,
-  IdentificationTypeEnum,
 } from "../lib/enums";
 import {
   baseQuerySchema,
@@ -17,20 +16,20 @@ export const doctorProfileSchema = z.object({
   userId: idSchema,
   branchId: idSchema,
   createdById: idSchema.optional(),
-  slug: slugSchema.optional(),
-  title: nullableStringSchema,
-  specialty: z.string().min(2).optional(),
+  licenseDocumentId: idSchema.optional(),
+
+  slug: slugSchema,
+  title: z.string().min(2),
+  specialty: z.string().min(2),
   bio: nullableStringSchema,
-  licenseNumber: nullableStringSchema,
-  yearsExperience: z.coerce.number().int().min(0).optional(),
+
+  licenseNumber: z.string().min(2),
+  yearsExperience: numberSchema.optional(),
   education: nullableStringSchema,
   qualifications: nullableStringSchema,
   languages: z.array(z.string().min(2)).default([]),
-  identificationType: IdentificationTypeEnum.optional(),
-  identificationNumber: nullableStringSchema,
-  identificationDocumentId: idSchema.optional(),
-  licenseDocumentId: idSchema.optional(),
-  consultationFee: numberSchema.optional(),
+
+  consultationFee: numberSchema,
   commissionPercent: numberSchema.optional(),
   isAvailable: z.boolean().default(true),
 });

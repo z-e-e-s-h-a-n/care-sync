@@ -28,18 +28,17 @@ import {
 import { useAdminUsers } from "@/hooks/admin";
 import CUUserForm from "@/components/forms/CUUserForm";
 import { MediaField } from "@workspace/ui/media/mediaField";
-import CUFormSkeleton from "@/components/skeleton/CUFormSkeleton";
-import { useBranches, usePatient, useSavePatient } from "@/hooks/healthcare";
+import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
+import { usePatient, useSavePatient } from "@/hooks/healthcare";
 
 const formatLabel = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
 
 const defaultValues: PatientProfileType = {
   userId: "",
-  preferredBranchId: undefined,
   identificationDocumentId: undefined,
-  birthDate: undefined,
-  gender: undefined,
+  birthDate: "",
+  gender: "male",
   address: "",
   occupation: "",
   emergencyContactName: "",
@@ -94,7 +93,6 @@ const PatientForm = ({ entityId, formType }: BaseCUFormProps) => {
 
     form.reset({
       userId: patientQuery.data.userId,
-      preferredBranchId: patientQuery.data.preferredBranchId ?? undefined,
       identificationDocumentId:
         patientQuery.data.identificationDocumentId ?? undefined,
       birthDate: patientQuery.data.birthDate ?? undefined,
@@ -117,7 +115,7 @@ const PatientForm = ({ entityId, formType }: BaseCUFormProps) => {
   if (patientQuery.isLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form} className="space-y-6">
+    <Form form={form}>
       <div className="space-y-1">
         <h2 className="text-2xl font-semibold tracking-tight">
           {formType === "add" ? "Create Patient" : "Update Patient"}
@@ -171,34 +169,6 @@ const PatientForm = ({ entityId, formType }: BaseCUFormProps) => {
               onSuccess={(user) => select(user.id)}
             />
           )}
-        />
-        <ComboboxField
-          form={form}
-          name="preferredBranchId"
-          label="Preferred Branch"
-          placeholder="Choose a preferred branch"
-          dataKey="branches"
-          useQuery={useBranches}
-          queryArgs={{
-            page: 1,
-            limit: 100,
-            sortBy: "name",
-            sortOrder: "asc",
-            searchBy: "name",
-          }}
-          getOption={(branch) => ({
-            key: branch.id,
-            value: branch.id,
-            label: branch.name,
-            content: (
-              <div className="flex flex-col">
-                <span className="font-medium">{branch.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {branch.address ?? branch.slug ?? "Branch details pending"}
-                </span>
-              </div>
-            ),
-          })}
         />
       </FormSection>
 

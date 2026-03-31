@@ -1,34 +1,74 @@
 "use client";
 
-import ListPage from "@workspace/ui/shared/ListPage";
-import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
-import { useBranches } from "@/hooks/healthcare";
+import { Badge } from "@workspace/ui/components/badge";
 import type {
-  BranchResponse,
   BranchQueryType,
-} from "@workspace/contracts/branch";
+  BranchResponse,
+} from "@workspace/contracts/business";
+import { formatDate } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
+import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
+import ListPage from "@workspace/ui/shared/ListPage";
+import type { SearchByOption } from "@workspace/ui/shared/SearchToolbar";
 
-const columns: ColumnConfig<BranchResponse, BranchQueryType>[] = [
-  { header: "Branch", accessor: "name", sortKey: "name" },
-  { header: "Slug", accessor: "slug" },
-  { header: "Email", accessor: (branch) => branch.email ?? "N/A" },
-  { header: "Doctors", accessor: (branch) => branch.doctors?.length ?? 0 },
+import { useBranches, useDeleteBranch } from "@/hooks/business";
+
+const branchColumns: ColumnConfig<BranchResponse, BranchQueryType>[] = [
+  {
+    header: "Branch",
+    accessor: "name",
+    sortKey: "name",
+  },
+  {
+    header: "Slug",
+    accessor: "slug",
+  },
+  {
+    header: "Contact",
+    accessor: (branch) => (
+      <div>
+        <div className="text-sm">{branch.email}</div>
+        <div className="text-xs text-muted-foreground">{branch.phone}</div>
+      </div>
+    ),
+  },
+  {
+    header: "Location",
+    accessor: (branch) => `${branch.city}, ${branch.country}`,
+  },
+  {
+    header: "Status",
+    accessor: (branch) => (
+      <Badge variant={getStatusVariant(branch.isActive ? "active" : "inactive")}>
+        {branch.isActive ? "active" : "inactive"}
+      </Badge>
+    ),
+  },
+  {
+    header: "Created",
+    accessor: (branch) => formatDate(branch.createdAt),
+    sortKey: "createdAt",
+  },
 ];
 
-export default function BranchesPage() {
+const branchSearchOptions: SearchByOption<BranchQueryType>[] = [
+  { value: "name", label: "Name" },
+  { value: "slug", label: "Slug" },
+];
+
+const page = () => {
   return (
     <ListPage
       dataKey="branches"
       entityType="branches"
-      canEdit={false}
-      columns={columns}
+      columns={branchColumns}
+      searchByOptions={branchSearchOptions}
       useListHook={useBranches}
-      defaultSortBy="name"
+      useDeleteHook={useDeleteBranch}
+      defaultSortBy="createdAt"
       defaultSearchBy="name"
-      searchByOptions={[
-        { label: "Branch", value: "name" },
-        { label: "Slug", value: "slug" },
-      ]}
     />
   );
-}
+};
+
+export default page;

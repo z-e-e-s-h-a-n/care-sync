@@ -260,8 +260,7 @@ function MediaUploader({ onSelect }: MediaUploaderProps) {
     if (item.status === "uploading") {
       const ok = await confirm({
         title: "Cancel this upload?",
-        description:
-          "The current file upload will be aborted immediately.",
+        description: "The current file upload will be aborted immediately.",
         confirmText: "Cancel upload",
         cancelText: "Keep uploading",
       });

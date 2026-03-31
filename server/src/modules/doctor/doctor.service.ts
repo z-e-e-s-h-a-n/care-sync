@@ -167,7 +167,6 @@ export class DoctorService {
       include: { avatar: true },
     },
     branch: true,
-    identificationDocument: true,
     licenseDocument: true,
   } satisfies Prisma.DoctorProfileInclude;
 }

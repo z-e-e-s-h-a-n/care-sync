@@ -1,0 +1,9 @@
+.tiptap-image-upload {
+  margin: 2rem 0;
+}
+
+.tiptap.ProseMirror.ProseMirror-focused {
+  .ProseMirror-selectednode .media-upload-surface__dropzone {
+    border-color: var(--media-upload-active);
+  }
+}

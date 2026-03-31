@@ -7,8 +7,8 @@ import ConversationThread from "@/components/dashboard/ConversationThread";
 import PageIntro from "@/components/dashboard/PageIntro";
 import { useAppointment } from "@/hooks/healthcare";
 import { Badge } from "@workspace/ui/components/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import SectionCard from "@workspace/ui/shared/SectionCard";
 
 const formatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -29,28 +29,41 @@ const DoctorMessageThreadPage = () => {
       />
 
       {appointment && (
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Appointment context</CardTitle>
-            <Link href={`/doctor/appointments/${appointment.id}`} className="text-sm text-primary hover:underline">
+        <SectionCard
+          title="Appointment context"
+          action={
+            <Link
+              href={`/doctor/appointments/${appointment.id}`}
+              className="text-sm text-primary hover:underline"
+            >
               Open appointment
             </Link>
-          </CardHeader>
-          <CardContent className="grid gap-4 text-sm md:grid-cols-3">
-            <div>
-              <p className="text-muted-foreground">Patient</p>
-              <p className="font-medium">{appointment.patient?.user?.displayName ?? "Patient"}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Scheduled</p>
-              <p className="font-medium">{formatter.format(new Date(appointment.scheduledStartAt))}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Status</p>
-              <Badge variant={getStatusVariant(appointment.status)} className="mt-1 capitalize">{appointment.status}</Badge>
-            </div>
-          </CardContent>
-        </Card>
+          }
+          className="shadow-sm"
+          contentClassName="grid gap-4 text-sm md:grid-cols-3"
+        >
+          <div>
+            <p className="text-muted-foreground">Patient</p>
+            <p className="font-medium">
+              {appointment.patient?.user?.displayName ?? "Patient"}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Scheduled</p>
+            <p className="font-medium">
+              {formatter.format(new Date(appointment.scheduledStartAt))}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Status</p>
+            <Badge
+              variant={getStatusVariant(appointment.status)}
+              className="mt-1 capitalize"
+            >
+              {appointment.status}
+            </Badge>
+          </div>
+        </SectionCard>
       )}
 
       <ConversationThread appointmentId={appointmentId} />

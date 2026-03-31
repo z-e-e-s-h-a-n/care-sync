@@ -4,12 +4,7 @@ import Link from "next/link";
 import type { CartResponse } from "@workspace/contracts/commerce";
 
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import SectionCard from "@workspace/ui/shared/SectionCard";
 
 interface CartSummaryCardProps {
   cart?: CartResponse | null;
@@ -27,24 +22,19 @@ const CartSummaryCard = ({ cart }: CartSummaryCardProps) => {
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cart summary</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Items</span>
-          <span className="font-medium">{count}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Total</span>
-          <span className="font-medium">{currencyFormatter.format(total)}</span>
-        </div>
-        <Button asChild className="w-full">
-          <Link href="/cart">Open cart</Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <SectionCard title="Cart summary" contentClassName="space-y-4 text-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Items</span>
+        <span className="font-medium">{count}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Total</span>
+        <span className="font-medium">{currencyFormatter.format(total)}</span>
+      </div>
+      <Button asChild className="w-full">
+        <Link href="/cart">Open cart</Link>
+      </Button>
+    </SectionCard>
   );
 };
 

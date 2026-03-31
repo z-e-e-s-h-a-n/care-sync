@@ -2,6 +2,7 @@
 
 import { Bell, BellRing, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
+
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -25,7 +26,7 @@ const formatDateTime = (value: string) =>
     timeStyle: "short",
   });
 
-export default function NotificationsPage() {
+const NotificationsPage = () => {
   const { data, isLoading, unreadCount } = useNotifications();
   const { markAsReadAsync, isPending } = useNotificationActions();
 
@@ -41,7 +42,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <section className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-primary/20 bg-linear-to-br from-primary/10 to-card">
           <CardHeader>
@@ -68,6 +69,7 @@ export default function NotificationsPage() {
           </CardHeader>
         </Card>
       </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -91,6 +93,7 @@ export default function NotificationsPage() {
               ))}
             </div>
           )}
+
           {!isLoading && !data?.length && (
             <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-dashed text-center">
               <Bell className="size-8 text-muted-foreground" />
@@ -102,8 +105,10 @@ export default function NotificationsPage() {
               </div>
             </div>
           )}
+
           {data?.map((notification) => {
             const isUnread = !notification.readAt;
+
             return (
               <div
                 key={notification.id}
@@ -132,6 +137,7 @@ export default function NotificationsPage() {
                       Received {formatDateTime(notification.createdAt)}
                     </div>
                   </div>
+
                   {isUnread && (
                     <Button
                       size="sm"
@@ -146,13 +152,15 @@ export default function NotificationsPage() {
                 </div>
                 <Separator className="my-4" />
                 <div className="text-xs text-muted-foreground">
-                  Channel: {notification.channels.join(", ")}
+                  Channels: {notification.channels.join(", ")}
                 </div>
               </div>
             );
           })}
         </CardContent>
       </Card>
-    </div>
+    </section>
   );
-}
+};
+
+export default NotificationsPage;

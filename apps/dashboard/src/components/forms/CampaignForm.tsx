@@ -12,16 +12,10 @@ import {
   notificationCampaignSchema,
   type NotificationCampaignType,
 } from "@workspace/contracts/campaign";
-import { Form } from "@workspace/ui/components/form";
+import { Form, FormSection } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import { InputField } from "@workspace/ui/components/input-field";
 import { SelectField } from "@workspace/ui/components/select-field";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 
 import { useCreateCampaign } from "@/hooks/healthcare";
 
@@ -63,11 +57,7 @@ const CampaignForm = () => {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Campaign Setup</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+      <FormSection title="Campaign Setup">
           <SelectField
             form={form}
             name="audience"
@@ -100,8 +90,7 @@ const CampaignForm = () => {
             className="md:col-span-2"
             rows={5}
           />
-        </CardContent>
-      </Card>
+      </FormSection>
 
       <div className="flex items-center justify-between">
         <Button

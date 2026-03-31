@@ -26,9 +26,9 @@
       "import": "./dist/admin.js",
       "types": "./dist/admin.d.ts"
     },
-    "./branch": {
-      "import": "./dist/branch.js",
-      "types": "./dist/branch.d.ts"
+    "./business": {
+      "import": "./dist/business.js",
+      "types": "./dist/business.d.ts"
     },
     "./patient": {
       "import": "./dist/patient.js",
@@ -66,6 +66,18 @@
       "import": "./dist/audit.js",
       "types": "./dist/audit.d.ts"
     },
+    "./traffic": {
+      "import": "./dist/traffic.js",
+      "types": "./dist/traffic.d.ts"
+    },
+    "./contact": {
+      "import": "./dist/contact.js",
+      "types": "./dist/contact.d.ts"
+    },
+    "./newsletter": {
+      "import": "./dist/newsletter.js",
+      "types": "./dist/audit.newsletter.ts"
+    },
     "./dashboard": {
       "import": "./dist/dashboard.js",
       "types": "./dist/dashboard.d.ts"
@@ -80,16 +92,16 @@
     }
   },
   "dependencies": {
-    "nestjs-zod": "^5.1.1",
-    "zod": "^4.3.6",
-    "@workspace/db": "workspace:*"
+    "@workspace/db": "workspace:*",
+    "nestjs-zod": "^5.2.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
-    "@types/node": "^25.3.5",
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@workspace/config": "workspace:*",
-    "eslint": "^9.39.3",
+    "eslint": "^9.39.4",
     "react": "^19.2.4",
     "tsup": "^8.5.1"
   }

@@ -13,7 +13,10 @@
     "./public": "./src/public/index.ts",
     "./auth": "./src/auth/index.ts",
     "./admin": "./src/admin/index.ts",
-    "./branch": "./src/branch/index.ts",
+    "./business": "./src/business/index.ts",
+    "./contact": "./src/contact/index.ts",
+    "./newsletter": "./src/newsletter/index.ts",
+    "./traffic": "./src/traffic/index.ts",
     "./doctor": "./src/doctor/index.ts",
     "./availability": "./src/availability/index.ts",
     "./appointment": "./src/appointment/index.ts",
@@ -28,16 +31,16 @@
     "./notification": "./src/notification/index.ts"
   },
   "dependencies": {
-    "axios": "^1.13.6",
+    "axios": "^1.14.0",
     "dotenv": "^17.3.1",
     "qs": "^6.15.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
-    "@types/node": "^25.3.5",
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^25.5.0",
     "@types/qs": "^6.15.0",
     "@workspace/config": "workspace:*",
     "@workspace/contracts": "workspace:*",
-    "eslint": "^9.39.3"
+    "eslint": "^9.39.4"
   }
 }

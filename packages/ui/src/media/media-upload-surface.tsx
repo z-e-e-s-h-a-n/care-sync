@@ -261,9 +261,7 @@ export function MediaUploadQueueItem({
     }
 
     if (item.status === "success") {
-      return (
-        <span className="media-upload-surface__done-text">Uploaded</span>
-      );
+      return <span className="media-upload-surface__done-text">Uploaded</span>;
     }
 
     return null;

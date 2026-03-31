@@ -4,7 +4,6 @@ import type { EmailTemplateComponent } from "../types/global";
 
 export const emailTemplateMap: Record<
   NotificationPurpose,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   EmailTemplateComponent<any>
 > = {
   signIn: emailTemplates.SignIn,
@@ -23,4 +22,6 @@ export const emailTemplateMap: Record<
   refundStatus: emailTemplates.RefundStatus,
   orderStatus: emailTemplates.OrderStatus,
   campaign: emailTemplates.Campaign,
+  newsletter: emailTemplates.Newsletter,
+  contactMessage: emailTemplates.ContactMessage,
 };

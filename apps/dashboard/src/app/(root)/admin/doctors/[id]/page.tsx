@@ -125,23 +125,9 @@ const sections: SectionConfig<DoctorProfileResponse>[] = [
           Array.isArray(value) && value.length ? value.join(", ") : "Not set",
       },
       {
-        label: "Identification Type",
-        accessor: "identificationType",
-        render: (value) => renderStatusBadge(value),
-      },
-      {
-        label: "Identification Number",
-        accessor: "identificationNumber",
-      },
-      {
         label: "License Document",
         accessor: "licenseDocument",
         render: (value) => renderDocumentLink(value, "Open license file"),
-      },
-      {
-        label: "Identification Document",
-        accessor: "identificationDocument",
-        render: (value) => renderDocumentLink(value, "Open ID file"),
       },
     ],
   },

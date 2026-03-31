@@ -13,8 +13,13 @@ import {
 import useUser from "@workspace/ui/hooks/use-user";
 import AccountSection from "@workspace/ui/shared/UserAccountSection";
 import ProfileSection from "@workspace/ui/shared/UserProfileSection";
+import { cn } from "../lib/utils";
 
-const UserAccountPage = () => {
+interface UserAccountPageProps {
+  className?: string;
+}
+
+const UserAccountPage = ({ className }: UserAccountPageProps) => {
   const { currentUser, isLoading, updateProfile, isUpdatePending } = useUser();
 
   if (isLoading) {
@@ -34,7 +39,7 @@ const UserAccountPage = () => {
   }
 
   return (
-    <section className="section space-y-6">
+    <section className={cn("space-y-6", className)}>
       <div>
         <h1 className="text-3xl font-bold">Account Management</h1>
         <p className="text-muted-foreground mt-2">

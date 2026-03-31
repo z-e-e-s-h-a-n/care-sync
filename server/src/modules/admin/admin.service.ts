@@ -45,6 +45,8 @@ export class AdminService {
       where.role = "patient";
     } else if (role) {
       where.role = role;
+    } else {
+      where.role = { not: "admin" };
     }
 
     if (isEmailVerified !== undefined) where.isEmailVerified = isEmailVerified;

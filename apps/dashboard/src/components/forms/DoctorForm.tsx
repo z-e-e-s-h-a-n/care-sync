@@ -23,10 +23,11 @@ import { SwitchField } from "@workspace/ui/components/switch-field";
 
 import { useAdminUsers } from "@/hooks/admin";
 import { MediaField } from "@workspace/ui/media/mediaField";
-import CUFormSkeleton from "@/components/skeleton/CUFormSkeleton";
+import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import CUUserForm from "@/components/forms/CUUserForm";
-import { useBranches, useDoctor, useSaveDoctor } from "@/hooks/healthcare";
+import { useDoctor, useSaveDoctor } from "@/hooks/healthcare";
 import useUser from "@workspace/ui/hooks/use-user";
+import { useBranches } from "@/hooks/business";
 
 const languageOptions = [
   { label: "Arabic", value: "Arabic" },
@@ -57,9 +58,8 @@ const DoctorForm = ({ entityId, formType }: BaseCUFormProps) => {
       education: "",
       qualifications: "",
       languages: [],
-      identificationNumber: "",
-      verificationStatus: "pending",
       isAvailable: true,
+      consultationFee: 0,
     } as DoctorProfileType,
     validators: {
       onSubmit: doctorProfileSchema,
@@ -87,7 +87,7 @@ const DoctorForm = ({ entityId, formType }: BaseCUFormProps) => {
   if (isLoading || isUserLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form} className="space-y-6">
+    <Form form={form}>
       {currentUser?.role === "admin" && (
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">
@@ -166,7 +166,8 @@ const DoctorForm = ({ entityId, formType }: BaseCUFormProps) => {
                 <div className="flex flex-col">
                   <span className="font-medium">{branch.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    {branch.address ?? branch.slug ?? "Branch details pending"}
+                    {branch.street}, {branch.city}, {branch.state},{" "}
+                    {branch.postalCode}
                   </span>
                 </div>
               ),
@@ -219,24 +220,6 @@ const DoctorForm = ({ entityId, formType }: BaseCUFormProps) => {
         title="Identity and Documents"
         description="Store verification identity details and supporting files."
       >
-        <SelectField
-          form={form}
-          name="identificationType"
-          label="Identification Type"
-          placeholder="Select identification type"
-          options={IdentificationTypeEnum.options}
-        />
-        <InputField
-          form={form}
-          name="identificationNumber"
-          label="Identification Number"
-        />
-        <MediaField
-          form={form}
-          name="identificationDocumentId"
-          label="Identification Document"
-          defaultMedia={data?.identificationDocument ?? undefined}
-        />
         <MediaField
           form={form}
           name="licenseDocumentId"

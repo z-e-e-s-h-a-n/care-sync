@@ -1,17 +1,14 @@
 "use client";
-import { useDoctor } from "@/hooks/healthcare";
-import { Badge } from "@workspace/ui/components/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import { getStatusVariant } from "@workspace/ui/lib/utils";
-import type { AppPageProps } from "@workspace/contracts";
+
 import React from "react";
-import { formatPrice } from "@workspace/shared/utils";
+
 import AppointmentForm from "@/components/AppointmentForm";
+import { useDoctor } from "@/hooks/healthcare";
+import type { AppPageProps } from "@workspace/contracts";
+import { Badge } from "@workspace/ui/components/badge";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
+import { formatPrice } from "@workspace/shared/utils";
+import StatCard from "@workspace/ui/shared/StatCard";
 
 const DoctorDetailPage = ({ params }: AppPageProps) => {
   const { id } = React.use(params);
@@ -22,7 +19,7 @@ const DoctorDetailPage = ({ params }: AppPageProps) => {
   }
 
   return (
-    <section className="section grid xl:grid-cols-[1fr_0.9fr]">
+    <section className="section grid xl:grid-cols-[1fr_0.9fr] space-y-6">
       <div className="space-y-6">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -51,43 +48,39 @@ const DoctorDetailPage = ({ params }: AppPageProps) => {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Experience</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-semibold">
-              {doctor.yearsExperience
-                ? `${doctor.yearsExperience}+ yrs`
-                : "N/A"}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Consultation fee</CardTitle>
-            </CardHeader>
-            <CardContent className="text-2xl font-semibold">
-              {doctor.consultationFee
+          <StatCard
+            label="Experience"
+            value={
+              doctor.yearsExperience ? `${doctor.yearsExperience}+ yrs` : "N/A"
+            }
+            labelVariant="title"
+            valueInContent
+          />
+          <StatCard
+            label="Consultation fee"
+            value={
+              doctor.consultationFee
                 ? formatPrice(doctor.consultationFee)
-                : "Not listed"}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Booking status</CardTitle>
-            </CardHeader>
-            <CardContent className="text-lg font-semibold">
-              {doctor.isAvailable
+                : "Not listed"
+            }
+            labelVariant="title"
+            valueInContent
+          />
+          <StatCard
+            label="Booking status"
+            value={
+              doctor.isAvailable
                 ? "Available for booking"
-                : "Currently unavailable"}
-            </CardContent>
-          </Card>
+                : "Currently unavailable"
+            }
+            labelVariant="title"
+            valueInContent
+            valueClassName="text-lg font-semibold"
+          />
         </div>
       </div>
 
-      <AppointmentForm
-        doctorId={doctor.id}
-        className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"
-      />
+      <AppointmentForm doctorId={doctor.id} />
     </section>
   );
 };

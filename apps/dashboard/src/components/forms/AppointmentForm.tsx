@@ -11,16 +11,9 @@ import {
   type CreateAppointmentType,
 } from "@workspace/contracts/appointment";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { ComboboxField } from "@workspace/ui/components/combobox-field";
 import { DatePickerField } from "@workspace/ui/components/date-field";
-import { Form, FormField } from "@workspace/ui/components/form";
+import { Form, FormField, FormSection } from "@workspace/ui/components/form";
 import { InputField } from "@workspace/ui/components/input-field";
 import {
   Select,
@@ -30,14 +23,14 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 
-import CUFormSkeleton from "@/components/skeleton/CUFormSkeleton";
+import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import {
-  useBranches,
   useCreateAppointment,
   useDoctors,
   useMyDoctorProfile,
   usePatients,
 } from "@/hooks/healthcare";
+import { useBranches } from "@/hooks/business";
 
 type AppointmentFormValues = {
   branchId: string;
@@ -176,7 +169,7 @@ const AppointmentForm = () => {
   }
 
   return (
-    <Form form={form} className="space-y-6">
+    <Form form={form}>
       <div className="space-y-1">
         <h2 className="text-2xl font-semibold tracking-tight">
           Book Appointment
@@ -188,180 +181,169 @@ const AppointmentForm = () => {
         </p>
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Linked Records</CardTitle>
-          <CardDescription>
-            Choose the branch, patient, and doctor for this appointment.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          {isDoctorWorkspace ? (
-            <>
-              <div className="rounded-xl border border-border/60 px-4 py-3">
-                <p className="text-sm text-muted-foreground">Doctor</p>
-                <p className="mt-1 font-medium">
-                  {doctorProfileQuery.data?.user?.displayName ?? "Doctor"}
-                </p>
+      <FormSection
+        title="Linked Records"
+        description="Choose the branch, patient, and doctor for this appointment."
+      >
+        {isDoctorWorkspace ? (
+          <>
+            <div className="rounded-xl border border-border/60 px-4 py-3">
+              <p className="text-sm text-muted-foreground">Doctor</p>
+              <p className="mt-1 font-medium">
+                {doctorProfileQuery.data?.user?.displayName ?? "Doctor"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border/60 px-4 py-3">
+              <p className="text-sm text-muted-foreground">Branch</p>
+              <p className="mt-1 font-medium">
+                {doctorProfileQuery.data?.branch?.name ?? "Branch not set"}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <ComboboxField
+              form={form}
+              name="branchId"
+              label="Branch"
+              placeholder="Choose a branch"
+              dataKey="branches"
+              useQuery={useBranches}
+              queryArgs={{
+                page: 1,
+                limit: 100,
+                sortBy: "name",
+                sortOrder: "asc",
+                searchBy: "name",
+              }}
+              getOption={(branch) => ({
+                key: branch.id,
+                value: branch.id,
+                label: branch.name,
+                content: (
+                  <div className="flex flex-col">
+                    <span className="font-medium">{branch.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {branch.street}, {branch.city}, {branch.state},{" "}
+                      {branch.postalCode}
+                    </span>
+                  </div>
+                ),
+              })}
+            />
+            <ComboboxField
+              form={form}
+              name="doctorId"
+              label="Doctor"
+              placeholder="Choose a doctor"
+              dataKey="doctors"
+              useQuery={useDoctors}
+              queryArgs={{
+                page: 1,
+                limit: 100,
+                sortBy: "displayName",
+                sortOrder: "asc",
+                searchBy: "displayName",
+                verificationStatus: "verified",
+                isAvailable: true,
+              }}
+              getOption={(doctor) => ({
+                key: doctor.id,
+                value: doctor.id,
+                label: doctor.user?.displayName ?? doctor.slug ?? doctor.id,
+                content: (
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {doctor.user?.displayName ?? doctor.slug ?? doctor.id}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {doctor.specialty ?? "Specialty not set"}
+                    </span>
+                  </div>
+                ),
+              })}
+            />
+          </>
+        )}
+
+        <ComboboxField
+          form={form}
+          name="patientId"
+          label="Patient"
+          placeholder="Choose a patient"
+          dataKey="patients"
+          useQuery={usePatients}
+          queryArgs={{
+            page: 1,
+            limit: 100,
+            sortBy: "displayName",
+            sortOrder: "asc",
+            searchBy: "displayName",
+          }}
+          getOption={(patient) => ({
+            key: patient.id,
+            value: patient.id,
+            label: patient.user?.displayName ?? patient.id,
+            content: (
+              <div className="flex flex-col">
+                <span className="font-medium">
+                  {patient.user?.displayName ?? patient.id}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {patient.user?.email ?? patient.user?.phone ?? "No contact"}
+                </span>
               </div>
-              <div className="rounded-xl border border-border/60 px-4 py-3">
-                <p className="text-sm text-muted-foreground">Branch</p>
-                <p className="mt-1 font-medium">
-                  {doctorProfileQuery.data?.branch?.name ?? "Branch not set"}
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <ComboboxField
-                form={form}
-                name="branchId"
-                label="Branch"
-                placeholder="Choose a branch"
-                dataKey="branches"
-                useQuery={useBranches}
-                queryArgs={{
-                  page: 1,
-                  limit: 100,
-                  sortBy: "name",
-                  sortOrder: "asc",
-                  searchBy: "name",
-                }}
-                getOption={(branch) => ({
-                  key: branch.id,
-                  value: branch.id,
-                  label: branch.name,
-                  content: (
-                    <div className="flex flex-col">
-                      <span className="font-medium">{branch.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {branch.address ??
-                          branch.slug ??
-                          "Branch details pending"}
-                      </span>
-                    </div>
+            ),
+          })}
+        />
+      </FormSection>
+
+      <FormSection
+        title="Schedule Details"
+        description="Set the date, time window, channel, and timezone for this booking."
+      >
+        <DatePickerField
+          form={form}
+          name="appointmentDate"
+          label="Appointment Date"
+          placeholder="Select appointment date"
+          disableBefore={todayStartIso}
+        />
+        <FormField form={form} name="channel" label="Channel">
+          {({ value, onChange, isInvalid }) => (
+            <Select value={value} onValueChange={onChange}>
+              <SelectTrigger aria-invalid={isInvalid}>
+                <SelectValue placeholder="Select channel" />
+              </SelectTrigger>
+              <SelectContent>
+                {AppointmentChannelEnum.options.map(
+                  (option: "inPerson" | "virtual") => (
+                    <SelectItem key={option} value={option}>
+                      {formatLabel(option)}
+                    </SelectItem>
                   ),
-                })}
-              />
-              <ComboboxField
-                form={form}
-                name="doctorId"
-                label="Doctor"
-                placeholder="Choose a doctor"
-                dataKey="doctors"
-                useQuery={useDoctors}
-                queryArgs={{
-                  page: 1,
-                  limit: 100,
-                  sortBy: "displayName",
-                  sortOrder: "asc",
-                  searchBy: "displayName",
-                  verificationStatus: "verified",
-                  isAvailable: true,
-                }}
-                getOption={(doctor) => ({
-                  key: doctor.id,
-                  value: doctor.id,
-                  label: doctor.user?.displayName ?? doctor.slug ?? doctor.id,
-                  content: (
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {doctor.user?.displayName ?? doctor.slug ?? doctor.id}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {doctor.specialty ?? "Specialty not set"}
-                      </span>
-                    </div>
-                  ),
-                })}
-              />
-            </>
+                )}
+              </SelectContent>
+            </Select>
           )}
-
-          <ComboboxField
-            form={form}
-            name="patientId"
-            label="Patient"
-            placeholder="Choose a patient"
-            dataKey="patients"
-            useQuery={usePatients}
-            queryArgs={{
-              page: 1,
-              limit: 100,
-              sortBy: "displayName",
-              sortOrder: "asc",
-              searchBy: "displayName",
-            }}
-            getOption={(patient) => ({
-              key: patient.id,
-              value: patient.id,
-              label: patient.user?.displayName ?? patient.id,
-              content: (
-                <div className="flex flex-col">
-                  <span className="font-medium">
-                    {patient.user?.displayName ?? patient.id}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {patient.user?.email ?? patient.user?.phone ?? "No contact"}
-                  </span>
-                </div>
-              ),
-            })}
-          />
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Schedule Details</CardTitle>
-          <CardDescription>
-            Set the date, time window, channel, and timezone for this booking.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <DatePickerField
-            form={form}
-            name="appointmentDate"
-            label="Appointment Date"
-            placeholder="Select appointment date"
-            disableBefore={todayStartIso}
-          />
-          <FormField form={form} name="channel" label="Channel">
-            {({ value, onChange, isInvalid }) => (
-              <Select value={value} onValueChange={onChange}>
-                <SelectTrigger aria-invalid={isInvalid}>
-                  <SelectValue placeholder="Select channel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AppointmentChannelEnum.options.map(
-                    (option: "inPerson" | "virtual") => (
-                      <SelectItem key={option} value={option}>
-                        {formatLabel(option)}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-            )}
-          </FormField>
-          <InputField
-            form={form}
-            name="startTime"
-            label="Start Time"
-            type="time"
-          />
-          <InputField form={form} name="endTime" label="End Time" type="time" />
-          <InputField form={form} name="timezone" label="Timezone" />
-          <InputField
-            form={form}
-            name="patientNotes"
-            label="Patient Notes"
-            type="textarea"
-            rows={5}
-            className="md:col-span-2"
-          />
-        </CardContent>
-      </Card>
+        </FormField>
+        <InputField
+          form={form}
+          name="startTime"
+          label="Start Time"
+          type="time"
+        />
+        <InputField form={form} name="endTime" label="End Time" type="time" />
+        <InputField form={form} name="timezone" label="Timezone" />
+        <InputField
+          form={form}
+          name="patientNotes"
+          label="Patient Notes"
+          type="textarea"
+          rows={5}
+          className="md:col-span-2"
+        />
+      </FormSection>
 
       <div className="flex items-center justify-between">
         <Button

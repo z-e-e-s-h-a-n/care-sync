@@ -6,7 +6,7 @@ import AvailabilityEditor from "@/components/dashboard/AvailabilityEditor";
 import PageIntro from "@/components/dashboard/PageIntro";
 import { useDoctorAvailability, useMyDoctorProfile } from "@/hooks/healthcare";
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import SectionCard from "@workspace/ui/shared/SectionCard";
 
 const DoctorAvailabilityPage = () => {
   const doctorQuery = useMyDoctorProfile();
@@ -21,37 +21,44 @@ const DoctorAvailabilityPage = () => {
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <CardTitle>Profile summary</CardTitle>
+        <SectionCard
+          title="Profile summary"
+          action={
             <Button asChild variant="ghost">
               <Link href="/doctor/profile">Edit profile</Link>
             </Button>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Doctor</p>
-              <p className="font-medium">{doctor?.user?.displayName ?? "Loading..."}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Specialty</p>
-              <p className="font-medium">{doctor?.specialty ?? "Not set"}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Branch</p>
-              <p className="font-medium">{doctor?.branch?.name ?? "Unassigned"}</p>
-            </div>
-          </CardContent>
-        </Card>
+          }
+          className="shadow-sm"
+          contentClassName="space-y-4 text-sm"
+        >
+          <div>
+            <p className="text-muted-foreground">Doctor</p>
+            <p className="font-medium">
+              {doctor?.user?.displayName ?? "Loading..."}
+            </p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Specialty</p>
+            <p className="font-medium">{doctor?.specialty ?? "Not set"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Branch</p>
+            <p className="font-medium">{doctor?.branch?.name ?? "Unassigned"}</p>
+          </div>
+        </SectionCard>
 
         {doctor?.id ? (
-          <AvailabilityEditor doctorId={doctor.id} initialValue={availabilityQuery.data} />
+          <AvailabilityEditor
+            doctorId={doctor.id}
+            initialValue={availabilityQuery.data}
+          />
         ) : (
-          <Card className="shadow-sm">
-            <CardContent className="p-6 text-sm text-muted-foreground">
-              Loading doctor profile...
-            </CardContent>
-          </Card>
+          <SectionCard
+            className="shadow-sm"
+            contentClassName="p-6 text-sm text-muted-foreground"
+          >
+            Loading doctor profile...
+          </SectionCard>
         )}
       </div>
     </div>

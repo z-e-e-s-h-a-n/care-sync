@@ -11,9 +11,9 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@tabler/icons-react": "^3.39.0",
-    "@tanstack/react-form": "^1.28.4",
-    "@tanstack/react-query": "^5.90.21",
+    "@tabler/icons-react": "^3.41.1",
+    "@tanstack/react-form": "^1.28.6",
+    "@tanstack/react-query": "^5.96.0",
     "@workspace/db": "workspace:*",
     "@workspace/sdk": "workspace:*",
     "@workspace/shared": "workspace:*",
@@ -30,14 +30,14 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
-    "@tailwindcss/postcss": "^4.2.1",
-    "@types/node": "^25.3.5",
+    "@eslint/js": "^9.39.4",
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@workspace/config": "workspace:*",
     "@workspace/contracts": "workspace:*",
-    "eslint": "^9.39.3",
-    "eslint-config-next": "^16.1.6"
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1"
   }
 }

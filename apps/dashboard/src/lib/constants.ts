@@ -8,11 +8,14 @@ import {
   IconMessageCircle,
   IconSpeakerphone,
   IconStethoscope,
-  IconBuildingHospital,
   IconClockHour4,
   IconUserCircle,
   IconUsersGroup,
   IconNotification,
+  IconMapPin,
+  IconSettings,
+  IconRoute,
+  IconAddressBook,
 } from "@tabler/icons-react";
 import type { NavGroup } from "@workspace/contracts";
 
@@ -46,18 +49,18 @@ export const adminSidebarMenu: NavGroup[] = [
       },
       {
         label: "Users",
-        href: "/users",
+        href: "/admin/users",
         icon: IconUsersGroup,
       },
       {
-        label: "Branches",
-        href: "/admin/branches",
-        icon: IconBuildingHospital,
+        label: "Media",
+        href: "/media",
+        icon: IconPhoto,
       },
     ],
   },
   {
-    groupLabel: "REVENUE",
+    groupLabel: "MANAGEMENT",
     items: [
       {
         label: "Payments",
@@ -69,20 +72,43 @@ export const adminSidebarMenu: NavGroup[] = [
         href: "/admin/campaigns",
         icon: IconSpeakerphone,
       },
-    ],
-  },
-  {
-    groupLabel: "SYSTEM",
-    items: [
       {
-        label: "Media",
-        href: "/media",
-        icon: IconPhoto,
+        label: "Leads",
+        icon: IconAddressBook,
+        children: [
+          {
+            label: "Contact Messages",
+            href: "/admin/leads/messages",
+          },
+          {
+            label: "Newsletter",
+            href: "/admin/leads/subscribers",
+          },
+        ],
+      },
+      {
+        label: "Traffic Sources",
+        href: "/admin/traffic-sources",
+        icon: IconRoute,
       },
       {
         label: "Audit Logs",
         href: "/admin/audit-logs",
         icon: IconHistory,
+      },
+    ],
+  },
+  {
+    items: [
+      {
+        label: "Branches",
+        href: "/admin/branches",
+        icon: IconMapPin,
+      },
+      {
+        label: "Business Profile",
+        href: "/admin/business-profile",
+        icon: IconSettings,
       },
     ],
   },
@@ -102,7 +128,7 @@ export const doctorSidebarMenu: NavGroup[] = [
     items: [
       {
         label: "Patients",
-        href: "/users",
+        href: "/doctor/patients",
         icon: IconUsersGroup,
       },
       {

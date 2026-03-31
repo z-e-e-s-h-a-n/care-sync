@@ -5,12 +5,6 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import type {
@@ -18,6 +12,7 @@ import type {
   AvailabilityScheduleType,
   BlockedTimeType,
 } from "@workspace/contracts/availability";
+import SectionCard from "@workspace/ui/shared/SectionCard";
 
 import { useReplaceDoctorAvailability } from "@/hooks/healthcare";
 
@@ -113,141 +108,141 @@ const AvailabilityEditor = ({
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Weekly schedule</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {rules.map((rule) => (
-            <div
-              key={rule.weekday}
-              className="grid gap-4 rounded-xl border border-border/60 p-4 lg:grid-cols-[160px_1fr_1fr_160px]"
-            >
-              <div className="flex items-center justify-between lg:block">
-                <div>
-                  <p className="font-medium capitalize">{rule.weekday}</p>
-                  <p className="text-xs text-muted-foreground">Doctor slots</p>
-                </div>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={rule.isActive}
-                    onChange={(event) =>
-                      updateRule(rule.weekday, {
-                        isActive: event.target.checked,
-                      })
-                    }
-                  />
-                  Active
-                </label>
+      <SectionCard
+        title="Weekly schedule"
+        className="shadow-sm"
+        contentClassName="space-y-4"
+      >
+        {rules.map((rule) => (
+          <div
+            key={rule.weekday}
+            className="grid gap-4 rounded-xl border border-border/60 p-4 lg:grid-cols-[160px_1fr_1fr_160px]"
+          >
+            <div className="flex items-center justify-between lg:block">
+              <div>
+                <p className="font-medium capitalize">{rule.weekday}</p>
+                <p className="text-xs text-muted-foreground">Doctor slots</p>
               </div>
-              <div className="space-y-2">
-                <Label>Start time</Label>
-                <Input
-                  type="time"
-                  value={rule.startTime}
-                  onChange={(event) =>
-                    updateRule(rule.weekday, { startTime: event.target.value })
-                  }
-                  disabled={!rule.isActive}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>End time</Label>
-                <Input
-                  type="time"
-                  value={rule.endTime}
-                  onChange={(event) =>
-                    updateRule(rule.weekday, { endTime: event.target.value })
-                  }
-                  disabled={!rule.isActive}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Slot minutes</Label>
-                <Input
-                  type="number"
-                  min={5}
-                  value={Number(rule.slotDurationMinute ?? 30)}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={rule.isActive}
                   onChange={(event) =>
                     updateRule(rule.weekday, {
-                      slotDurationMinute: Number(event.target.value || 30),
+                      isActive: event.target.checked,
                     })
                   }
-                  disabled={!rule.isActive}
                 />
-              </div>
+                Active
+              </label>
             </div>
-          ))}
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label>Start time</Label>
+              <Input
+                type="time"
+                value={rule.startTime}
+                onChange={(event) =>
+                  updateRule(rule.weekday, { startTime: event.target.value })
+                }
+                disabled={!rule.isActive}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>End time</Label>
+              <Input
+                type="time"
+                value={rule.endTime}
+                onChange={(event) =>
+                  updateRule(rule.weekday, { endTime: event.target.value })
+                }
+                disabled={!rule.isActive}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Slot minutes</Label>
+              <Input
+                type="number"
+                min={5}
+                value={Number(rule.slotDurationMinute ?? 30)}
+                onChange={(event) =>
+                  updateRule(rule.weekday, {
+                    slotDurationMinute: Number(event.target.value || 30),
+                  })
+                }
+                disabled={!rule.isActive}
+              />
+            </div>
+          </div>
+        ))}
+      </SectionCard>
 
-      <Card className="shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Blocked time</CardTitle>
+      <SectionCard
+        title="Blocked time"
+        action={
           <Button type="button" variant="outline" onClick={addBlockedTime}>
             Add block
           </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {blockedTimes.length ? (
-            blockedTimes.map((blockedTime, index) => (
-              <div
-                key={`${blockedTime.startAt}-${index}`}
-                className="grid gap-4 rounded-xl border border-border/60 p-4 lg:grid-cols-[1fr_1fr_1fr_auto]"
-              >
-                <div className="space-y-2">
-                  <Label>Start</Label>
-                  <Input
-                    type="datetime-local"
-                    value={String(blockedTime.startAt ?? "").slice(0, 16)}
-                    onChange={(event) =>
-                      updateBlockedTime(index, {
-                        startAt: new Date(event.target.value).toISOString(),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>End</Label>
-                  <Input
-                    type="datetime-local"
-                    value={String(blockedTime.endAt ?? "").slice(0, 16)}
-                    onChange={(event) =>
-                      updateBlockedTime(index, {
-                        endAt: new Date(event.target.value).toISOString(),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Reason</Label>
-                  <Input
-                    value={blockedTime.reason ?? ""}
-                    onChange={(event) =>
-                      updateBlockedTime(index, { reason: event.target.value })
-                    }
-                    placeholder="Vacation, surgery, conference..."
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => removeBlockedTime(index)}
-                  >
-                    Remove
-                  </Button>
-                </div>
+        }
+        className="shadow-sm"
+        contentClassName="space-y-4"
+      >
+        {blockedTimes.length ? (
+          blockedTimes.map((blockedTime, index) => (
+            <div
+              key={`${blockedTime.startAt}-${index}`}
+              className="grid gap-4 rounded-xl border border-border/60 p-4 lg:grid-cols-[1fr_1fr_1fr_auto]"
+            >
+              <div className="space-y-2">
+                <Label>Start</Label>
+                <Input
+                  type="datetime-local"
+                  value={String(blockedTime.startAt ?? "").slice(0, 16)}
+                  onChange={(event) =>
+                    updateBlockedTime(index, {
+                      startAt: new Date(event.target.value).toISOString(),
+                    })
+                  }
+                />
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No blocked dates yet. Add breaks, vacations, or manual holds here.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label>End</Label>
+                <Input
+                  type="datetime-local"
+                  value={String(blockedTime.endAt ?? "").slice(0, 16)}
+                  onChange={(event) =>
+                    updateBlockedTime(index, {
+                      endAt: new Date(event.target.value).toISOString(),
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Reason</Label>
+                <Input
+                  value={blockedTime.reason ?? ""}
+                  onChange={(event) =>
+                    updateBlockedTime(index, { reason: event.target.value })
+                  }
+                  placeholder="Vacation, surgery, conference..."
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => removeBlockedTime(index)}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No blocked dates yet. Add breaks, vacations, or manual holds here.
+          </p>
+        )}
+      </SectionCard>
 
       <div className="flex justify-end">
         <Button type="button" onClick={submit} disabled={isPending}>

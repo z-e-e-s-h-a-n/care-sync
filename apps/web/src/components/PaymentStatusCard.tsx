@@ -6,14 +6,9 @@ import type { AppointmentResponse } from "@workspace/contracts/appointment";
 import { useCreatePayment } from "@/hooks/healthcare";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { formatPrice } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import SectionCard from "@workspace/ui/shared/SectionCard";
 
 interface PaymentStatusCardProps {
   appointment: AppointmentResponse;
@@ -41,44 +36,35 @@ const PaymentStatusCard = ({ appointment }: PaymentStatusCardProps) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Payment status</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Amount</span>
-          <span className="font-medium">
-            {amount > 0 ? formatPrice(amount) : "No charge listed"}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Current status</span>
-          <Badge
-            variant={getStatusVariant(latestPayment?.status ?? "pending")}
-            className="capitalize"
-          >
-            {latestPayment?.status ?? "not created"}
-          </Badge>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">Provider</span>
-          <span className="font-medium capitalize">
-            {latestPayment?.provider ?? "stripe"}
-          </span>
-        </div>
+    <SectionCard title="Payment status" contentClassName="space-y-4 text-sm">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-muted-foreground">Amount</span>
+        <span className="font-medium">
+          {amount > 0 ? formatPrice(amount) : "No charge listed"}
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-muted-foreground">Current status</span>
+        <Badge
+          variant={getStatusVariant(latestPayment?.status ?? "pending")}
+          className="capitalize"
+        >
+          {latestPayment?.status ?? "not created"}
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-muted-foreground">Provider</span>
+        <span className="font-medium capitalize">
+          {latestPayment?.provider ?? "stripe"}
+        </span>
+      </div>
 
-        {!latestPayment && amount > 0 && (
-          <Button
-            className="w-full"
-            onClick={createIntent}
-            disabled={isPending}
-          >
-            {isPending ? "Preparing payment..." : "Create payment record"}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+      {!latestPayment && amount > 0 && (
+        <Button className="w-full" onClick={createIntent} disabled={isPending}>
+          {isPending ? "Preparing payment..." : "Create payment record"}
+        </Button>
+      )}
+    </SectionCard>
   );
 };
 

@@ -7,12 +7,14 @@ export { VerifyIdentifier } from "./verifyIdentifier";
 export { UpdateIdentifier } from "./updateIdentifier";
 export { UserStatus } from "./userStatus";
 export { SecurityAlert } from "./securityAlert";
+export { Newsletter } from "./newsletter";
+export { ContactMessage } from "./contactMessage";
 export {
+  Campaign,
+  OrderStatus,
+  RefundStatus,
+  PaymentStatus,
+  NewChatMessage,
   AppointmentStatus,
   AppointmentReminder,
-  NewChatMessage,
-  PaymentStatus,
-  RefundStatus,
-  OrderStatus,
-  Campaign,
 } from "./careEvent";

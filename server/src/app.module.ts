@@ -20,7 +20,7 @@ import { CacheModule } from "@/modules/cache/cache.module";
 import { UserModule } from "@/modules/user/user.module";
 import { MediaModule } from "@/modules/media/media.module";
 import { AuditModule } from "@/modules/audit/audit.module";
-import { BranchModule } from "@/modules/branch/branch.module";
+import { BusinessModule } from "@/modules/business/business.module";
 import { PatientModule } from "@/modules/patient/patient.module";
 import { DoctorModule } from "@/modules/doctor/doctor.module";
 import { AvailabilityModule } from "@/modules/availability/availability.module";
@@ -30,6 +30,8 @@ import { PaymentModule } from "@/modules/payment/payment.module";
 import { CommerceModule } from "@/modules/commerce/commerce.module";
 import { CampaignModule } from "@/modules/campaign/campaign.module";
 import { ClientModule } from "./modules/client/client.module";
+import { LeadModule } from "@/modules/lead/lead.module";
+import { TrafficModule } from "./modules/traffic/traffic.module";
 
 @Module({
   imports: [
@@ -51,7 +53,7 @@ import { ClientModule } from "./modules/client/client.module";
     AdminModule,
     MediaModule,
     AuditModule,
-    BranchModule,
+    BusinessModule,
     PatientModule,
     DoctorModule,
     AvailabilityModule,
@@ -60,6 +62,8 @@ import { ClientModule } from "./modules/client/client.module";
     PaymentModule,
     CommerceModule,
     CampaignModule,
+    LeadModule,
+    TrafficModule,
   ],
 
   providers: [

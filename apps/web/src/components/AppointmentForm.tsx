@@ -18,13 +18,8 @@ import {
 } from "@workspace/contracts/appointment";
 
 import { Button } from "@workspace/ui/components/button";
-import {
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { Label } from "@workspace/ui/components/label";
-import { Form } from "@workspace/ui/components/form";
+import { Form, FormSection } from "@workspace/ui/components/form";
 import { InputField } from "@workspace/ui/components/input-field";
 import { DatePickerField } from "@workspace/ui/components/date-field";
 import { ComboboxField } from "@workspace/ui/components/combobox-field";
@@ -36,18 +31,13 @@ import { InfoNotice } from "@workspace/ui/shared/InfoNotice";
 interface AppointmentFormProps {
   doctorId?: string;
   onSuccess?: () => void;
-  className?: string;
 }
 
 type AppointmentFormValues = CreateAppointmentType & {
   selectedDate?: string;
 };
 
-const AppointmentForm = ({
-  doctorId,
-  onSuccess,
-  className,
-}: AppointmentFormProps) => {
+const AppointmentForm = ({ doctorId, onSuccess }: AppointmentFormProps) => {
   const router = useRouter();
   const { data: patientProfile } = useMyPatientProfile();
   const { currentUser } = useUser();
@@ -57,14 +47,14 @@ const AppointmentForm = ({
     () => ({
       doctorId,
       patientId: patientProfile?.id,
-      branchId: patientProfile?.preferredBranchId,
+      // branchId: "",
       selectedDate: new Date().toISOString(),
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       patientNotes: "",
       bookingSource: "app",
       channel: "inPerson",
     }),
-    [doctorId, patientProfile?.id, patientProfile?.preferredBranchId],
+    [doctorId, patientProfile?.id],
   );
 
   const form = useForm({
@@ -106,97 +96,92 @@ const AppointmentForm = ({
 
   return (
     <Form form={form}>
-      <div className={className}>
-        <CardHeader>
-          <CardTitle>New Appointment</CardTitle>
-        </CardHeader>
+      <FormSection title="New Appointment" className="md:grid-cols-1">
+        {!currentUser ||
+          (!patientProfile && (
+            <InfoNotice
+              variant="warning"
+              message={
+                !currentUser
+                  ? "Please sign in first to continue."
+                  : "Complete your profile to continue booking an appointment."
+              }
+            />
+          ))}
 
-        <CardContent className="space-y-8">
-          {!currentUser ||
-            (!patientProfile && (
-              <InfoNotice
-                variant="warning"
-                message={
-                  !currentUser
-                    ? "Please sign in first to continue."
-                    : "Complete your profile to continue booking an appointment."
-                }
-              />
-            ))}
+        <ComboboxField
+          form={form}
+          name="doctorId"
+          label="Doctor"
+          placeholder="Select Doctor"
+          disabled={!!doctorId}
+          dataKey="doctors"
+          useQuery={useDoctors as any}
+          getOption={(doctor: any) => ({
+            key: doctor.id,
+            label: doctor.user.displayName,
+            value: doctor.id,
+            content: <div>{doctor.user.displayName}</div>,
+          })}
+        />
 
-          <ComboboxField
-            form={form}
-            name="doctorId"
-            label="Doctor"
-            placeholder="Select Doctor"
-            dataKey="doctors"
-            useQuery={useDoctors as any}
-            getOption={(doctor: any) => ({
-              key: doctor.id,
-              label: doctor.user.displayName,
-              value: doctor.id,
-              content: <div>{doctor.user.displayName}</div>,
+        <DatePickerField
+          form={form}
+          name="selectedDate"
+          label="Expected appointment date"
+          disableBefore={new Date().toISOString()}
+        />
+
+        <Field className="space-y-3">
+          <Label>Choose a time slot</Label>
+
+          <div className="grid gap-4 grid-cols-2">
+            {slots.map((slot) => {
+              const isActive = startAt === slot.startAt;
+
+              return (
+                <Button
+                  key={slot.startAt}
+                  type="button"
+                  variant={isActive ? "default" : "outline"}
+                  onClick={() => {
+                    form.setFieldValue("scheduledStartAt", slot.startAt);
+                    form.setFieldValue("scheduledEndAt", slot.endAt);
+                  }}
+                >
+                  <IconClock />
+                  <p className="font-medium">
+                    {formatDate(slot.startAt, "time")}
+                  </p>
+                </Button>
+              );
             })}
-          />
+          </div>
 
-          <DatePickerField
-            form={form}
-            name="selectedDate"
-            label="Expected appointment date"
-            disableBefore={new Date().toISOString()}
-          />
+          {!slots.length && (
+            <p className="text-sm text-muted-foreground">
+              No slots available in the selected window.
+            </p>
+          )}
+        </Field>
 
-          <Field className="space-y-3">
-            <Label>Choose a time slot</Label>
+        <InputField
+          form={form}
+          name="patientNotes"
+          type="textarea"
+          label="Notes for the doctor"
+          rows={4}
+          placeholder="Symptoms, reason for visit, or anything the provider should know."
+        />
 
-            <div className="grid gap-4 grid-cols-2">
-              {slots.map((slot) => {
-                const isActive = startAt === slot.startAt;
-
-                return (
-                  <Button
-                    key={slot.startAt}
-                    type="button"
-                    variant={isActive ? "default" : "outline"}
-                    onClick={() => {
-                      form.setFieldValue("scheduledStartAt", slot.startAt);
-                      form.setFieldValue("scheduledEndAt", slot.endAt);
-                    }}
-                  >
-                    <IconClock />
-                    <p className="font-medium">
-                      {formatDate(slot.startAt, "time")}
-                    </p>
-                  </Button>
-                );
-              })}
-            </div>
-
-            {!slots.length && (
-              <p className="text-sm text-muted-foreground">
-                No slots available in the selected window.
-              </p>
-            )}
-          </Field>
-
-          <InputField
-            form={form}
-            name="patientNotes"
-            type="textarea"
-            label="Notes for the doctor"
-            rows={4}
-            placeholder="Symptoms, reason for visit, or anything the provider should know."
-          />
-
-          <Button
-            className="w-full"
-            type="submit"
-            disabled={isPending || !startAt || !patientProfile}
-          >
-            {isPending ? "Booking..." : "Submit Appointment"}
-          </Button>
-        </CardContent>
-      </div>
+        <Button
+          className="w-full"
+          type="submit"
+          disabled={isPending || !startAt || !patientProfile}
+        >
+          {isPending ? "Booking..." : "Submit Appointment"}
+        </Button>
+      </FormSection>
     </Form>
   );
 };

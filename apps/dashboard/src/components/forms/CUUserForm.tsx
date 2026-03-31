@@ -1,7 +1,7 @@
 "use client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 
 import { CUUserSchema, type CUUserType } from "@workspace/contracts/admin";
 import {
@@ -11,22 +11,15 @@ import {
   type BaseCUFormProps,
 } from "@workspace/contracts";
 
-import { Form } from "@workspace/ui/components/form";
+import { Form, FormSection } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import { InputField } from "@workspace/ui/components/input-field";
 import { SelectField } from "@workspace/ui/components/select-field";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-
 import { useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { useAdminUser } from "@/hooks/admin";
-import CUFormSkeleton from "@/components/skeleton/CUFormSkeleton";
+import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import type { UserResponse } from "@workspace/contracts/user";
 import useUser from "@workspace/ui/hooks/use-user";
 
@@ -89,10 +82,27 @@ const CUUserForm = ({
     },
   });
 
+  const { firstName, lastName, displayName } = useStore(
+    form.store,
+    (state) => ({
+      firstName: state.values.firstName,
+      lastName: state.values.lastName,
+      displayName: state.values.displayName,
+    }),
+  );
+
   useEffect(() => {
     if (!data) return;
     form.reset();
   }, [data, form]);
+
+  useEffect(() => {
+    const nextDisplayName = `${firstName ?? ""} ${lastName ?? ""}`.trim();
+
+    if (displayName === nextDisplayName) return;
+
+    form.setFieldValue("displayName", nextDisplayName);
+  }, [displayName, firstName, form, lastName]);
 
   if (isUserLoading || !currentUser) return <CUFormSkeleton />;
   if (isLoading) return <CUFormSkeleton />;
@@ -108,48 +118,22 @@ const CUUserForm = ({
       {/* =========================
               BASIC INFORMATION
           ========================== */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+      <FormSection title="Basic Information">
           <InputField form={form} name="firstName" label="First Name" />
           <InputField form={form} name="lastName" label="Last Name" />
 
-          <form.Subscribe
-            selector={(s) => ({
-              firstName: s.values.firstName,
-              lastName: s.values.lastName,
-            })}
-          >
-            {({ firstName, lastName }) => {
-              const displayName = `${firstName} ${lastName || ""}`.trim();
-
-              if (displayName) {
-                form.setFieldValue("displayName", displayName);
-              }
-
-              return (
-                <InputField
-                  form={form}
-                  name="displayName"
-                  label="Display Name"
-                  className="md:col-span-2"
-                />
-              );
-            }}
-          </form.Subscribe>
-        </CardContent>
-      </Card>
+          <InputField
+            form={form}
+            name="displayName"
+            label="Display Name"
+            className="md:col-span-2"
+          />
+      </FormSection>
 
       {/* =========================
               ACCOUNT & SECURITY
           ========================== */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Account & Security</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <FormSection title="Account & Security" className="md:grid-cols-1">
           <InputField
             form={form}
             name="identifier"
@@ -200,17 +184,12 @@ const CUUserForm = ({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </FormSection>
 
       {/* =========================
               ROLE & STATUS
           ========================== */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Role & Status</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+      <FormSection title="Role & Status">
           <SelectField
             form={form}
             name="role"
@@ -223,8 +202,7 @@ const CUUserForm = ({
             label="Status"
             options={UserStatusEnum.options}
           />
-        </CardContent>
-      </Card>
+      </FormSection>
 
       {/* =========================
               ACTIONS

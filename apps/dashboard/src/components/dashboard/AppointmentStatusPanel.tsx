@@ -4,14 +4,9 @@
 import { toast } from "sonner";
 
 import { Button } from "@workspace/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import type { AppointmentStatus } from "@workspace/contracts";
 import type { AppointmentResponse } from "@workspace/contracts/appointment";
+import SectionCard from "@workspace/ui/shared/SectionCard";
 
 import { useUpdateAppointmentStatus } from "@/hooks/healthcare";
 
@@ -80,12 +75,9 @@ const AppointmentStatusPanel = ({
   }
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle>Status actions</CardTitle>
-      </CardHeader>
-      <CardContent>{actions}</CardContent>
-    </Card>
+    <SectionCard title="Status actions" className="shadow-sm">
+      {actions}
+    </SectionCard>
   );
 };
 

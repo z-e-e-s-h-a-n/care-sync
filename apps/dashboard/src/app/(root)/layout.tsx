@@ -39,7 +39,7 @@ const DashboardLayout = ({ children }: AppLayoutProps) => {
       />
       <SidebarInset>
         <Header />
-        <div className="section-wrapper sm:py-6 md:py-8">{children}</div>
+        <div className="section-wrapper py-12">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

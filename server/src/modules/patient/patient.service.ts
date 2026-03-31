@@ -47,10 +47,25 @@ export class PatientService {
     return { message: "Patient profile created successfully.", data: patient };
   }
 
-  async list(query: PatientQueryDto) {
+  async list(query: PatientQueryDto, currentUser: Express.User) {
     const { page, limit, sortBy, sortOrder, search, searchBy } = query;
 
     const where: Prisma.PatientProfileWhereInput = {};
+
+    if (currentUser.role === "doctor") {
+      const doctorProfile = await this.prisma.doctorProfile.findUniqueOrThrow({
+        where: {
+          userId: currentUser.id,
+        },
+      });
+
+      where.appointments = {
+        some: {
+          doctorId: doctorProfile.id,
+        },
+      };
+    }
+
     if (search && searchBy) {
       const searchWhereMap: Record<
         typeof searchBy,
@@ -106,17 +121,50 @@ export class PatientService {
       include: this.patientInclude,
     });
 
-    if (
-      currentUser.role !== "admin" &&
-      currentUser.role !== "doctor" &&
-      patient.userId !== currentUser.id
-    ) {
-      throw new ForbiddenException(
-        "You can only access your own patient profile.",
-      );
+    if (currentUser.role === "admin") {
+      return {
+        message: "Patient profile fetched successfully.",
+        data: patient,
+      };
     }
 
-    return { message: "Patient profile fetched successfully.", data: patient };
+    if (currentUser.role === "patient") {
+      if (patient.userId !== currentUser.id) {
+        throw new ForbiddenException(
+          "You can only access your own patient profile.",
+        );
+      }
+
+      return {
+        message: "Patient profile fetched successfully.",
+        data: patient,
+      };
+    }
+
+    if (currentUser.role === "doctor") {
+      const doctorProfile = await this.prisma.doctorProfile.findUniqueOrThrow({
+        where: { userId: currentUser.id },
+      });
+
+      const hasAccess = await this.prisma.appointment.findFirst({
+        where: {
+          patientId,
+          doctorId: doctorProfile.id,
+        },
+        select: { id: true },
+      });
+
+      if (!hasAccess) {
+        throw new ForbiddenException("You can only access your own patients.");
+      }
+
+      return {
+        message: "Patient profile fetched successfully.",
+        data: patient,
+      };
+    }
+
+    throw new ForbiddenException("Access denied.");
   }
 
   async update(patientId: string, dto: PatientProfileDto) {
@@ -133,7 +181,6 @@ export class PatientService {
       omit: { password: true },
       include: { avatar: true },
     },
-    preferredBranch: true,
     identificationDocument: true,
     appointments: {
       orderBy: { scheduledStartAt: "desc" },

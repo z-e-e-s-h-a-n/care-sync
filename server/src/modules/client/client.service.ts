@@ -23,6 +23,7 @@ export interface ClientInfo {
 @Injectable()
 export class ClientService {
   private ipStackKey: string;
+  private static readonly TRAFFIC_SOURCE_COOKIE = "trafficSourceId";
 
   constructor(private readonly env: EnvService) {
     this.ipStackKey = this.env.get("IP_STACK_API_KEY");
@@ -102,6 +103,22 @@ export class ClientService {
       deviceType,
       deviceInfo,
     };
+  }
+
+  getTrafficSourceId(req: Request) {
+    const cookieValue = req.cookies[ClientService.TRAFFIC_SOURCE_COOKIE];
+
+    return typeof cookieValue === "string" && cookieValue.length > 0
+      ? cookieValue
+      : undefined;
+  }
+
+  setTrafficSourceCookie(res: Response, trafficSourceId: string) {
+    this.setCookie(res, ClientService.TRAFFIC_SOURCE_COOKIE, trafficSourceId);
+  }
+
+  clearTrafficSourceCookie(res: Response) {
+    this.clearCookie(res, ClientService.TRAFFIC_SOURCE_COOKIE);
   }
 
   setCookie = (

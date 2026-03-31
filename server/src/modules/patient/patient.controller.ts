@@ -32,8 +32,8 @@ export class PatientController {
 
   @Roles("admin", "doctor")
   @Get()
-  list(@Query() query: PatientQueryDto) {
-    return this.patientService.list(query);
+  list(@Query() query: PatientQueryDto, @User() user: Express.User) {
+    return this.patientService.list(query, user);
   }
 
   @Roles("admin", "doctor", "patient")

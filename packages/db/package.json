@@ -35,18 +35,18 @@
     }
   },
   "dependencies": {
-    "@faker-js/faker": "^10.3.0",
-    "@prisma/client": "^7.5.0",
+    "@faker-js/faker": "^10.4.0",
+    "@prisma/client": "^7.6.0",
     "argon2": "^0.44.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
-    "@prisma/adapter-pg": "^7.4.2",
-    "@types/node": "^25.3.5",
+    "@eslint/js": "^9.39.4",
+    "@prisma/adapter-pg": "^7.6.0",
+    "@types/node": "^25.5.0",
     "@workspace/config": "workspace:*",
     "dotenv": "^17.3.1",
-    "eslint": "^9.39.3",
-    "prisma": "^7.5.0",
+    "eslint": "^9.39.4",
+    "prisma": "^7.6.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "5.9.3"

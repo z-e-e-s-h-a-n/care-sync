@@ -3,6 +3,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "./card";
@@ -67,9 +68,11 @@ interface FormProps<TFormData> {
 }
 
 interface FormSectionProps {
-  title: string;
-  description?: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
   children: React.ReactNode;
+  footer?: React.ReactNode;
+  className?: string;
 }
 
 export interface BaseFieldProps<
@@ -114,7 +117,7 @@ export const Form = <TFormData,>({
   className,
 }: FormProps<TFormData>) => {
   return (
-    <section id={id} className={cn("py-12", className)}>
+    <section id={id} className={cn("space-y-6", className)}>
       {header}
       <form
         onSubmit={async (e) => {
@@ -135,13 +138,20 @@ export const FormSection = ({
   title,
   description,
   children,
+  footer,
+  className,
 }: FormSectionProps) => (
   <Card className="shadow-sm">
     <CardHeader>
       <CardTitle>{title}</CardTitle>
       {description && <CardDescription>{description}</CardDescription>}
     </CardHeader>
-    <CardContent className="grid gap-4 md:grid-cols-2">{children}</CardContent>
+    <CardContent
+      className={cn("grid gap-4 grid-cols-1", className ?? "md:grid-cols-2")}
+    >
+      {children}
+    </CardContent>
+    {footer ? <CardFooter>{footer}</CardFooter> : null}
   </Card>
 );
 

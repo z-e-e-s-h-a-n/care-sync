@@ -15,7 +15,6 @@ import { ThemeModeEnum, type ThemeMode } from "@workspace/contracts";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
@@ -26,7 +25,7 @@ import {
   AvatarImage,
 } from "@workspace/ui/components/avatar";
 
-import { Form } from "@workspace/ui/components/form";
+import { Form, FormSection } from "@workspace/ui/components/form";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import { InputField } from "@workspace/ui/components/input-field";
@@ -139,35 +138,43 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-          <CardDescription>
-            Update how your name appears across the platform
-          </CardDescription>
-        </CardHeader>
+      <FormSection
+        title="Basic Information"
+        description="Update how your name appears across the platform"
+      >
+        <InputField form={form} name="firstName" label="First Name" />
+        <InputField form={form} name="lastName" label="Last Name" />
+        <InputField
+          form={form}
+          name="displayName"
+          label="Display Name"
+          className="md:col-span-2"
+        />
+      </FormSection>
 
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <InputField form={form} name="firstName" label="First Name" />
-          <InputField form={form} name="lastName" label="Last Name" />
-          <InputField
-            form={form}
-            name="displayName"
-            label="Display Name"
-            className="md:col-span-2"
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Preferences & Notifications</CardTitle>
-          <CardDescription>
-            Control appearance and notification behavior
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
+      <FormSection
+        title="Preferences & Notifications"
+        description="Control appearance and notification behavior"
+        className="md:grid-cols-1"
+        footer={
+          <div className="flex w-full justify-end">
+            <Button
+              size="lg"
+              type="submit"
+              disabled={isUpdating || isPushPending}
+            >
+              {isUpdating || isPushPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Saving
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
+        }
+      >
           <SelectField
             form={form}
             name="preferredTheme"
@@ -204,25 +211,7 @@ const ProfileSection = ({ user, onUpdate, isUpdating }: ProfileFormProps) => {
             label="Login Alerts"
             desc="New device login notifications"
           />
-        </CardContent>
-
-        <CardFooter className="justify-end">
-          <Button
-            size="lg"
-            type="submit"
-            disabled={isUpdating || isPushPending}
-          >
-            {isUpdating || isPushPending ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Saving
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
+      </FormSection>
     </Form>
   );
 };
