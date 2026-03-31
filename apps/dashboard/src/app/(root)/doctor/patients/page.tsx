@@ -2,7 +2,7 @@
 
 import ListPage from "@workspace/ui/shared/ListPage";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
-import { useMyDoctorProfile, usePatients } from "@/hooks/healthcare";
+import { usePatients } from "@/hooks/healthcare";
 import type {
   PatientProfileResponse,
   PatientQueryType,
@@ -30,8 +30,6 @@ const columns: ColumnConfig<PatientProfileResponse, PatientQueryType>[] = [
 ];
 
 const PatientsPage = () => {
-  const { data } = useMyDoctorProfile();
-
   return (
     <ListPage
       dataKey="patients"
@@ -41,7 +39,6 @@ const PatientsPage = () => {
       defaultSortBy="createdAt"
       defaultSearchBy="displayName"
       useListHook={usePatients}
-      defaultParams={{ doctorId: data?.id }}
       searchByOptions={[
         { label: "Patient", value: "displayName" },
         { label: "Email", value: "email" },
