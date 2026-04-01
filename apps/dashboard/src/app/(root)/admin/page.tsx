@@ -14,10 +14,22 @@ import {
   YAxis,
 } from "recharts";
 import {
+  ArrowUpRight,
   CalendarClock,
   FilePlus2,
+  History,
+  LogIn,
+  LogOut,
+  Mail,
+  Megaphone,
   MoveRight,
+  Newspaper,
+  PencilLine,
+  Plus,
+  RefreshCcw,
   Stethoscope,
+  Trash2,
+  UserRound,
   Users,
   Wallet,
 } from "lucide-react";
@@ -52,6 +64,7 @@ import {
   formatDate,
   formatPrice,
 } from "@workspace/shared/utils";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -72,6 +85,15 @@ const revenueChartConfig = {
 
 const titleCase = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
+
+const auditActionIconMap: Record<string, React.ElementType> = {
+  create: Plus,
+  update: PencilLine,
+  delete: Trash2,
+  login: LogIn,
+  logout: LogOut,
+  statusChange: RefreshCcw,
+};
 
 function EmptyState({ message }: { message: string }) {
   return (
@@ -125,7 +147,8 @@ export default function AdminOverviewPage() {
     {
       href: "/admin/patients/new",
       title: "Add patient",
-      description: "Create a full patient record directly from the admin panel.",
+      description:
+        "Create a full patient record directly from the admin panel.",
       icon: Users,
     },
     {
@@ -252,7 +275,11 @@ export default function AdminOverviewPage() {
                   axisLine={false}
                   tickMargin={8}
                 />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                <YAxis
+                  allowDecimals={false}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <ChartTooltip
                   cursor={false}
                   content={
@@ -394,75 +421,116 @@ export default function AdminOverviewPage() {
       {/* ── Tab group 1: People & Appointments | Quick Actions ── */}
       <section className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
         <Card className="shadow-sm">
-          <Tabs defaultValue="appointments" className="gap-0">
-            <CardHeader className="border-b">
-              <TabsList className="w-full justify-start">
-                <TabsTrigger value="appointments">
-                  Upcoming Appointments
-                </TabsTrigger>
-                <TabsTrigger value="patients">Recent Patients</TabsTrigger>
-                <TabsTrigger value="doctors">Recent Doctors</TabsTrigger>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="size-5" />
+              People & Scheduling
+            </CardTitle>
+            <CardDescription>
+              Upcoming appointments plus the latest patient and doctor activity.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="appointments" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="appointments">Appointments</TabsTrigger>
+                <TabsTrigger value="patients">Patients</TabsTrigger>
+                <TabsTrigger value="doctors">Doctors</TabsTrigger>
               </TabsList>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <TabsContent value="appointments" className="mt-0 space-y-3">
+
+              <TabsContent value="appointments" className="space-y-3">
                 {(overview?.upcomingAppointments ?? []).length ? (
                   overview!.upcomingAppointments.map((appt) => (
-                    <div
+                    <Link
                       key={appt.id}
-                      className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/30"
+                      href={`/admin/appointments/${appt.id}`}
+                      className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                     >
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <p className="font-medium">
-                            {appt.patientName} with {appt.doctorName}
-                          </p>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {appt.branchName ?? "Branch not assigned"}
-                          </p>
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            {formatDate(appt.scheduledStartAt, {
-                              mode: "datetime",
-                            })}
-                          </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="default"
+                            className="rounded-lg size-10"
+                          >
+                            <CalendarClock />
+                          </Button>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={getStatusVariant(appt.status)}
+                                className="capitalize"
+                              >
+                                {titleCase(appt.status)}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {appt.branchName ?? "Branch not assigned"}
+                              </span>
+                            </div>
+                            <p className="mt-2 font-medium">
+                              {appt.patientName} with {appt.doctorName}
+                            </p>
+                          </div>
                         </div>
-                        <Badge variant="outline" className="w-fit capitalize">
-                          {titleCase(appt.status)}
-                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(appt.scheduledStartAt, {
+                            mode: "datetime",
+                          })}
+                        </span>
                       </div>
-                    </div>
+                      <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                        <span className="text-muted-foreground">
+                          Open appointment details
+                        </span>
+                        <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      </div>
+                    </Link>
                   ))
                 ) : (
                   <EmptyState message="No appointments are scheduled yet." />
                 )}
                 <div className="flex justify-end pt-2">
-                  <Button
-                    href="/admin/appointments"
-                    variant="ghost"
-                    size="sm"
-                  >
+                  <Button href="/admin/appointments" variant="ghost" size="sm">
                     View all appointments
                   </Button>
                 </div>
               </TabsContent>
 
-              <TabsContent value="patients" className="mt-0 space-y-3">
+              <TabsContent value="patients" className="space-y-3">
                 {(overview?.recentPatients ?? []).length ? (
                   overview!.recentPatients.map((patient) => (
-                    <div
+                    <Link
                       key={patient.id}
-                      className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                      href={`/admin/patients/${patient.id}`}
+                      className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                     >
-                      <div>
-                        <p className="font-medium">{patient.displayName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {patient.email ?? patient.phone ?? "No contact"}
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="default"
+                            className="rounded-lg size-10"
+                          >
+                            <UserRound />
+                          </Button>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">
+                              {patient.displayName}
+                            </p>
+                            <p className="mt-1 truncate text-sm text-muted-foreground">
+                              {patient.email ?? patient.phone ?? "No contact"}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(patient.createdAt)}
+                        </span>
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        {formatDate(patient.createdAt)}
-                      </span>
-                    </div>
+                      <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                        <span className="text-muted-foreground">
+                          Review patient profile
+                        </span>
+                        <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      </div>
+                    </Link>
                   ))
                 ) : (
                   <EmptyState message="No patients are available yet." />
@@ -474,28 +542,52 @@ export default function AdminOverviewPage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="doctors" className="mt-0 space-y-3">
+              <TabsContent value="doctors" className="space-y-3">
                 {(overview?.doctorRoster ?? []).length ? (
                   overview!.doctorRoster.map((doctor) => (
-                    <div
+                    <Link
                       key={doctor.id}
-                      className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                      href={`/admin/doctors/${doctor.id}`}
+                      className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                     >
-                      <div>
-                        <p className="font-medium">{doctor.displayName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {doctor.specialty}
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="default"
+                            className="rounded-lg size-10"
+                          >
+                            <Stethoscope />
+                          </Button>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">
+                              {doctor.displayName}
+                            </p>
+                            <p className="mt-1 truncate text-sm text-muted-foreground">
+                              {doctor.specialty}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge
+                            variant={getStatusVariant(
+                              doctor.verificationStatus,
+                            )}
+                            className="capitalize"
+                          >
+                            {titleCase(doctor.verificationStatus)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {doctor.isAvailable ? "Available" : "Unavailable"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="secondary" className="capitalize">
-                          {titleCase(doctor.verificationStatus)}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {doctor.isAvailable ? "Available" : "Unavailable"}
+                      <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                        <span className="text-muted-foreground">
+                          Open doctor profile
                         </span>
+                        <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </div>
-                    </div>
+                    </Link>
                   ))
                 ) : (
                   <EmptyState message="No doctors yet." />
@@ -506,8 +598,8 @@ export default function AdminOverviewPage() {
                   </Button>
                 </div>
               </TabsContent>
-            </CardContent>
-          </Tabs>
+            </Tabs>
+          </CardContent>
         </Card>
 
         <Card className="shadow-sm">
@@ -527,9 +619,13 @@ export default function AdminOverviewPage() {
                   className="group rounded-2xl border border-border/60 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <Icon className="size-4" />
-                    </span>
+                    <Button
+                      variant="default"
+                      appearance="soft"
+                      className="rounded-lg size-10"
+                    >
+                      <Icon />
+                    </Button>
                     <MoveRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                   </div>
                   <p className="mt-4 font-medium">{action.title}</p>
@@ -557,86 +653,131 @@ export default function AdminOverviewPage() {
       {/* ── Tab group 2: Outreach & Activity ── */}
       <section>
         <Card className="shadow-sm">
-          <Tabs defaultValue="campaigns" className="gap-0">
-            <CardHeader className="border-b">
-              <TabsList>
-                <TabsTrigger value="campaigns">Recent Campaigns</TabsTrigger>
-                <TabsTrigger value="leads">Leads & Outreach</TabsTrigger>
-                <TabsTrigger value="activity">Activity Log</TabsTrigger>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="size-5" />
+              Outreach & Activity
+            </CardTitle>
+            <CardDescription>
+              Keep an eye on campaigns, inbound leads, and operational changes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="campaigns" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+                <TabsTrigger value="leads">Leads</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
               </TabsList>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <TabsContent value="campaigns" className="mt-0">
+
+              <TabsContent value="campaigns" className="space-y-3">
                 {(overview?.campaigns ?? []).length ? (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid gap-3">
                     {overview!.campaigns.map((campaign) => (
-                      <div
+                      <Link
                         key={campaign.id}
-                        className="rounded-xl border border-border/60 p-4"
+                        href={`/admin/campaigns/${campaign.id}`}
+                        className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="font-medium leading-snug">
-                            {campaign.title}
-                          </p>
-                          <Badge
-                            variant="outline"
-                            className="shrink-0 capitalize"
-                          >
-                            {titleCase(campaign.status)}
-                          </Badge>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <Button variant="default">
+                              <Megaphone />
+                            </Button>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant={getStatusVariant(campaign.status)}
+                                  className="capitalize"
+                                >
+                                  {titleCase(campaign.status)}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {titleCase(campaign.audience)}
+                                </span>
+                              </div>
+                              <p className="mt-2 truncate font-medium">
+                                {campaign.title}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          Audience: {titleCase(campaign.audience)}
-                        </p>
-                      </div>
+                        <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                          <span className="text-muted-foreground">
+                            Open campaign details
+                          </span>
+                          <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (
                   <EmptyState message="No campaigns have been created yet." />
                 )}
-                <div className="flex justify-end pt-4">
+                <div className="flex justify-end pt-2">
                   <Button href="/admin/campaigns" variant="ghost" size="sm">
                     View all campaigns
                   </Button>
                 </div>
               </TabsContent>
 
-              <TabsContent value="leads" className="mt-0 space-y-6">
+              <TabsContent value="leads" className="space-y-6">
                 <div>
-                  <p className="mb-3 text-sm font-medium text-muted-foreground">
-                    Contact Messages
-                  </p>
+                  <div className="mb-3">
+                    <p className="text-sm font-medium">Contact Messages</p>
+                    <p className="text-xs text-muted-foreground">
+                      Latest inbound messages from your landing pages.
+                    </p>
+                  </div>
                   {(overview?.contactMessages ?? []).length ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {overview!.contactMessages.map((msg) => (
-                        <div
+                        <Link
                           key={msg.id}
-                          className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                          href={`/admin/leads/messages/${msg.id}`}
+                          className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                         >
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium">
-                              {msg.firstName}
-                              {msg.lastName ? ` ${msg.lastName}` : ""}
-                            </p>
-                            <p className="truncate text-sm text-muted-foreground">
-                              {msg.subject ?? msg.email}
-                            </p>
-                          </div>
-                          <div className="ml-4 flex shrink-0 flex-col items-end gap-1">
-                            <Badge variant="outline" className="capitalize">
-                              {titleCase(msg.status)}
-                            </Badge>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <Button variant="default">
+                                <Mail />
+                              </Button>
+
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant={getStatusVariant(msg.status)}
+                                    className="capitalize"
+                                  >
+                                    {titleCase(msg.status)}
+                                  </Badge>
+                                  <span className="truncate text-xs text-muted-foreground">
+                                    {msg.email}
+                                  </span>
+                                </div>
+                                <p className="mt-2 truncate font-medium">
+                                  {msg.firstName}
+                                  {msg.lastName ? ` ${msg.lastName}` : ""}
+                                </p>
+                              </div>
+                            </div>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(msg.createdAt)}
                             </span>
                           </div>
-                        </div>
+                          <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                            <span className="truncate text-muted-foreground">
+                              {msg.subject ?? "Open message thread"}
+                            </span>
+                            <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   ) : (
                     <EmptyState message="No contact messages yet." />
                   )}
-                  <div className="flex justify-end pt-3">
+                  <div className="flex justify-end pt-2">
                     <Button
                       href="/admin/leads/messages"
                       variant="ghost"
@@ -648,39 +789,62 @@ export default function AdminOverviewPage() {
                 </div>
 
                 <div>
-                  <p className="mb-3 text-sm font-medium text-muted-foreground">
-                    Newsletter Subscribers
-                  </p>
+                  <div className="mb-3">
+                    <p className="text-sm font-medium">
+                      Newsletter Subscribers
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Signups and opt-outs from your email outreach.
+                    </p>
+                  </div>
                   {(overview?.newsletterSubscribers ?? []).length ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {overview!.newsletterSubscribers.map((sub) => (
-                        <div
+                        <Link
                           key={sub.id}
-                          className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                          href={`/admin/leads/subscribers/${sub.id}`}
+                          className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                         >
-                          <div>
-                            <p className="font-medium">{sub.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {sub.email}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge
-                              variant={sub.isActive ? "default" : "secondary"}
-                            >
-                              {sub.isActive ? "Active" : "Unsubscribed"}
-                            </Badge>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <Button variant="default">
+                                <Newspaper />
+                              </Button>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant={
+                                      sub.isActive ? "success" : "destructive"
+                                    }
+                                  >
+                                    {sub.isActive ? "Active" : "Unsubscribed"}
+                                  </Badge>
+                                  <span className="truncate text-xs text-muted-foreground">
+                                    {sub.email}
+                                  </span>
+                                </div>
+                                <p className="mt-2 truncate font-medium">
+                                  {sub.name}
+                                </p>
+                              </div>
+                            </div>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(sub.subscribedAt)}
                             </span>
                           </div>
-                        </div>
+                          <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                            <span className="text-muted-foreground">
+                              Open subscriber details
+                            </span>
+                            <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   ) : (
                     <EmptyState message="No newsletter subscribers yet." />
                   )}
-                  <div className="flex justify-end pt-3">
+                  <div className="flex justify-end pt-2">
                     <Button
                       href="/admin/leads/subscribers"
                       variant="ghost"
@@ -692,47 +856,58 @@ export default function AdminOverviewPage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="activity" className="mt-0 space-y-2">
+              <TabsContent value="activity" className="space-y-3">
                 {(overview?.auditLogs ?? []).length ? (
-                  overview!.auditLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Badge
-                          variant={
-                            log.action === "delete"
-                              ? "destructive"
-                              : log.action === "create"
-                                ? "default"
-                                : "secondary"
-                          }
-                          className="capitalize"
-                        >
-                          {titleCase(log.action)}
-                        </Badge>
-                        <div>
-                          <p className="text-sm font-medium">
-                            {titleCase(log.entityType)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {log.userName ?? "System"}
-                            {log.ip ? ` · ${log.ip}` : ""}
-                          </p>
+                  overview!.auditLogs.map((log) => {
+                    const ActionIcon =
+                      auditActionIconMap[log.action] ?? History;
+
+                    return (
+                      <Link
+                        key={log.id}
+                        href={`/admin/audit-logs/${log.id}`}
+                        className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <Button variant="default">
+                              <ActionIcon />
+                            </Button>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="capitalize">
+                                  {titleCase(log.action)}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {titleCase(log.entityType)}
+                                </span>
+                              </div>
+                              <p className="mt-2 font-medium">
+                                {log.userName ?? "System"}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(log.createdAt)}
+                          </span>
                         </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(log.createdAt)}
-                      </span>
-                    </div>
-                  ))
+                        <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                          <span className="text-muted-foreground">
+                            {log.ip
+                              ? `IP: ${log.ip}`
+                              : "Tracked dashboard activity"}
+                          </span>
+                          <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </div>
+                      </Link>
+                    );
+                  })
                 ) : (
                   <EmptyState message="No activity has been recorded yet." />
                 )}
               </TabsContent>
-            </CardContent>
-          </Tabs>
+            </Tabs>
+          </CardContent>
         </Card>
       </section>
     </div>
