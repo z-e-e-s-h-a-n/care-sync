@@ -43,12 +43,12 @@ export const getBackPath = (pathname: string, count = 1) => {
 
 export const getStatusVariant = (status: string): BadgeVariants["variant"] => {
   const map: Record<string, BadgeVariants["variant"]> = {
-    pending: "outline",
+    pending: "warning",
     active: "success",
     suspended: "destructive",
-    verified: "default",
+    verified: "success",
     rejected: "destructive",
-    booked: "info",
+    booked: "success",
     confirmed: "info",
     cancelled: "destructive",
     completed: "success",

@@ -10,7 +10,7 @@ import { TZDate } from "@date-fns/tz";
 type DateInput = Date | string;
 type SafeDateInput = Date | string | number;
 
-type DateFormatMode = "date" | "time" | "datetime" | "shortDate";
+type DateFormatMode = "date" | "time" | "datetime" | "shortDate" | "weekday";
 type DateMetaMode = "relative" | "dayCount";
 
 type BaseDateOptions = {
@@ -51,6 +51,9 @@ const DEFAULT_INTL_OPTIONS: Record<DateFormatMode, Intl.DateTimeFormatOptions> =
     datetime: {
       dateStyle: "medium",
       timeStyle: "short",
+    },
+    weekday: {
+      weekday: "short",
     },
   };
 

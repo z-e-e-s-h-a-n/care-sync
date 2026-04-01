@@ -2,28 +2,17 @@
 
 import Link from "next/link";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   CalendarRange,
   Clock3,
   MessageSquareText,
-  MoveRight,
   ShieldCheck,
   UserRoundCog,
   Wallet,
 } from "lucide-react";
 
-import OverviewStatCard from "@/components/dashboard/OverviewStatCard";
+import DashboardChart from "@/components/dashboard/DashboardChart";
+import DashboardQuickActions from "@/components/dashboard/DashboardQuickActions";
+import DashboardStats from "@/components/dashboard/DashboardStats";
 import PageIntro from "@/components/dashboard/PageIntro";
 import { useMyDoctorProfile } from "@/hooks/doctor";
 import { Badge } from "@workspace/ui/components/badge";
@@ -32,16 +21,10 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@workspace/ui/components/chart";
+import { type ChartConfig } from "@workspace/ui/components/chart";
 import {
   addDays,
   formatCompactNumber,
@@ -51,14 +34,7 @@ import {
 } from "@workspace/shared/utils";
 import { useAppointments } from "@/hooks/appointment";
 import { usePayments } from "@/hooks/payment";
-
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-];
+import type { DashboardStatCardProps } from "@/components/dashboard/DashboardStatCard";
 
 const appointmentChartConfig = {
   appointments: {
@@ -185,16 +161,6 @@ export default function DoctorOverviewPage() {
     ([label, value]) => ({ label, value }),
   );
 
-  const appointmentStatusConfig: ChartConfig = Object.fromEntries(
-    appointmentStatusData.map((item, index) => [
-      item.label,
-      {
-        label: titleCase(item.label),
-        color: CHART_COLORS[index % CHART_COLORS.length],
-      },
-    ]),
-  );
-
   const quickActions = [
     {
       href: "/doctor/appointments/new",
@@ -243,6 +209,50 @@ export default function DoctorOverviewPage() {
     },
   ];
 
+  const stats: DashboardStatCardProps[] = [
+    {
+      label: "Verification",
+      value: titleCase(doctor?.verificationStatus ?? "pending"),
+      helper: "Current admin review state for your doctor profile.",
+      badge: doctor?.branch?.name ?? "Branch pending",
+      trendLabel: doctor?.specialty ?? "Specialty not added yet",
+      bars: appointmentStatusData.map((item) => item.value),
+      icon: ShieldCheck,
+      tone: doctor?.verificationStatus === "verified" ? "success" : "warning",
+    },
+    {
+      label: "Booking access",
+      value: doctor?.isAvailable ? "Open" : "Paused",
+      helper: "Controls whether new patients can book from your profile.",
+      badge: doctor?.consultationFee
+        ? formatPrice(Number(doctor.consultationFee))
+        : "Fee missing",
+      trendLabel: `${todayAppointments} appointments start today`,
+      bars: appointmentWindowData.map((item) => item.appointments),
+      icon: Clock3,
+      tone: doctor?.isAvailable ? "success" : "warning",
+    },
+    {
+      label: "Upcoming visits",
+      value: formatCompactNumber(activeAppointments.length),
+      helper: "Future consultations currently assigned to your account.",
+      badge: `${upcomingAppointments.length} total queued`,
+      trendLabel: `${completedAppointments.length} already completed`,
+      bars: appointmentWindowData.map((item) => item.appointments),
+      icon: CalendarRange,
+    },
+    {
+      label: "Captured earnings",
+      value: formatPrice(earnings),
+      helper: "Succeeded appointment payments visible in your role scope.",
+      badge: formatPrice(averageTicket || 0),
+      trendLabel: `${formatPrice(pendingValue)} still pending`,
+      bars: earningsTrendData.map((item) => item.earned + item.expected),
+      icon: Wallet,
+      tone: "warning",
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <PageIntro
@@ -250,239 +260,34 @@ export default function DoctorOverviewPage() {
         description="Manage your schedule, booking flow, and payment visibility from a more complete doctor workspace."
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <OverviewStatCard
-          label="Verification"
-          value={titleCase(doctor?.verificationStatus ?? "pending")}
-          helper="Current admin review state for your doctor profile."
-          badge={doctor?.branch?.name ?? "Branch pending"}
-          trendLabel={doctor?.specialty ?? "Specialty not added yet"}
-          bars={appointmentStatusData.map((item) => item.value)}
-          icon={ShieldCheck}
-          tone={
-            doctor?.verificationStatus === "verified" ? "success" : "warning"
-          }
-        />
-        <OverviewStatCard
-          label="Booking access"
-          value={doctor?.isAvailable ? "Open" : "Paused"}
-          helper="Controls whether new patients can book from your profile."
-          badge={
-            doctor?.consultationFee
-              ? formatPrice(Number(doctor.consultationFee))
-              : "Fee missing"
-          }
-          trendLabel={`${todayAppointments} appointments start today`}
-          bars={appointmentWindowData.map((item) => item.appointments)}
-          icon={Clock3}
-          tone={doctor?.isAvailable ? "success" : "warning"}
-        />
-        <OverviewStatCard
-          label="Upcoming visits"
-          value={formatCompactNumber(activeAppointments.length)}
-          helper="Future consultations currently assigned to your account."
-          badge={`${upcomingAppointments.length} total queued`}
-          trendLabel={`${completedAppointments.length} already completed`}
-          bars={appointmentWindowData.map((item) => item.appointments)}
-          icon={CalendarRange}
-        />
-        <OverviewStatCard
-          label="Captured earnings"
-          value={formatPrice(earnings)}
-          helper="Succeeded appointment payments visible in your role scope."
-          badge={formatPrice(averageTicket || 0)}
-          trendLabel={`${formatPrice(pendingValue)} still pending`}
-          bars={earningsTrendData.map((item) => item.earned + item.expected)}
-          icon={Wallet}
-          tone="warning"
-        />
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Weekly schedule load</CardTitle>
-            <CardDescription>
-              Appointment volume mapped across the next seven days.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={appointmentChartConfig}
-              className="h-80 w-full"
-            >
-              <AreaChart accessibilityLayer data={appointmentWindowData}>
-                <defs>
-                  <linearGradient
-                    id="doctorAppointments"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor="var(--color-appointments)"
-                      stopOpacity={0.75}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="var(--color-appointments)"
-                      stopOpacity={0.12}
-                    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      indicator="dot"
-                      labelFormatter={(_, payload) =>
-                        payload?.[0]?.payload?.date ?? ""
-                      }
-                    />
-                  }
-                />
-                <Area
-                  type="monotone"
-                  dataKey="appointments"
-                  stroke="var(--color-appointments)"
-                  fill="url(#doctorAppointments)"
-                  strokeWidth={2.5}
-                  activeDot={{ r: 4 }}
-                />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Earnings flow</CardTitle>
-              <CardDescription>
-                Settled and expected value from the recent payment activity.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={earningsChartConfig}
-                className="h-64 w-full"
-              >
-                <BarChart accessibilityLayer data={earningsTrendData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis tickLine={false} axisLine={false} width={40} />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        indicator="dashed"
-                        labelFormatter={(_, payload) =>
-                          payload?.[0]?.payload?.date ?? ""
-                        }
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="earned"
-                    fill="var(--color-earned)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="expected"
-                    fill="var(--color-expected)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Visit status mix</CardTitle>
-              <CardDescription>
-                How the visible appointments are distributed by status.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {appointmentStatusData.length ? (
-                <>
-                  <ChartContainer
-                    config={appointmentStatusConfig}
-                    className="h-56 w-full"
-                  >
-                    <PieChart accessibilityLayer>
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent hideLabel nameKey="label" />
-                        }
-                      />
-                      <Pie
-                        data={appointmentStatusData}
-                        dataKey="value"
-                        nameKey="label"
-                        innerRadius={52}
-                        outerRadius={84}
-                        paddingAngle={4}
-                      >
-                        {appointmentStatusData.map((item, index) => (
-                          <Cell
-                            key={item.label}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ChartContainer>
-                  <div className="grid gap-3">
-                    {appointmentStatusData.map((item, index) => (
-                      <div
-                        key={item.label}
-                        className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="size-2.5 rounded-full"
-                            style={{
-                              backgroundColor:
-                                CHART_COLORS[index % CHART_COLORS.length],
-                            }}
-                          />
-                          <span>{titleCase(item.label)}</span>
-                        </div>
-                        <span className="font-medium">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="rounded-xl border border-dashed px-4 py-10 text-sm text-muted-foreground">
-                  No appointment activity is available for charting yet.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+      <DashboardStats stats={stats} />
+      <DashboardChart
+        area={{
+          title: "Weekly schedule load",
+          description: "Appointment volume mapped across the next seven days.",
+          config: appointmentChartConfig,
+          data: appointmentWindowData,
+          valueKey: "appointments",
+          gradientId: "doctorAppointments",
+        }}
+        bar={{
+          title: "Earnings flow",
+          description:
+            "Settled and expected value from the recent payment activity.",
+          config: earningsChartConfig,
+          data: earningsTrendData,
+          keys: ["earned", "expected"],
+        }}
+        pie={{
+          title: "Visit status mix",
+          description:
+            "How the visible appointments are distributed by status.",
+          data: appointmentStatusData,
+          emptyMessage:
+            "No appointment activity is available for charting yet.",
+          formatLabel: titleCase,
+        }}
+      />
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="shadow-sm">
@@ -533,49 +338,12 @@ export default function DoctorOverviewPage() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Quick actions</CardTitle>
-              <CardDescription>
-                The doctor tasks you usually need in the middle of a workday.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              {quickActions.map((action) => {
-                const Icon = action.icon;
-
-                return (
-                  <Link
-                    key={action.href}
-                    href={action.href}
-                    className="group rounded-2xl border border-border/60 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <Icon className="size-4" />
-                      </span>
-                      <MoveRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                    <p className="mt-4 font-medium">{action.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {action.description}
-                    </p>
-                  </Link>
-                );
-              })}
-            </CardContent>
-            <CardFooter className="flex-col items-stretch gap-3 border-t pt-6">
-              {focusItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-medium">{item.value}</span>
-                </div>
-              ))}
-            </CardFooter>
-          </Card>
+          <DashboardQuickActions
+            title="Quick actions"
+            description="The doctor tasks you usually need in the middle of a workday."
+            actions={quickActions}
+            focusItems={focusItems}
+          />
 
           <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between gap-3">

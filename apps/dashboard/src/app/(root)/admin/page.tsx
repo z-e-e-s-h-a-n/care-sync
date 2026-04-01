@@ -2,18 +2,6 @@
 
 import Link from "next/link";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   ArrowUpRight,
   CalendarClock,
   FilePlus2,
@@ -22,7 +10,6 @@ import {
   LogOut,
   Mail,
   Megaphone,
-  MoveRight,
   Newspaper,
   PencilLine,
   Plus,
@@ -34,7 +21,10 @@ import {
   Wallet,
 } from "lucide-react";
 
-import OverviewStatCard from "@/components/dashboard/OverviewStatCard";
+import DashboardChart from "@/components/dashboard/DashboardChart";
+import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
+import DashboardQuickActions from "@/components/dashboard/DashboardQuickActions";
+import DashboardStats from "@/components/dashboard/DashboardStats";
 import PageIntro from "@/components/dashboard/PageIntro";
 import { useAdminDashboard } from "@/hooks/dashboard";
 import { Badge } from "@workspace/ui/components/badge";
@@ -43,16 +33,10 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@workspace/ui/components/chart";
+import { type ChartConfig } from "@workspace/ui/components/chart";
 import {
   Tabs,
   TabsContent,
@@ -65,14 +49,7 @@ import {
   formatPrice,
 } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
-
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-];
+import type { DashboardStatCardProps } from "@/components/dashboard/DashboardStatCard";
 
 const appointmentChartConfig = {
   appointments: { label: "Appointments", color: "var(--chart-1)" },
@@ -95,27 +72,19 @@ const auditActionIconMap: Record<string, React.ElementType> = {
   statusChange: RefreshCcw,
 };
 
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-      {message}
-    </div>
-  );
-}
-
 export default function AdminOverviewPage() {
   const { data: overview } = useAdminDashboard();
 
   const appointmentWindowData =
     overview?.upcomingVisits.window.map(({ date, count }) => ({
-      label: formatDate(date, { options: { weekday: "short" } }),
+      label: formatDate(date, { mode: "shortDate" }),
       date: formatDate(date, { mode: "shortDate" }),
       appointments: count,
     })) ?? [];
 
   const revenueTrendData =
     overview?.revenue.trend.map(({ date, settled, pending }) => ({
-      label: formatDate(date, { options: { weekday: "short" } }),
+      label: formatDate(date, { mode: "shortDate" }),
       date: formatDate(date, { mode: "shortDate" }),
       settled,
       pending,
@@ -126,16 +95,6 @@ export default function AdminOverviewPage() {
       label: status,
       value: count,
     })) ?? [];
-
-  const paymentStatusConfig: ChartConfig = Object.fromEntries(
-    paymentStatusData.map((item, index) => [
-      item.label,
-      {
-        label: titleCase(item.label),
-        color: CHART_COLORS[index % CHART_COLORS.length],
-      },
-    ]),
-  );
 
   const quickActions = [
     {
@@ -184,6 +143,49 @@ export default function AdminOverviewPage() {
     },
   ];
 
+  const stats: DashboardStatCardProps[] = [
+    {
+      label: "Care team",
+      value: formatCompactNumber(overview?.careTeam.total ?? 0),
+      helper: `${overview?.careTeam.branchTotal ?? 0} branches are represented in the current roster feed.`,
+      badge: `${overview?.careTeam.verified ?? 0} verified`,
+      trendLabel: `${overview?.careTeam.available ?? 0} available for new bookings`,
+      bars: overview?.careTeam.rosterBars ?? [],
+      icon: Stethoscope,
+      tone: "success",
+    },
+    {
+      label: "Patient growth",
+      value: formatCompactNumber(overview?.patientGrowth.total ?? 0),
+      helper:
+        "Recent signups and profile creation activity from the last month.",
+      badge: `+${overview?.patientGrowth.newThisMonth ?? 0} this month`,
+      trendLabel: `${overview?.upcomingVisits.todayCount ?? 0} appointments are on deck for today`,
+      bars: overview?.patientGrowth.growthBars.map((d) => d.count) ?? [],
+      icon: Users,
+    },
+    {
+      label: "Upcoming visits",
+      value: formatCompactNumber(overview?.upcomingVisits.active ?? 0),
+      helper:
+        "Active appointments scheduled ahead, excluding completed and cancelled visits.",
+      badge: `${overview?.upcomingVisits.queued ?? 0} queued`,
+      trendLabel: `${overview?.upcomingVisits.todayCount ?? 0} appointments start today`,
+      bars: appointmentWindowData.map((item) => item.appointments),
+      icon: CalendarClock,
+    },
+    {
+      label: "Collected revenue",
+      value: formatPrice(overview?.revenue.collected ?? 0),
+      helper: "Succeeded payments captured across all time.",
+      badge: `${overview?.revenue.successRate ?? 0}% success`,
+      trendLabel: `${formatPrice(overview?.revenue.pending ?? 0)} still pending`,
+      bars: revenueTrendData.map((item) => item.settled + item.pending),
+      icon: Wallet,
+      tone: "warning",
+    },
+  ];
+
   return (
     <div className="space-y-8">
       <PageIntro
@@ -192,231 +194,34 @@ export default function AdminOverviewPage() {
       />
 
       {/* ── Stat cards ── */}
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <OverviewStatCard
-          label="Care team"
-          value={formatCompactNumber(overview?.careTeam.total ?? 0)}
-          helper={`${overview?.careTeam.branchTotal ?? 0} branches are represented in the current roster feed.`}
-          badge={`${overview?.careTeam.verified ?? 0} verified`}
-          trendLabel={`${overview?.careTeam.available ?? 0} available for new bookings`}
-          bars={overview?.careTeam.rosterBars ?? []}
-          icon={Stethoscope}
-          tone="success"
-        />
-        <OverviewStatCard
-          label="Patient growth"
-          value={formatCompactNumber(overview?.patientGrowth.total ?? 0)}
-          helper="Recent signups and profile creation activity from the last month."
-          badge={`+${overview?.patientGrowth.newThisMonth ?? 0} this month`}
-          trendLabel={`${overview?.upcomingVisits.todayCount ?? 0} appointments are on deck for today`}
-          bars={overview?.patientGrowth.growthBars.map((d) => d.count) ?? []}
-          icon={Users}
-        />
-        <OverviewStatCard
-          label="Upcoming visits"
-          value={formatCompactNumber(overview?.upcomingVisits.active ?? 0)}
-          helper="Active appointments scheduled ahead, excluding completed and cancelled visits."
-          badge={`${overview?.upcomingVisits.queued ?? 0} queued`}
-          trendLabel={`${overview?.upcomingVisits.todayCount ?? 0} appointments start today`}
-          bars={appointmentWindowData.map((item) => item.appointments)}
-          icon={CalendarClock}
-        />
-        <OverviewStatCard
-          label="Collected revenue"
-          value={formatPrice(overview?.revenue.collected ?? 0)}
-          helper="Succeeded payments captured across all time."
-          badge={`${overview?.revenue.successRate ?? 0}% success`}
-          trendLabel={`${formatPrice(overview?.revenue.pending ?? 0)} still pending`}
-          bars={revenueTrendData.map((item) => item.settled + item.pending)}
-          icon={Wallet}
-          tone="warning"
-        />
-      </section>
+      <DashboardStats stats={stats} />
 
       {/* ── Charts ── */}
-      <section className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Appointment load</CardTitle>
-            <CardDescription>
-              Daily booking pressure across the next seven days.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={appointmentChartConfig}
-              className="h-80 w-full"
-            >
-              <AreaChart accessibilityLayer data={appointmentWindowData}>
-                <defs>
-                  <linearGradient
-                    id="adminAppointments"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor="var(--color-appointments)"
-                      stopOpacity={0.75}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="var(--color-appointments)"
-                      stopOpacity={0.12}
-                    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      indicator="dot"
-                      labelFormatter={(_, payload) =>
-                        payload?.[0]?.payload?.date ?? ""
-                      }
-                    />
-                  }
-                />
-                <Area
-                  type="monotone"
-                  dataKey="appointments"
-                  stroke="var(--color-appointments)"
-                  fill="url(#adminAppointments)"
-                  strokeWidth={2.5}
-                  activeDot={{ r: 4 }}
-                />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Revenue flow</CardTitle>
-              <CardDescription>
-                Settled versus pending payment value over the last seven days.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={revenueChartConfig}
-                className="h-64 w-full"
-              >
-                <BarChart accessibilityLayer data={revenueTrendData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis tickLine={false} axisLine={false} width={40} />
-                  <ChartTooltip
-                    cursor={false}
-                    content={
-                      <ChartTooltipContent
-                        indicator="dashed"
-                        labelFormatter={(_, payload) =>
-                          payload?.[0]?.payload?.date ?? ""
-                        }
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="settled"
-                    fill="var(--color-settled)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="pending"
-                    fill="var(--color-pending)"
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Payment status mix</CardTitle>
-              <CardDescription>
-                Snapshot of payment outcomes across all time.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {paymentStatusData.length ? (
-                <>
-                  <ChartContainer
-                    config={paymentStatusConfig}
-                    className="h-56 w-full"
-                  >
-                    <PieChart accessibilityLayer>
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent hideLabel nameKey="label" />
-                        }
-                      />
-                      <Pie
-                        data={paymentStatusData}
-                        dataKey="value"
-                        nameKey="label"
-                        innerRadius={52}
-                        outerRadius={84}
-                        paddingAngle={4}
-                      >
-                        {paymentStatusData.map((item, index) => (
-                          <Cell
-                            key={item.label}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ChartContainer>
-                  <div className="grid gap-3">
-                    {paymentStatusData.map((item, index) => (
-                      <div
-                        key={item.label}
-                        className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="size-2.5 rounded-full"
-                            style={{
-                              backgroundColor:
-                                CHART_COLORS[index % CHART_COLORS.length],
-                            }}
-                          />
-                          <span>{titleCase(item.label)}</span>
-                        </div>
-                        <span className="font-medium">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <EmptyState message="No payment activity is available for charting yet." />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+      <DashboardChart
+        area={{
+          title: "Appointment load",
+          description: "Daily booking pressure across the next seven days.",
+          config: appointmentChartConfig,
+          data: appointmentWindowData,
+          valueKey: "appointments",
+          gradientId: "adminAppointments",
+        }}
+        bar={{
+          title: "Revenue flow",
+          description:
+            "Settled versus pending payment value over the last seven days.",
+          config: revenueChartConfig,
+          data: revenueTrendData,
+          keys: ["settled", "pending"],
+        }}
+        pie={{
+          title: "Payment status mix",
+          description: "Snapshot of payment outcomes across all time.",
+          data: paymentStatusData,
+          emptyMessage: "No payment activity is available for charting yet.",
+          formatLabel: titleCase,
+        }}
+      />
 
       {/* ── Tab group 1: People & Appointments | Quick Actions ── */}
       <section className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
@@ -486,7 +291,7 @@ export default function AdminOverviewPage() {
                     </Link>
                   ))
                 ) : (
-                  <EmptyState message="No appointments are scheduled yet." />
+                  <DashboardEmptyState message="No appointments are scheduled yet." />
                 )}
                 <div className="flex justify-end pt-2">
                   <Button href="/admin/appointments" variant="ghost" size="sm">
@@ -533,7 +338,7 @@ export default function AdminOverviewPage() {
                     </Link>
                   ))
                 ) : (
-                  <EmptyState message="No patients are available yet." />
+                  <DashboardEmptyState message="No patients are available yet." />
                 )}
                 <div className="flex justify-end pt-2">
                   <Button href="/admin/patients" variant="ghost" size="sm">
@@ -590,7 +395,7 @@ export default function AdminOverviewPage() {
                     </Link>
                   ))
                 ) : (
-                  <EmptyState message="No doctors yet." />
+                  <DashboardEmptyState message="No doctors yet." />
                 )}
                 <div className="flex justify-end pt-2">
                   <Button href="/admin/doctors" variant="ghost" size="sm">
@@ -601,53 +406,12 @@ export default function AdminOverviewPage() {
             </Tabs>
           </CardContent>
         </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Quick actions</CardTitle>
-            <CardDescription>
-              Jump into the admin tasks that usually need attention first.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="group rounded-2xl border border-border/60 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <Button
-                      variant="default"
-                      appearance="soft"
-                      className="rounded-lg size-10"
-                    >
-                      <Icon />
-                    </Button>
-                    <MoveRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                  <p className="mt-4 font-medium">{action.title}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {action.description}
-                  </p>
-                </Link>
-              );
-            })}
-          </CardContent>
-          <CardFooter className="flex-col items-stretch gap-3 border-t pt-6">
-            {focusItems.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-muted-foreground">{item.label}</span>
-                <span className="font-medium">{item.value}</span>
-              </div>
-            ))}
-          </CardFooter>
-        </Card>
+        <DashboardQuickActions
+          title="Quick actions"
+          description="Jump into the admin tasks that usually need attention first."
+          actions={quickActions}
+          focusItems={focusItems}
+        />
       </section>
 
       {/* ── Tab group 2: Outreach & Activity ── */}
@@ -712,7 +476,7 @@ export default function AdminOverviewPage() {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState message="No campaigns have been created yet." />
+                  <DashboardEmptyState message="No campaigns have been created yet." />
                 )}
                 <div className="flex justify-end pt-2">
                   <Button href="/admin/campaigns" variant="ghost" size="sm">
@@ -775,7 +539,7 @@ export default function AdminOverviewPage() {
                       ))}
                     </div>
                   ) : (
-                    <EmptyState message="No contact messages yet." />
+                    <DashboardEmptyState message="No contact messages yet." />
                   )}
                   <div className="flex justify-end pt-2">
                     <Button
@@ -842,7 +606,7 @@ export default function AdminOverviewPage() {
                       ))}
                     </div>
                   ) : (
-                    <EmptyState message="No newsletter subscribers yet." />
+                    <DashboardEmptyState message="No newsletter subscribers yet." />
                   )}
                   <div className="flex justify-end pt-2">
                     <Button
@@ -903,7 +667,7 @@ export default function AdminOverviewPage() {
                     );
                   })
                 ) : (
-                  <EmptyState message="No activity has been recorded yet." />
+                  <DashboardEmptyState message="No activity has been recorded yet." />
                 )}
               </TabsContent>
             </Tabs>
