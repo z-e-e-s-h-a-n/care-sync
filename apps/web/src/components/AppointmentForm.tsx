@@ -87,8 +87,14 @@ const AppointmentForm = ({ doctorId, onSuccess }: AppointmentFormProps) => {
     }),
   );
 
-  const from = useMemo(() => addDays(selectedDate, 0), [selectedDate]);
-  const to = useMemo(() => addDays(selectedDate, 6), [selectedDate]);
+  const from = useMemo(
+    () => addDays(selectedDate!, 0)?.toISOString(),
+    [selectedDate],
+  );
+  const to = useMemo(
+    () => addDays(selectedDate!, 6)?.toISOString(),
+    [selectedDate],
+  );
 
   const slotsQuery = useDoctorSlots(selectedDoctorId, from, to);
 
@@ -151,7 +157,7 @@ const AppointmentForm = ({ doctorId, onSuccess }: AppointmentFormProps) => {
                 >
                   <IconClock />
                   <p className="font-medium">
-                    {formatDate(slot.startAt, "time")}
+                    {formatDate(slot.startAt, { mode: "time" })}
                   </p>
                 </Button>
               );

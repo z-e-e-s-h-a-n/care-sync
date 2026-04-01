@@ -39,7 +39,9 @@ const RequestSuccess = ({ searchParams }: AppPageProps) => {
         </div>
         <div className="flex items-center gap-2">
           <IconCalendar className="size-4" />
-          <p>{formatDate(appointment.scheduledStartAt, "datetime")}</p>
+          <p>
+            {formatDate(appointment.scheduledStartAt, { mode: "datetime" })}
+          </p>
         </div>
       </section>
     </section>
