@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD, APP_PIPE } from "@nestjs/core";
 import { ZodValidationPipe } from "nestjs-zod";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 
 import { EnvModule } from "@/modules/env/env.module";
 import { validateEnv } from "@/schemas/env.schema";
@@ -32,6 +33,7 @@ import { CampaignModule } from "@/modules/campaign/campaign.module";
 import { ClientModule } from "./modules/client/client.module";
 import { LeadModule } from "@/modules/lead/lead.module";
 import { TrafficModule } from "./modules/traffic/traffic.module";
+import { DashboardModule } from "@/modules/dashboard/dashboard.module";
 
 @Module({
   imports: [
@@ -39,6 +41,9 @@ import { TrafficModule } from "./modules/traffic/traffic.module";
       isGlobal: true,
       validate: validateEnv,
     }),
+    ThrottlerModule.forRoot([
+      { name: "default", ttl: 60000, limit: 100 },
+    ]),
     EnvModule,
     CacheModule,
     SchedulerModule,
@@ -64,9 +69,14 @@ import { TrafficModule } from "./modules/traffic/traffic.module";
     CampaignModule,
     LeadModule,
     TrafficModule,
+    DashboardModule,
   ],
 
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

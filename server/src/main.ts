@@ -1,5 +1,7 @@
 import "reflect-metadata";
+import helmet from "helmet";
 import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import cookieParser from "cookie-parser";
 import { WinstonModule } from "nest-winston";
 import { AppModule } from "@/app.module";
@@ -10,7 +12,7 @@ import { AllExceptionsFilter } from "@/filters/exceptions.filter";
 import { ResponseInterceptor } from "@/interceptors/response.interceptor";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: WinstonModule.createLogger(winstonConfig),
   });
   const env = app.get(EnvService);
@@ -21,6 +23,8 @@ async function bootstrap() {
   const endpoint = env.get("APP_ENDPOINT");
   const nodeEnv = env.get("NODE_ENV");
   const allowedOrigins = env.get("CORS_ORIGIN");
+
+  app.set("trust proxy", 1);
 
   app.enableCors({
     origin: allowedOrigins,
@@ -33,6 +37,7 @@ async function bootstrap() {
       "x-trusted-device",
     ],
   });
+  app.use(helmet());
   app.use(cookieParser());
   app.useGlobalInterceptors(app.get(ResponseInterceptor));
   app.useGlobalFilters(app.get(AllExceptionsFilter));

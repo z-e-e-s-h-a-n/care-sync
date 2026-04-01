@@ -10,6 +10,7 @@ import {
   Req,
   Res,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import {
   UpdateIdentifierDto,
   RequestOtpDto,
@@ -33,12 +34,14 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post("signup")
   async signUp(@Body() dto: SignUpDto) {
     return this.authService.signUp(dto);
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("signin")
   async signIn(
     @Body() dto: SignInDto,
@@ -57,12 +60,14 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post("request-otp")
   async requestOtp(@Body() dto: RequestOtpDto) {
     return this.authService.requestOtp(dto);
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get("validate-otp")
   async validateOtp(
     @Query() dto: ValidateOtpDto,

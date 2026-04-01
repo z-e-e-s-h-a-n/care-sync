@@ -1,5 +1,11 @@
 import { apiClient, executeApi } from "../lib";
-import type { DashboardResponse } from "@workspace/contracts/dashboard";
+import type {
+  AdminDashboardOverview,
+  DoctorDashboardOverview,
+} from "@workspace/contracts/dashboard";
 
-export const getDashboard = () =>
-  executeApi<DashboardResponse>(() => apiClient.get("/dashboard"));
+export const getAdminDashboard = () =>
+  executeApi<AdminDashboardOverview>(() => apiClient.get("/dashboard/admin"));
+
+export const getDoctorDashboard = () =>
+  executeApi<DoctorDashboardOverview>(() => apiClient.get("/dashboard/doctor"));
