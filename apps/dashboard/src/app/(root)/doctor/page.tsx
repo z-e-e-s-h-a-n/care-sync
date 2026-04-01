@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
+
 import {
+  ArrowUpRight,
   CalendarRange,
   Clock3,
   MessageSquareText,
@@ -10,6 +13,7 @@ import {
 } from "lucide-react";
 
 import DashboardChart from "@/components/dashboard/DashboardChart";
+import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
 import DashboardQuickActions from "@/components/dashboard/DashboardQuickActions";
 import DashboardStats from "@/components/dashboard/DashboardStats";
 import PageIntro from "@/components/dashboard/PageIntro";
@@ -30,7 +34,7 @@ import {
   formatDate,
   formatPrice,
 } from "@workspace/shared/utils";
-
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 const appointmentChartConfig = {
   appointments: {
     label: "Booked",
@@ -227,35 +231,54 @@ export default function DoctorOverviewPage() {
               Open schedule
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {overview?.upcomingAppointments?.slice(0, 6).length ? (
               overview.upcomingAppointments.slice(0, 6).map((appointment) => (
-                <div
+                <Link
                   key={appointment.id}
-                  className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/30"
+                  href="/doctor/appointments"
+                  className="group block rounded-2xl border bg-card/70 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                 >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="font-medium">{appointment.patientName}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {appointment.branchName ??
-                          doctor?.branchName ??
-                          "Branch not assigned"}
-                      </p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {formatDate(appointment.scheduledStartAt)}
-                      </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <CalendarRange className="size-4" />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={getStatusVariant(appointment.status)}
+                            className="capitalize"
+                          >
+                            {titleCase(appointment.status)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {appointment.branchName ??
+                              doctor?.branchName ??
+                              "Branch not assigned"}
+                          </span>
+                        </div>
+                        <p className="mt-2 font-medium">
+                          {appointment.patientName}
+                        </p>
+                      </div>
                     </div>
-                    <Badge variant="outline" className="w-fit capitalize">
-                      {titleCase(appointment.status)}
-                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(appointment.scheduledStartAt, {
+                        mode: "datetime",
+                      })}
+                    </span>
                   </div>
-                </div>
+                  <div className="mt-4 flex items-center justify-between rounded-xl border border-dashed px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">
+                      View this appointment in your schedule
+                    </span>
+                    <ArrowUpRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </div>
+                </Link>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No appointments are assigned yet.
-              </p>
+              <DashboardEmptyState message="No appointments are assigned yet." />
             )}
           </CardContent>
         </Card>
