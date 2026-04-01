@@ -23,9 +23,7 @@ import {
 import { MediaService } from "./media.service";
 import { User } from "@/decorators/user.decorator";
 import { BooleanQuery } from "@/lib/decorators/boolean-query.decorator";
-import { Roles } from "@/lib/decorators/roles.decorator";
 
-@Roles("admin")
 @Controller("media")
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
@@ -72,33 +70,44 @@ export class MediaController {
   }
 
   @Get()
-  async findAllMedia(@Query() query: MediaQueryDto) {
-    return this.mediaService.findAllMedia(query);
+  async findAllMedia(
+    @Query() query: MediaQueryDto,
+    @User() currentUser: Express.User,
+  ) {
+    return this.mediaService.findAllMedia(query, currentUser);
   }
 
   @Get("/:mediaId")
-  async findMedia(@Param("mediaId") mediaId: string) {
-    return this.mediaService.findMedia(mediaId);
+  async findMedia(
+    @Param("mediaId") mediaId: string,
+    @User() currentUser: Express.User,
+  ) {
+    return this.mediaService.findMedia(mediaId, currentUser);
   }
 
   @Put("/:mediaId")
   async updateMedia(
     @Body() dto: MediaUpdateDto,
     @Param("mediaId") mediaId: string,
+    @User() currentUser: Express.User,
   ) {
-    return this.mediaService.updateMedia(dto, mediaId);
+    return this.mediaService.updateMedia(dto, mediaId, currentUser);
   }
 
   @Delete("/:mediaId")
   async deleteMedia(
     @Param("mediaId") mediaId: string,
     @BooleanQuery("force") force: boolean,
+    @User() currentUser: Express.User,
   ) {
-    return this.mediaService.deleteMedia(mediaId, force);
+    return this.mediaService.deleteMedia(mediaId, force, currentUser);
   }
 
   @Post("/:mediaId/restore")
-  async restoreMedia(@Param("mediaId") mediaId: string) {
-    return this.mediaService.restoreMedia(mediaId);
+  async restoreMedia(
+    @Param("mediaId") mediaId: string,
+    @User() currentUser: Express.User,
+  ) {
+    return this.mediaService.restoreMedia(mediaId, currentUser);
   }
 }

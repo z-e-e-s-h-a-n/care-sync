@@ -205,19 +205,15 @@ export class DashboardService {
       ]),
     );
     const collected = paymentMap["succeeded"]?.amount ?? 0;
-    const totalPayments = paymentStatusCounts.reduce(
-      (s, r) => s + r._count,
-      0,
-    );
+    const totalPayments = paymentStatusCounts.reduce((s, r) => s + r._count, 0);
     const succeededCount = paymentMap["succeeded"]?.count ?? 0;
     const successRate = totalPayments
       ? Math.round((succeededCount / totalPayments) * 100)
       : 0;
     const pendingPaymentValue = Number(pendingPaymentSum._sum.amount ?? 0);
-    const pendingRevenue =
-      paymentStatusCounts
-        .filter((r) => r.status !== "succeeded")
-        .reduce((s, r) => s + Number(r._sum.amount ?? 0), 0);
+    const pendingRevenue = paymentStatusCounts
+      .filter((r) => r.status !== "succeeded")
+      .reduce((s, r) => s + Number(r._sum.amount ?? 0), 0);
 
     // 7-day windows
     const last7Days = buildDateRange(sevenDaysAgo, 7);
@@ -230,9 +226,7 @@ export class DashboardService {
 
     const appointmentWindow = fillDailyCounts(
       next7Days,
-      groupByDay(
-        appointmentsNext7Days.map((r) => r.scheduledStartAt),
-      ),
+      groupByDay(appointmentsNext7Days.map((r) => r.scheduledStartAt)),
     );
 
     const revenueTrend = fillDailyRevenue(
@@ -437,10 +431,7 @@ export class DashboardService {
     // Earnings aggregation
     const succeeded = doctorPayments.filter((p) => p.status === "succeeded");
     const pending = doctorPayments.filter((p) => p.status !== "succeeded");
-    const earningsTotal = succeeded.reduce(
-      (s, p) => s + Number(p.amount),
-      0,
-    );
+    const earningsTotal = succeeded.reduce((s, p) => s + Number(p.amount), 0);
     const pendingTotal = pending.reduce((s, p) => s + Number(p.amount), 0);
     const earningsAverage = succeeded.length
       ? earningsTotal / succeeded.length
@@ -534,9 +525,7 @@ function toDateKey(date: Date): string {
 }
 
 function buildDateRange(from: Date, days: number): string[] {
-  return Array.from({ length: days }, (_, i) =>
-    toDateKey(addDays(from, i)),
-  );
+  return Array.from({ length: days }, (_, i) => toDateKey(addDays(from, i)));
 }
 
 function groupByDay(dates: Date[]): Record<string, number> {

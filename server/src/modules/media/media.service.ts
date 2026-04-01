@@ -61,12 +61,13 @@ export class MediaService {
     }
   }
 
-  async findAllMedia(query: MediaQueryDto) {
+  async findAllMedia(query: MediaQueryDto, currentUser: Express.User) {
     const { page, limit, sortBy, sortOrder, search, searchBy, mimeType, type } =
       query;
 
     const where: Prisma.MediaWhereInput = {};
 
+    where.uploadedById = currentUser.id;
     if (type) where.type = { equals: type };
     if (mimeType) where.mimeType = { contains: mimeType, mode: "insensitive" };
 
@@ -106,9 +107,9 @@ export class MediaService {
     };
   }
 
-  async findMedia(mediaId: string) {
+  async findMedia(mediaId: string, currentUser: Express.User) {
     const media = await this.prisma.media.findUniqueOrThrow({
-      where: { id: mediaId },
+      where: { id: mediaId, uploadedById: currentUser.id },
       include: this.mediaInclude,
     });
 
@@ -118,9 +119,13 @@ export class MediaService {
     };
   }
 
-  async updateMedia(dto: MediaUpdateDto, mediaId: string) {
+  async updateMedia(
+    dto: MediaUpdateDto,
+    mediaId: string,
+    currentUser: Express.User,
+  ) {
     const updated = await this.prisma.media.update({
-      where: { id: mediaId },
+      where: { id: mediaId, uploadedById: currentUser.id },
       data: dto,
       include: this.mediaInclude,
     });
@@ -131,9 +136,9 @@ export class MediaService {
     };
   }
 
-  async deleteMedia(mediaId: string, force = false) {
+  async deleteMedia(mediaId: string, force = false, currentUser: Express.User) {
     const media = await this.prisma.media.findUniqueOrThrow({
-      where: { id: mediaId },
+      where: { id: mediaId, uploadedById: currentUser.id },
     });
 
     if (force) {
@@ -149,9 +154,9 @@ export class MediaService {
     };
   }
 
-  async restoreMedia(mediaId: string) {
+  async restoreMedia(mediaId: string, currentUser: Express.User) {
     await this.prisma.media.update({
-      where: { id: mediaId },
+      where: { id: mediaId, uploadedById: currentUser.id },
       data: { deletedAt: null },
     });
 
