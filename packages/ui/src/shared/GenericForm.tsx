@@ -3,11 +3,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useForm, type FormValidateOrFn } from "@tanstack/react-form";
-import type {
-  ArrayItem,
-  BaseCUFormProps,
-  FormSectionType,
-} from "@workspace/contracts";
+import type { ArrayItem, BaseCUFormProps } from "@workspace/contracts";
 
 import type { ApiException } from "@workspace/sdk";
 import { getBackPath } from "@workspace/ui/lib/utils";
@@ -22,7 +18,7 @@ interface UseQueryResult<TData, TFormData> {
   data?: TData;
   isLoading?: boolean;
   fetchError: ApiException | null;
-  mutateAsync: (data: TFormData) => Promise<TData>;
+  mutateAsync: (data: TFormData) => Promise<TData | null>;
   isPending: boolean;
   mutateError: ApiException | null;
 }
@@ -35,17 +31,9 @@ interface GenericFormProps<TData, TFormData> extends BaseCUFormProps {
   description?: string;
   submitLabel?: string;
   mapDataToValues?: (data: TData) => TFormData;
-  children?: (
-    form: AnyFormApi<TFormData>,
-    formType: FormSectionType,
-    data?: TData,
-  ) => React.ReactNode;
+  children?: (form: AnyFormApi<TFormData>, data?: TData) => React.ReactNode;
   useQuery: (...args: string[]) => UseQueryResult<TData, TFormData>;
-  formHeader?: (
-    form: AnyFormApi<TFormData>,
-    formType: FormSectionType,
-    data?: TData,
-  ) => React.ReactNode;
+  formHeader?: (form: AnyFormApi<TFormData>, data?: TData) => React.ReactNode;
   arrayFields?: {
     [K in keyof TFormData]: TFormData[K] extends readonly any[]
       ? {
@@ -131,7 +119,7 @@ export function GenericForm<
         </div>
       }
     >
-      {formHeader && formHeader(form, formType, data)}
+      {formHeader && formHeader(form, data)}
 
       {arrayFields && (
         <GenericArrayField
@@ -142,7 +130,7 @@ export function GenericForm<
         />
       )}
 
-      {children?.(form, formType, data)}
+      {children?.(form, data)}
 
       <div className="flex items-center justify-between">
         <Button
