@@ -94,26 +94,25 @@ const ContactMessageDetailsPage = ({ params }: AppPageProps) => {
               label: "Created At",
               accessor: "createdAt",
               icon: Calendar,
-              format: (value) => formatDate(value, "datetime"),
+              format: (value) => formatDate(value, { mode: "datetime" }),
             },
             {
               label: "Updated At",
               accessor: "updatedAt",
               icon: Calendar,
-              format: (value) => formatDate(value, "datetime"),
+              format: (value) => formatDate(value, { mode: "datetime" }),
             },
             {
               label: "Viewed At",
               accessor: (message) =>
-                message.viewedAt ? formatDate(message.viewedAt, "datetime") : "—",
+                formatDate(message.viewedAt, { mode: "datetime" }),
+
               icon: Calendar,
             },
             {
               label: "Replied At",
               accessor: (message) =>
-                message.repliedAt
-                  ? formatDate(message.repliedAt, "datetime")
-                  : "—",
+                formatDate(message.repliedAt, { mode: "datetime" }),
               icon: Calendar,
             },
           ],

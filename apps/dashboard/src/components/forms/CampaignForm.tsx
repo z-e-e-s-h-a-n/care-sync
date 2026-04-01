@@ -17,7 +17,7 @@ import { Button } from "@workspace/ui/components/button";
 import { InputField } from "@workspace/ui/components/input-field";
 import { SelectField } from "@workspace/ui/components/select-field";
 
-import { useCreateCampaign } from "@/hooks/healthcare";
+import { useCreateCampaign } from "@/hooks/campaign";
 
 const CampaignForm = () => {
   const router = useRouter();
@@ -25,12 +25,8 @@ const CampaignForm = () => {
 
   const form = useForm({
     defaultValues: {
-      audience: "patients",
-      title: "",
-      subject: "",
-      message: "",
       channel: "email",
-      scheduledAt: undefined,
+      audience: "patients",
     } as NotificationCampaignType,
     validators: {
       onSubmit: notificationCampaignSchema,
@@ -58,38 +54,38 @@ const CampaignForm = () => {
       </div>
 
       <FormSection title="Campaign Setup">
-          <SelectField
-            form={form}
-            name="audience"
-            label="Audience"
-            options={CampaignAudienceEnum.options}
-          />
-          <SelectField
-            form={form}
-            name="channel"
-            label="Channel"
-            options={NotificationChannelEnum.options}
-          />
-          <InputField
-            form={form}
-            name="title"
-            label="Title"
-            className="md:col-span-2"
-          />
-          <InputField
-            form={form}
-            name="subject"
-            label="Subject"
-            className="md:col-span-2"
-          />
-          <InputField
-            form={form}
-            name="message"
-            label="Message"
-            type="textarea"
-            className="md:col-span-2"
-            rows={5}
-          />
+        <SelectField
+          form={form}
+          name="audience"
+          label="Audience"
+          options={CampaignAudienceEnum.options}
+        />
+        <SelectField
+          form={form}
+          name="channel"
+          label="Channel"
+          options={NotificationChannelEnum.options}
+        />
+        <InputField
+          form={form}
+          name="title"
+          label="Title"
+          className="md:col-span-2"
+        />
+        <InputField
+          form={form}
+          name="subject"
+          label="Subject"
+          className="md:col-span-2"
+        />
+        <InputField
+          form={form}
+          name="message"
+          label="Message"
+          type="textarea"
+          className="md:col-span-2"
+          rows={5}
+        />
       </FormSection>
 
       <div className="flex items-center justify-between">

@@ -2,16 +2,12 @@
 
 import ListPage from "@workspace/ui/shared/ListPage";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
-import { usePayments } from "@/hooks/healthcare";
+import { usePayments } from "@/hooks/payment";
 import type {
   PaymentQueryType,
   PaymentResponse,
 } from "@workspace/contracts/payment";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { formatPrice } from "@workspace/shared/utils";
 
 const columns: ColumnConfig<PaymentResponse, PaymentQueryType>[] = [
   { header: "Payment", accessor: "id" },
@@ -25,7 +21,7 @@ const columns: ColumnConfig<PaymentResponse, PaymentQueryType>[] = [
   },
   {
     header: "Amount",
-    accessor: (payment) => currencyFormatter.format(Number(payment.amount)),
+    accessor: (payment) => formatPrice(payment.amount),
   },
   { header: "Provider", accessor: "provider" },
   { header: "Status", accessor: "status", sortKey: "status" },

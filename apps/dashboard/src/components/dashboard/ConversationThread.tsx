@@ -12,7 +12,7 @@ import {
   useConversationByAppointment,
   useMessages,
   useSendMessage,
-} from "@/hooks/healthcare";
+} from "@/hooks/chat";
 
 interface ConversationThreadProps {
   appointmentId: string;

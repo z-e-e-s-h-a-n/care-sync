@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
 
 import type { BaseCUFormProps } from "@workspace/contracts";
-import { IdentificationTypeEnum } from "@workspace/contracts";
 import {
   doctorProfileSchema,
   type DoctorProfileType,
@@ -15,17 +14,14 @@ import { Button } from "@workspace/ui/components/button";
 import { ComboboxField } from "@workspace/ui/components/combobox-field";
 import { Form, FormSection } from "@workspace/ui/components/form";
 import { InputField } from "@workspace/ui/components/input-field";
-import {
-  MultiSelectField,
-  SelectField,
-} from "@workspace/ui/components/select-field";
+import { MultiSelectField } from "@workspace/ui/components/select-field";
 import { SwitchField } from "@workspace/ui/components/switch-field";
 
 import { useAdminUsers } from "@/hooks/admin";
 import { MediaField } from "@workspace/ui/media/mediaField";
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import CUUserForm from "@/components/forms/CUUserForm";
-import { useDoctor, useSaveDoctor } from "@/hooks/healthcare";
+import { useDoctor, useSaveDoctor } from "@/hooks/doctor";
 import useUser from "@workspace/ui/hooks/use-user";
 import { useBranches } from "@/hooks/business";
 
@@ -48,15 +44,10 @@ const DoctorForm = ({ entityId, formType }: BaseCUFormProps) => {
     defaultValues: {
       userId: "",
       branchId: "",
-      createdById: "",
-      verifiedById: "",
       slug: "",
       title: "",
       specialty: "",
-      bio: "",
       licenseNumber: "",
-      education: "",
-      qualifications: "",
       languages: [],
       isAvailable: true,
       consultationFee: 0,

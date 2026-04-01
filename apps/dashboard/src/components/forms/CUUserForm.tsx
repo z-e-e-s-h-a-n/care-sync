@@ -54,14 +54,9 @@ const CUUserForm = ({
 
   const form = useForm({
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      displayName: "",
       identifier: data?.email ?? data?.phone,
-      password: undefined,
       role: userRole,
       status: "pending",
-      ...data,
     } as CUUserType,
     validators: {
       onSubmit: CUUserSchema,
@@ -119,89 +114,89 @@ const CUUserForm = ({
               BASIC INFORMATION
           ========================== */}
       <FormSection title="Basic Information">
-          <InputField form={form} name="firstName" label="First Name" />
-          <InputField form={form} name="lastName" label="Last Name" />
+        <InputField form={form} name="firstName" label="First Name" />
+        <InputField form={form} name="lastName" label="Last Name" />
 
-          <InputField
-            form={form}
-            name="displayName"
-            label="Display Name"
-            className="md:col-span-2"
-          />
+        <InputField
+          form={form}
+          name="displayName"
+          label="Display Name"
+          className="md:col-span-2"
+        />
       </FormSection>
 
       {/* =========================
               ACCOUNT & SECURITY
           ========================== */}
       <FormSection title="Account & Security" className="md:grid-cols-1">
-          <InputField
-            form={form}
-            name="identifier"
-            label="Email / Phone"
-            type="email"
-            disabled={formType === "update"}
-          />
+        <InputField
+          form={form}
+          name="identifier"
+          label="Email / Phone"
+          type="email"
+          disabled={formType === "update"}
+        />
 
-          {!changePassword ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="w-fit"
-              onClick={() => setChangePassword(true)}
-            >
-              {formType === "add" ? "Set Password" : "Change Password"}
-            </Button>
-          ) : (
-            <div className="space-y-3 rounded-lg border p-4 bg-muted/10">
-              <InputField
-                form={form}
-                name="password"
-                label="New Password"
-                type="password"
-                autoComplete="new-password"
-              />
+        {!changePassword ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-fit"
+            onClick={() => setChangePassword(true)}
+          >
+            {formType === "add" ? "Set Password" : "Change Password"}
+          </Button>
+        ) : (
+          <div className="space-y-3 rounded-lg border p-4 bg-muted/10">
+            <InputField
+              form={form}
+              name="password"
+              label="New Password"
+              type="password"
+              autoComplete="new-password"
+            />
 
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setChangePassword(false)}
-                >
-                  Save
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setChangePassword(false);
-                    form.setFieldValue("password", undefined);
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setChangePassword(false)}
+              >
+                Save
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setChangePassword(false);
+                  form.setFieldValue("password", undefined);
+                }}
+              >
+                Cancel
+              </Button>
             </div>
-          )}
+          </div>
+        )}
       </FormSection>
 
       {/* =========================
               ROLE & STATUS
           ========================== */}
       <FormSection title="Role & Status">
-          <SelectField
-            form={form}
-            name="role"
-            label="Role"
-            options={allowedRoles}
-          />
-          <SelectField
-            form={form}
-            name="status"
-            label="Status"
-            options={UserStatusEnum.options}
-          />
+        <SelectField
+          form={form}
+          name="role"
+          label="Role"
+          options={allowedRoles}
+        />
+        <SelectField
+          form={form}
+          name="status"
+          label="Status"
+          options={UserStatusEnum.options}
+        />
       </FormSection>
 
       {/* =========================

@@ -14,7 +14,7 @@ import type {
 } from "@workspace/contracts/availability";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 
-import { useReplaceDoctorAvailability } from "@/hooks/healthcare";
+import { useReplaceDoctorAvailability } from "@/hooks/availability";
 
 const weekdays = [
   "monday",

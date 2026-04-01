@@ -8,7 +8,7 @@ import type { AppointmentStatus } from "@workspace/contracts";
 import type { AppointmentResponse } from "@workspace/contracts/appointment";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 
-import { useUpdateAppointmentStatus } from "@/hooks/healthcare";
+import { useUpdateAppointmentStatus } from "@/hooks/appointment";
 
 interface AppointmentStatusPanelProps {
   appointment: AppointmentResponse;

@@ -14,25 +14,21 @@ import {
   type SectionConfig,
   GenericDetailsPage,
 } from "@workspace/ui/shared/GenericDetailsPage";
-import { useAppointment } from "@/hooks/healthcare";
+import { useAppointment } from "@/hooks/appointment";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import { formatDate } from "@workspace/shared/utils";
 
-const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
+const formatDateTime = (value?: string) =>
+  formatDate(value, { fallback: "Not recorded" });
 
-const formatDateTime = (value?: string | null) =>
-  value ? dateTimeFormatter.format(new Date(value)) : "Not recorded";
-
-const formatLabel = (value?: string | null) =>
+const formatLabel = (value?: string) =>
   value
     ? value
         .replace(/([A-Z])/g, " $1")
         .replace(/^./, (char) => char.toUpperCase())
     : "Not set";
 
-const renderBadge = (value?: string | null) => (
+const renderBadge = (value?: string) => (
   <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
     {formatLabel(value)}
   </Badge>

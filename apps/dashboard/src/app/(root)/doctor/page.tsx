@@ -25,7 +25,7 @@ import {
 
 import OverviewStatCard from "@/components/dashboard/OverviewStatCard";
 import PageIntro from "@/components/dashboard/PageIntro";
-import { useDoctorDashboard } from "@/hooks/dashboard";
+import { useMyDoctorProfile } from "@/hooks/doctor";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -42,27 +42,15 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@workspace/ui/components/chart";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-const compactNumberFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-});
-const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-});
+import {
+  addDays,
+  formatCompactNumber,
+  formatDate,
+  formatPrice,
+  startOfDay,
+} from "@workspace/shared/utils";
+import { useAppointments } from "@/hooks/appointment";
+import { usePayments } from "@/hooks/payment";
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -90,34 +78,112 @@ const earningsChartConfig = {
   },
 } satisfies ChartConfig;
 
+const dateKey = (value: Date) => startOfDay(value).toISOString().slice(0, 10);
+
 const titleCase = (value: string) =>
-  value
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (char) => char.toUpperCase());
+  value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
+
+const sum = (values: number[]) =>
+  values.reduce((total, value) => total + value, 0);
 
 export default function DoctorOverviewPage() {
-  const { data: overview } = useDoctorDashboard();
+  const { data: doctor } = useMyDoctorProfile();
+  const { data: appointmentsQuery } = useAppointments({
+    page: 1,
+    limit: 80,
+    sortBy: "scheduledStartAt",
+    sortOrder: "asc",
+    searchBy: "doctorName",
+  });
+  const { data: paymentsQuery } = usePayments({
+    page: 1,
+    limit: 60,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    searchBy: "status",
+  });
 
-  const appointmentWindowData =
-    overview?.bookingAccess.window.map(({ date, count }) => ({
-      label: weekdayFormatter.format(new Date(date)),
-      date: shortDateFormatter.format(new Date(date)),
+  const appointments = appointmentsQuery?.appointments ?? [];
+  const payments = paymentsQuery?.payments ?? [];
+
+  const today = startOfDay(new Date());
+  const upcomingAppointments = appointments
+    .filter((appointment) => new Date(appointment.scheduledStartAt) >= today)
+    .sort(
+      (left, right) =>
+        new Date(left.scheduledStartAt).getTime() -
+        new Date(right.scheduledStartAt).getTime(),
+    );
+  const activeAppointments = upcomingAppointments.filter(
+    (appointment) =>
+      !["cancelled", "completed", "noShow"].includes(appointment.status),
+  );
+  const completedAppointments = appointments.filter(
+    (appointment) => appointment.status === "completed",
+  );
+  const todayAppointments = activeAppointments.filter(
+    (appointment) =>
+      dateKey(new Date(appointment.scheduledStartAt)) === dateKey(today),
+  ).length;
+
+  const successfulPayments = payments.filter(
+    (payment) => payment.status === "succeeded",
+  );
+  const pendingPayments = payments.filter(
+    (payment) => payment.status !== "succeeded",
+  );
+  const earnings = sum(
+    successfulPayments.map((payment) => Number(payment.amount)),
+  );
+  const pendingValue = sum(
+    pendingPayments.map((payment) => Number(payment.amount)),
+  );
+  const averageTicket = successfulPayments.length
+    ? earnings / successfulPayments.length
+    : 0;
+
+  const appointmentWindowData = Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(today, index);
+    const key = dateKey(date);
+    const count = activeAppointments.filter(
+      (appointment) => dateKey(new Date(appointment.scheduledStartAt)) === key,
+    ).length;
+
+    return {
+      label: formatDate(date, { options: { weekday: "short" } }),
+      date: formatDate(date, { mode: "shortDate" }),
       appointments: count,
-    })) ?? [];
+    };
+  });
 
-  const earningsTrendData =
-    overview?.earnings.trend.map(({ date, earned, expected }) => ({
-      label: weekdayFormatter.format(new Date(date)),
-      date: shortDateFormatter.format(new Date(date)),
+  const earningsTrendData = Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(today, index - 6);
+    const key = dateKey(date);
+    const earned = successfulPayments
+      .filter((payment) => dateKey(new Date(payment.createdAt)) === key)
+      .reduce((total, payment) => total + Number(payment.amount), 0);
+    const expected = pendingPayments
+      .filter((payment) => dateKey(new Date(payment.createdAt)) === key)
+      .reduce((total, payment) => total + Number(payment.amount), 0);
+
+    return {
+      label: formatDate(date, { options: { weekday: "short" } }),
+      date: formatDate(date, { mode: "shortDate" }),
       earned,
       expected,
-    })) ?? [];
+    };
+  });
 
-  const appointmentStatusData =
-    overview?.appointmentStatusMix.map(({ status, count }) => ({
-      label: status,
-      value: count,
-    })) ?? [];
+  const appointmentStatusData = Array.from(
+    appointments.reduce((accumulator, appointment) => {
+      accumulator.set(
+        appointment.status,
+        (accumulator.get(appointment.status) ?? 0) + 1,
+      );
+      return accumulator;
+    }, new Map<string, number>()),
+    ([label, value]) => ({ label, value }),
+  );
 
   const appointmentStatusConfig: ChartConfig = Object.fromEntries(
     appointmentStatusData.map((item, index) => [
@@ -145,13 +211,15 @@ export default function DoctorOverviewPage() {
     {
       href: "/doctor/availability",
       title: "Manage availability",
-      description: "Keep your schedule open only when you can actually take visits.",
+      description:
+        "Keep your schedule open only when you can actually take visits.",
       icon: Clock3,
     },
     {
       href: "/doctor/messages",
       title: "Review messages",
-      description: "Catch up on appointment conversations and patient questions.",
+      description:
+        "Catch up on appointment conversations and patient questions.",
       icon: MessageSquareText,
     },
   ];
@@ -159,19 +227,19 @@ export default function DoctorOverviewPage() {
   const focusItems = [
     {
       label: "Assigned branch",
-      value: overview?.focus.branchName ?? "Unassigned",
+      value: doctor?.branch?.name ?? "Unassigned",
     },
     {
       label: "Completed visits",
-      value: overview?.focus.completedVisits ?? 0,
+      value: completedAppointments.length,
     },
     {
       label: "Settled payments",
-      value: overview?.focus.settledPayments ?? 0,
+      value: successfulPayments.length,
     },
     {
       label: "Pending payment value",
-      value: currencyFormatter.format(overview?.focus.pendingPaymentValue ?? 0),
+      value: formatPrice(pendingValue),
     },
   ];
 
@@ -185,43 +253,45 @@ export default function DoctorOverviewPage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OverviewStatCard
           label="Verification"
-          value={titleCase(overview?.profile.verificationStatus ?? "pending")}
+          value={titleCase(doctor?.verificationStatus ?? "pending")}
           helper="Current admin review state for your doctor profile."
-          badge={overview?.profile.branchName ?? "Branch pending"}
-          trendLabel={overview?.profile.specialty ?? "Specialty not added yet"}
+          badge={doctor?.branch?.name ?? "Branch pending"}
+          trendLabel={doctor?.specialty ?? "Specialty not added yet"}
           bars={appointmentStatusData.map((item) => item.value)}
           icon={ShieldCheck}
-          tone={overview?.profile.verificationStatus === "verified" ? "success" : "warning"}
+          tone={
+            doctor?.verificationStatus === "verified" ? "success" : "warning"
+          }
         />
         <OverviewStatCard
           label="Booking access"
-          value={overview?.profile.isAvailable ? "Open" : "Paused"}
+          value={doctor?.isAvailable ? "Open" : "Paused"}
           helper="Controls whether new patients can book from your profile."
           badge={
-            overview?.profile.consultationFee
-              ? currencyFormatter.format(overview.profile.consultationFee)
+            doctor?.consultationFee
+              ? formatPrice(Number(doctor.consultationFee))
               : "Fee missing"
           }
-          trendLabel={`${overview?.bookingAccess.todayCount ?? 0} appointments start today`}
+          trendLabel={`${todayAppointments} appointments start today`}
           bars={appointmentWindowData.map((item) => item.appointments)}
           icon={Clock3}
-          tone={overview?.profile.isAvailable ? "success" : "warning"}
+          tone={doctor?.isAvailable ? "success" : "warning"}
         />
         <OverviewStatCard
           label="Upcoming visits"
-          value={compactNumberFormatter.format(overview?.upcomingVisits.active ?? 0)}
+          value={formatCompactNumber(activeAppointments.length)}
           helper="Future consultations currently assigned to your account."
-          badge={`${overview?.upcomingVisits.queued ?? 0} total queued`}
-          trendLabel={`${overview?.upcomingVisits.completed ?? 0} already completed`}
+          badge={`${upcomingAppointments.length} total queued`}
+          trendLabel={`${completedAppointments.length} already completed`}
           bars={appointmentWindowData.map((item) => item.appointments)}
           icon={CalendarRange}
         />
         <OverviewStatCard
           label="Captured earnings"
-          value={currencyFormatter.format(overview?.earnings.total ?? 0)}
+          value={formatPrice(earnings)}
           helper="Succeeded appointment payments visible in your role scope."
-          badge={currencyFormatter.format(overview?.earnings.average ?? 0)}
-          trendLabel={`${currencyFormatter.format(overview?.earnings.pending ?? 0)} still pending`}
+          badge={formatPrice(averageTicket || 0)}
+          trendLabel={`${formatPrice(pendingValue)} still pending`}
           bars={earningsTrendData.map((item) => item.earned + item.expected)}
           icon={Wallet}
           tone="warning"
@@ -237,20 +307,53 @@ export default function DoctorOverviewPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={appointmentChartConfig} className="h-80 w-full">
+            <ChartContainer
+              config={appointmentChartConfig}
+              className="h-80 w-full"
+            >
               <AreaChart accessibilityLayer data={appointmentWindowData}>
                 <defs>
-                  <linearGradient id="doctorAppointments" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-appointments)" stopOpacity={0.75} />
-                    <stop offset="95%" stopColor="var(--color-appointments)" stopOpacity={0.12} />
+                  <linearGradient
+                    id="doctorAppointments"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-appointments)"
+                      stopOpacity={0.75}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-appointments)"
+                      stopOpacity={0.12}
+                    />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <ChartTooltip
                   cursor={false}
-                  content={<ChartTooltipContent indicator="dot" labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""} />}
+                  content={
+                    <ChartTooltipContent
+                      indicator="dot"
+                      labelFormatter={(_, payload) =>
+                        payload?.[0]?.payload?.date ?? ""
+                      }
+                    />
+                  }
                 />
                 <Area
                   type="monotone"
@@ -274,17 +377,40 @@ export default function DoctorOverviewPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={earningsChartConfig} className="h-64 w-full">
+              <ChartContainer
+                config={earningsChartConfig}
+                className="h-64 w-full"
+              >
                 <BarChart accessibilityLayer data={earningsTrendData}>
                   <CartesianGrid vertical={false} />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
                   <YAxis tickLine={false} axisLine={false} width={40} />
                   <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent indicator="dashed" labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""} />}
+                    content={
+                      <ChartTooltipContent
+                        indicator="dashed"
+                        labelFormatter={(_, payload) =>
+                          payload?.[0]?.payload?.date ?? ""
+                        }
+                      />
+                    }
                   />
-                  <Bar dataKey="earned" fill="var(--color-earned)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="expected" fill="var(--color-expected)" radius={[6, 6, 0, 0]} />
+                  <Bar
+                    dataKey="earned"
+                    fill="var(--color-earned)"
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="expected"
+                    fill="var(--color-expected)"
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ChartContainer>
             </CardContent>
@@ -300,10 +426,15 @@ export default function DoctorOverviewPage() {
             <CardContent className="flex flex-col gap-4">
               {appointmentStatusData.length ? (
                 <>
-                  <ChartContainer config={appointmentStatusConfig} className="h-56 w-full">
+                  <ChartContainer
+                    config={appointmentStatusConfig}
+                    className="h-56 w-full"
+                  >
                     <PieChart accessibilityLayer>
                       <ChartTooltip
-                        content={<ChartTooltipContent hideLabel nameKey="label" />}
+                        content={
+                          <ChartTooltipContent hideLabel nameKey="label" />
+                        }
                       />
                       <Pie
                         data={appointmentStatusData}
@@ -332,7 +463,8 @@ export default function DoctorOverviewPage() {
                           <span
                             className="size-2.5 rounded-full"
                             style={{
-                              backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
+                              backgroundColor:
+                                CHART_COLORS[index % CHART_COLORS.length],
                             }}
                           />
                           <span>{titleCase(item.label)}</span>
@@ -366,20 +498,24 @@ export default function DoctorOverviewPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {overview?.upcomingAppointments.length ? (
-              overview.upcomingAppointments.map((appointment) => (
+            {upcomingAppointments.slice(0, 6).length ? (
+              upcomingAppointments.slice(0, 6).map((appointment) => (
                 <div
                   key={appointment.id}
                   className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/30"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <p className="font-medium">{appointment.patientName}</p>
+                      <p className="font-medium">
+                        {appointment.patient?.user?.displayName ?? "Patient"}
+                      </p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {appointment.branchName ?? overview.profile.branchName ?? "Branch not assigned"}
+                        {appointment.branch?.name ??
+                          doctor?.branch?.name ??
+                          "Branch not assigned"}
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {dateFormatter.format(new Date(appointment.scheduledStartAt))}
+                        {formatDate(appointment.scheduledStartAt)}
                       </p>
                     </div>
                     <Badge variant="outline" className="w-fit capitalize">
@@ -430,7 +566,10 @@ export default function DoctorOverviewPage() {
             </CardContent>
             <CardFooter className="flex-col items-stretch gap-3 border-t pt-6">
               {focusItems.map((item) => (
-                <div key={item.label} className="flex items-center justify-between text-sm">
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between text-sm"
+                >
                   <span className="text-muted-foreground">{item.label}</span>
                   <span className="font-medium">{item.value}</span>
                 </div>
@@ -454,33 +593,33 @@ export default function DoctorOverviewPage() {
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Doctor</p>
                 <p className="mt-1 font-medium">
-                  {overview?.profile.displayName ?? "Doctor profile"}
+                  {doctor?.user?.displayName ?? "Doctor profile"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Specialty</p>
                 <p className="mt-1 font-medium">
-                  {overview?.profile.specialty ?? "Specialty not set"}
+                  {doctor?.specialty ?? "Specialty not set"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Branch</p>
                 <p className="mt-1 font-medium">
-                  {overview?.profile.branchName ?? "Unassigned"}
+                  {doctor?.branch?.name ?? "Unassigned"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Consultation fee</p>
                 <p className="mt-1 font-medium">
-                  {overview?.profile.consultationFee
-                    ? currencyFormatter.format(overview.profile.consultationFee)
+                  {doctor?.consultationFee
+                    ? formatPrice(Number(doctor.consultationFee))
                     : "Not set"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Bio</p>
                 <p className="mt-1 font-medium">
-                  {overview?.profile.bio ?? "No bio added yet."}
+                  {doctor?.bio ?? "No bio added yet."}
                 </p>
               </div>
             </CardContent>

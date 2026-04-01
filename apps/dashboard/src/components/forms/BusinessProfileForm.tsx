@@ -23,31 +23,12 @@ import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 
 import { useBusinessProfile } from "@/hooks/business";
 
-const defaultValues: BusinessProfileType = {
-  name: "",
-  legalName: "",
-  description: "",
-  faviconId: "",
-  logoId: "",
-  coverId: undefined,
-  email: "",
-  phone: "",
-  whatsapp: "",
-  facebook: "",
-  instagram: "",
-  tiktok: "",
-  twitter: undefined,
-  linkedin: undefined,
-  metaTitle: "",
-  metaDescription: "",
-};
-
 const BusinessProfileForm = () => {
   const { data, isLoading, fetchError, mutateAsync, isPending } =
     useBusinessProfile();
 
   const form = useForm({
-    defaultValues,
+    defaultValues: {} as BusinessProfileType,
     validators: {
       onSubmit: businessProfileSchema,
     },

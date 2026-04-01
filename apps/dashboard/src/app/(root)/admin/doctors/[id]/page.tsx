@@ -13,7 +13,7 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 
-import { useDoctor, useVerifyDoctor } from "@/hooks/healthcare";
+import { useDoctor, useVerifyDoctor } from "@/hooks/doctor";
 import {
   type SectionConfig,
   GenericDetailsPage,
@@ -23,7 +23,7 @@ import Link from "next/link";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatDateTime = (value?: string) =>
-  value ? formatDate(value, "datetime") : "Not recorded";
+  formatDate(value, { mode: "datetime", fallback: "Not recorded" });
 
 const renderStatusBadge = (value?: string | null, label?: string) => (
   <Badge variant={getStatusVariant(value ?? "")} className="capitalize">

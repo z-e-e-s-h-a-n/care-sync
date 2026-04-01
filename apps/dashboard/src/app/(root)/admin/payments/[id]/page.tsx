@@ -21,24 +21,24 @@ import {
   type SectionConfig,
   GenericDetailsPage,
 } from "@workspace/ui/shared/GenericDetailsPage";
-import { usePayment, useUpdatePayment } from "@/hooks/healthcare";
+import { usePayment, useUpdatePayment } from "@/hooks/payment";
 import { formatDate, formatPrice } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const formatCurrency = (value?: number) =>
-  value ? formatPrice(value) : "Not set";
+  formatPrice(value, { fallback: "Not set" });
 
-const formatDateTime = (value?: string | null) =>
-  value ? formatDate(value, "datetime") : "Not recorded";
+const formatDateTime = (value?: string) =>
+  formatDate(value, { mode: "datetime", fallback: "Not recorded" });
 
-const formatLabel = (value?: string | null) =>
+const formatLabel = (value?: string) =>
   value
     ? value
         .replace(/([A-Z])/g, " $1")
         .replace(/^./, (char) => char.toUpperCase())
     : "Not set";
 
-const renderBadge = (value?: string | null) => (
+const renderBadge = (value?: string) => (
   <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
     {formatLabel(value)}
   </Badge>

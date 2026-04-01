@@ -1,25 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-
 import ConversationThread from "@/components/dashboard/ConversationThread";
 import PageIntro from "@/components/dashboard/PageIntro";
-import { useAppointment } from "@/hooks/healthcare";
+import { useAppointment } from "@/hooks/appointment";
 import { Badge } from "@workspace/ui/components/badge";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 import SectionCard from "@workspace/ui/shared/SectionCard";
+import { formatDate } from "@workspace/shared/utils";
+import type { AppPageProps } from "@workspace/contracts";
+import React from "react";
 
-const formatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
-const DoctorMessageThreadPage = () => {
-  const params = useParams<{ appointmentId: string }>();
-  const appointmentId = params.appointmentId;
-  const appointmentQuery = useAppointment(appointmentId);
-  const appointment = appointmentQuery.data;
+const DoctorMessageThreadPage = ({ params }: AppPageProps) => {
+  const { appointmentId } = React.use(params);
+  const { data: appointment } = useAppointment(appointmentId);
 
   return (
     <div className="space-y-6">
@@ -51,7 +45,7 @@ const DoctorMessageThreadPage = () => {
           <div>
             <p className="text-muted-foreground">Scheduled</p>
             <p className="font-medium">
-              {formatter.format(new Date(appointment.scheduledStartAt))}
+              {formatDate(appointment.scheduledStartAt)}
             </p>
           </div>
           <div>

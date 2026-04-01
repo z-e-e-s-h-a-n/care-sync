@@ -2,28 +2,22 @@
 
 import ListPage from "@workspace/ui/shared/ListPage";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
-import { useAppointments } from "@/hooks/healthcare";
+import { useAppointments } from "@/hooks/appointment";
 import type {
   AppointmentQueryType,
   AppointmentResponse,
 } from "@workspace/contracts/appointment";
-
-const formatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
+import { formatDate } from "@workspace/shared/utils";
 
 const columns: ColumnConfig<AppointmentResponse, AppointmentQueryType>[] = [
   {
     header: "Patient",
-    accessor: (appointment) =>
-      appointment.patient?.user?.displayName ?? appointment.patientId,
+    accessor: (appointment) => appointment.patient?.user.displayName,
   },
   { header: "Channel", accessor: "channel" },
   {
     header: "Scheduled",
-    accessor: (appointment) =>
-      formatter.format(new Date(appointment.scheduledStartAt)),
+    accessor: (appointment) => formatDate(appointment.scheduledStartAt),
     sortKey: "scheduledStartAt",
   },
   { header: "Status", accessor: "status", sortKey: "status" },

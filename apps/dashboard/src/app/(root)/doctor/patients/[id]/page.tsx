@@ -13,7 +13,7 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 
-import { usePatient } from "@/hooks/healthcare";
+import { usePatient } from "@/hooks/patient";
 import {
   type SectionConfig,
   GenericDetailsPage,
@@ -21,13 +21,13 @@ import {
 import { formatDate } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 
-const renderBadge = (value?: string | null) => (
+const renderBadge = (value?: string) => (
   <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
     {value ?? "Not set"}
   </Badge>
 );
 
-const renderDocumentLink = (document?: { url?: string | null } | null) =>
+const renderDocumentLink = (document?: { url?: string }) =>
   document?.url ? (
     <Link
       href={document.url}
@@ -82,7 +82,7 @@ const sections: SectionConfig<PatientProfileResponse>[] = [
         label: "Profile Updated",
         accessor: "updatedAt",
         render: (value) =>
-          value ? formatDate(value, "datetime") : "Not recorded",
+          formatDate(value, { mode: "datetime", fallback: "Not recorded" }),
       },
     ],
   },

@@ -3,18 +3,19 @@
 import Link from "next/link";
 
 import PageIntro from "@/components/dashboard/PageIntro";
-import { useAppointments } from "@/hooks/healthcare";
+import { useAppointments } from "@/hooks/appointment";
 import { Badge } from "@workspace/ui/components/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
-
-const formatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
+import { formatDate } from "@workspace/shared/utils";
 
 const DoctorMessagesPage = () => {
-  const appointmentsQuery = useAppointments({
+  const { data } = useAppointments({
     page: 1,
     limit: 12,
     sortBy: "scheduledStartAt",
@@ -22,7 +23,7 @@ const DoctorMessagesPage = () => {
     searchBy: "patientName",
   });
 
-  const threadedAppointments = (appointmentsQuery.data?.appointments ?? []).filter(
+  const threadedAppointments = (data?.appointments ?? []).filter(
     (appointment) => Boolean(appointment.conversation),
   );
 
@@ -49,7 +50,7 @@ const DoctorMessagesPage = () => {
                     {appointment.patient?.user?.displayName ?? "Patient"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {formatter.format(new Date(appointment.scheduledStartAt))}
+                    {formatDate(appointment.scheduledStartAt)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

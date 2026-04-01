@@ -68,7 +68,8 @@ const TrafficSourceDetailsPage = ({ params }: AppPageProps) => {
             },
             {
               label: "Created At",
-              accessor: (source) => formatDate(source.createdAt, "datetime"),
+              accessor: (source) =>
+                formatDate(source.createdAt, { mode: "datetime" }),
             },
           ],
         },
@@ -101,7 +102,7 @@ const TrafficSourceDetailsPage = ({ params }: AppPageProps) => {
               href: `/content/posts/${view.postId}`,
               values: [
                 `Post: ${view.postId}`,
-                formatDate(view.viewedAt, "datetime"),
+                formatDate(view.viewedAt, { mode: "datetime" }),
               ],
             }))}
           />

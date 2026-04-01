@@ -2,7 +2,7 @@
 
 import ListPage from "@workspace/ui/shared/ListPage";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
-import { useDoctors } from "@/hooks/healthcare";
+import { useDoctors } from "@/hooks/doctor";
 import type {
   DoctorProfileResponse,
   DoctorQueryType,

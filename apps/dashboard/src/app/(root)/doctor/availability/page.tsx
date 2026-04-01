@@ -4,14 +4,14 @@ import Link from "next/link";
 
 import AvailabilityEditor from "@/components/dashboard/AvailabilityEditor";
 import PageIntro from "@/components/dashboard/PageIntro";
-import { useDoctorAvailability, useMyDoctorProfile } from "@/hooks/healthcare";
+import { useDoctorAvailability } from "@/hooks/availability";
+import { useMyDoctorProfile } from "@/hooks/doctor";
 import { Button } from "@workspace/ui/components/button";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 
 const DoctorAvailabilityPage = () => {
-  const doctorQuery = useMyDoctorProfile();
-  const doctor = doctorQuery.data;
-  const availabilityQuery = useDoctorAvailability(doctor?.id);
+  const { data: doctorProfile } = useMyDoctorProfile();
+  const { data } = useDoctorAvailability(doctorProfile?.id);
 
   return (
     <div className="space-y-6">
@@ -34,24 +34,25 @@ const DoctorAvailabilityPage = () => {
           <div>
             <p className="text-muted-foreground">Doctor</p>
             <p className="font-medium">
-              {doctor?.user?.displayName ?? "Loading..."}
+              {doctorProfile?.user?.displayName ?? "Loading..."}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground">Specialty</p>
-            <p className="font-medium">{doctor?.specialty ?? "Not set"}</p>
+            <p className="font-medium">
+              {doctorProfile?.specialty ?? "Not set"}
+            </p>
           </div>
           <div>
             <p className="text-muted-foreground">Branch</p>
-            <p className="font-medium">{doctor?.branch?.name ?? "Unassigned"}</p>
+            <p className="font-medium">
+              {doctorProfile?.branch?.name ?? "Unassigned"}
+            </p>
           </div>
         </SectionCard>
 
-        {doctor?.id ? (
-          <AvailabilityEditor
-            doctorId={doctor.id}
-            initialValue={availabilityQuery.data}
-          />
+        {doctorProfile?.id ? (
+          <AvailabilityEditor doctorId={doctorProfile.id} initialValue={data} />
         ) : (
           <SectionCard
             className="shadow-sm"

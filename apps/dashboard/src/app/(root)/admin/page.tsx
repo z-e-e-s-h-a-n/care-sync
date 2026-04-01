@@ -41,27 +41,11 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@workspace/ui/components/chart";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-const compactNumberFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-});
-const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-});
+import {
+  formatCompactNumber,
+  formatDate,
+  formatPrice,
+} from "@workspace/shared/utils";
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -97,15 +81,15 @@ export default function AdminOverviewPage() {
 
   const appointmentWindowData =
     overview?.upcomingVisits.window.map(({ date, count }) => ({
-      label: weekdayFormatter.format(new Date(date)),
-      date: shortDateFormatter.format(new Date(date)),
+      label: formatDate(date, { options: { weekday: "short" } }),
+      date: formatDate(date, { mode: "shortDate" }),
       appointments: count,
     })) ?? [];
 
   const revenueTrendData =
     overview?.revenue.trend.map(({ date, settled, pending }) => ({
-      label: weekdayFormatter.format(new Date(date)),
-      date: shortDateFormatter.format(new Date(date)),
+      label: formatDate(date, { options: { weekday: "short" } }),
+      date: formatDate(date, { mode: "shortDate" }),
       settled,
       pending,
     })) ?? [];
@@ -165,7 +149,7 @@ export default function AdminOverviewPage() {
     },
     {
       label: "Pending payment value",
-      value: currencyFormatter.format(overview?.focus.pendingPaymentValue ?? 0),
+      value: formatPrice(overview?.focus.pendingPaymentValue ?? 0),
     },
     {
       label: "Draft campaigns",
@@ -183,7 +167,7 @@ export default function AdminOverviewPage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OverviewStatCard
           label="Care team"
-          value={compactNumberFormatter.format(overview?.careTeam.total ?? 0)}
+          value={formatCompactNumber(overview?.careTeam.total ?? 0)}
           helper={`${overview?.careTeam.branchTotal ?? 0} branches are represented in the current roster feed.`}
           badge={`${overview?.careTeam.verified ?? 0} verified`}
           trendLabel={`${overview?.careTeam.available ?? 0} available for new bookings`}
@@ -193,22 +177,16 @@ export default function AdminOverviewPage() {
         />
         <OverviewStatCard
           label="Patient growth"
-          value={compactNumberFormatter.format(
-            overview?.patientGrowth.total ?? 0,
-          )}
+          value={formatCompactNumber(overview?.patientGrowth.total ?? 0)}
           helper="Recent signups and profile creation activity from the last month."
           badge={`+${overview?.patientGrowth.newThisMonth ?? 0} this month`}
           trendLabel={`${overview?.upcomingVisits.todayCount ?? 0} appointments are on deck for today`}
-          bars={
-            overview?.patientGrowth.growthBars.map((d) => d.count) ?? []
-          }
+          bars={overview?.patientGrowth.growthBars.map((d) => d.count) ?? []}
           icon={Users}
         />
         <OverviewStatCard
           label="Upcoming visits"
-          value={compactNumberFormatter.format(
-            overview?.upcomingVisits.active ?? 0,
-          )}
+          value={formatCompactNumber(overview?.upcomingVisits.active ?? 0)}
           helper="Active appointments scheduled ahead, excluding completed and cancelled visits."
           badge={`${overview?.upcomingVisits.queued ?? 0} queued`}
           trendLabel={`${overview?.upcomingVisits.todayCount ?? 0} appointments start today`}
@@ -217,10 +195,10 @@ export default function AdminOverviewPage() {
         />
         <OverviewStatCard
           label="Collected revenue"
-          value={currencyFormatter.format(overview?.revenue.collected ?? 0)}
+          value={formatPrice(overview?.revenue.collected ?? 0)}
           helper="Succeeded payments captured across all time."
           badge={`${overview?.revenue.successRate ?? 0}% success`}
-          trendLabel={`${currencyFormatter.format(overview?.revenue.pending ?? 0)} still pending`}
+          trendLabel={`${formatPrice(overview?.revenue.pending ?? 0)} still pending`}
           bars={revenueTrendData.map((item) => item.settled + item.pending)}
           icon={Wallet}
           tone="warning"
@@ -442,9 +420,9 @@ export default function AdminOverviewPage() {
                         {appointment.branchName ?? "Branch not assigned"}
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {dateFormatter.format(
-                          new Date(appointment.scheduledStartAt),
-                        )}
+                        {formatDate(appointment.scheduledStartAt, {
+                          mode: "datetime",
+                        })}
                       </p>
                     </div>
                     <Badge variant="outline" className="w-fit capitalize">
@@ -614,7 +592,7 @@ export default function AdminOverviewPage() {
                     </p>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {shortDateFormatter.format(new Date(patient.createdAt))}
+                    {formatDate(patient.createdAt)}
                   </span>
                 </div>
               ))

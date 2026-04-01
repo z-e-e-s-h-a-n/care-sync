@@ -29,39 +29,24 @@ import { useAdminUsers } from "@/hooks/admin";
 import CUUserForm from "@/components/forms/CUUserForm";
 import { MediaField } from "@workspace/ui/media/mediaField";
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
-import { usePatient, useSavePatient } from "@/hooks/healthcare";
+import { usePatient, useSavePatient } from "@/hooks/patient";
 
 const formatLabel = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
-
-const defaultValues: PatientProfileType = {
-  userId: "",
-  identificationDocumentId: undefined,
-  birthDate: "",
-  gender: "male",
-  address: "",
-  occupation: "",
-  emergencyContactName: "",
-  emergencyContactNumber: "",
-  insuranceProvider: "",
-  insurancePolicyNumber: "",
-  allergies: "",
-  currentMedication: "",
-  familyMedicalHistory: "",
-  pastMedicalHistory: "",
-  identificationType: undefined,
-  identificationNumber: "",
-};
 
 const PatientForm = ({ entityId, formType }: BaseCUFormProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const isDoctorWorkspace = pathname.startsWith("/doctor");
-  const patientQuery = usePatient(entityId);
+  const { data, isLoading } = usePatient(entityId);
   const { savePatient, isPending } = useSavePatient(entityId);
 
   const form = useForm({
-    defaultValues,
+    defaultValues: {
+      userId: "",
+      birthDate: "",
+      gender: "male",
+    } as PatientProfileType,
     validators: {
       onSubmit: patientProfileSchema,
     },
@@ -89,30 +74,11 @@ const PatientForm = ({ entityId, formType }: BaseCUFormProps) => {
   });
 
   useEffect(() => {
-    if (!patientQuery.data) return;
+    if (!data) return;
+    form.reset(data);
+  }, [data, form]);
 
-    form.reset({
-      userId: patientQuery.data.userId,
-      identificationDocumentId:
-        patientQuery.data.identificationDocumentId ?? undefined,
-      birthDate: patientQuery.data.birthDate ?? undefined,
-      gender: patientQuery.data.gender ?? undefined,
-      address: patientQuery.data.address ?? "",
-      occupation: patientQuery.data.occupation ?? "",
-      emergencyContactName: patientQuery.data.emergencyContactName ?? "",
-      emergencyContactNumber: patientQuery.data.emergencyContactNumber ?? "",
-      insuranceProvider: patientQuery.data.insuranceProvider ?? "",
-      insurancePolicyNumber: patientQuery.data.insurancePolicyNumber ?? "",
-      allergies: patientQuery.data.allergies ?? "",
-      currentMedication: patientQuery.data.currentMedication ?? "",
-      familyMedicalHistory: patientQuery.data.familyMedicalHistory ?? "",
-      pastMedicalHistory: patientQuery.data.pastMedicalHistory ?? "",
-      identificationType: patientQuery.data.identificationType ?? undefined,
-      identificationNumber: patientQuery.data.identificationNumber ?? "",
-    });
-  }, [patientQuery.data, form]);
-
-  if (patientQuery.isLoading) return <CUFormSkeleton />;
+  if (isLoading) return <CUFormSkeleton />;
 
   return (
     <Form form={form}>
@@ -284,7 +250,7 @@ const PatientForm = ({ entityId, formType }: BaseCUFormProps) => {
           name="identificationDocumentId"
           label="Scanned Copy of Identification Document"
           className="md:col-span-2"
-          defaultMedia={patientQuery.data?.identificationDocument ?? undefined}
+          defaultMedia={data?.identificationDocument}
         />
       </FormSection>
 

@@ -86,13 +86,13 @@ const sections: SectionConfig<BranchResponse>[] = [
       {
         label: "Created At",
         accessor: (branch: BranchResponse) =>
-          formatDate(branch.createdAt, "datetime"),
+          formatDate(branch.createdAt, { mode: "datetime" }),
         icon: Calendar,
       },
       {
         label: "Updated At",
         accessor: (branch: BranchResponse) =>
-          formatDate(branch.updatedAt, "datetime"),
+          formatDate(branch.updatedAt, { mode: "datetime" }),
         icon: Calendar,
       },
     ],

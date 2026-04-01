@@ -44,7 +44,7 @@ const OverviewStatCard = ({
   const maxBarValue = Math.max(...normalizedBars, 0);
 
   return (
-    <Card className="overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/30 shadow-sm">
+    <Card className="overflow-hidden border-border/60 bg-linear-to-br from-card via-card to-muted/30 shadow-sm">
       <CardHeader className="gap-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">

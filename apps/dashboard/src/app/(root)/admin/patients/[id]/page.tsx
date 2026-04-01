@@ -13,7 +13,7 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 
-import { usePatient } from "@/hooks/healthcare";
+import { usePatient } from "@/hooks/patient";
 import {
   type SectionConfig,
   GenericDetailsPage,
@@ -82,7 +82,7 @@ const sections: SectionConfig<PatientProfileResponse>[] = [
         label: "Profile Updated",
         accessor: "updatedAt",
         render: (value) =>
-          value ? formatDate(value, "datetime") : "Not recorded",
+          formatDate(value, { mode: "datetime", fallback: "Not recorded" }),
       },
     ],
   },

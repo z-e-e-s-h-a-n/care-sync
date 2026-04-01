@@ -2,7 +2,7 @@
 
 import ListPage from "@workspace/ui/shared/ListPage";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
-import { useCampaigns } from "@/hooks/healthcare";
+import { useCampaigns } from "@/hooks/campaign";
 import type {
   CampaignQueryType,
   NotificationCampaignResponse,

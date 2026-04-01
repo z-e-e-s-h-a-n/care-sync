@@ -2,15 +2,15 @@
 
 import { Mail, MessageSquare, Phone, UserRound } from "lucide-react";
 
-import { ContactMessageStatusEnum, type BaseCUFormProps } from "@workspace/contracts";
+import {
+  ContactMessageStatusEnum,
+  type BaseCUFormProps,
+} from "@workspace/contracts";
 import {
   updateContactMessageSchema,
   type ContactMessageResponse,
-  type UpdateContactMessageType,
 } from "@workspace/contracts/contact";
-import {
-  FormSection,
-} from "@workspace/ui/components/form";
+import { FormSection } from "@workspace/ui/components/form";
 import { SelectField } from "@workspace/ui/components/select-field";
 import { GenericForm } from "@workspace/ui/shared/GenericForm";
 
@@ -19,34 +19,19 @@ import { useContactMessage } from "@/hooks/lead";
 const getContactName = (message: ContactMessageResponse) =>
   [message.firstName, message.lastName].filter(Boolean).join(" ");
 
-const useContactMessageForm = (id?: string) => {
-  const query = useContactMessage(id);
-
-  return {
-    ...query,
-    mutateAsync: async (data: UpdateContactMessageType) => {
-      await query.mutateAsync(data);
-      return query.data as ContactMessageResponse;
-    },
-  };
-};
-
 const ContactMessageForm = ({ formType, entityId }: BaseCUFormProps) => (
-  <GenericForm<ContactMessageResponse, UpdateContactMessageType>
+  <GenericForm
     entityId={entityId}
     formType={formType}
     entityName="Contact Message"
     description="Update the follow-up status for this message."
     submitLabel="Save Status"
     schema={updateContactMessageSchema}
-    useQuery={useContactMessageForm}
-    mapDataToValues={(data) => ({
-      status: data.status,
-    })}
+    useQuery={useContactMessage}
     defaultValues={{
       status: "pending",
     }}
-    formHeader={(_, __, data) =>
+    formHeader={(_, data) =>
       data ? (
         <FormSection
           title="Message Summary"
@@ -57,7 +42,9 @@ const ContactMessageForm = ({ formType, entityId }: BaseCUFormProps) => (
               <UserRound className="size-4" />
               Name
             </div>
-            <div className="mt-2 font-medium">{getContactName(data) || "—"}</div>
+            <div className="mt-2 font-medium">
+              {getContactName(data) || "—"}
+            </div>
           </div>
           <div className="rounded-lg border bg-background p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

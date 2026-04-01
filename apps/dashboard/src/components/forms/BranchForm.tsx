@@ -7,7 +7,6 @@ import { SwitchField } from "@workspace/ui/components/switch-field";
 import { type BaseCUFormProps, WeekdayEnum } from "@workspace/contracts";
 import {
   CUBranchSchema,
-  type BranchResponse,
   type CUBranchType,
 } from "@workspace/contracts/business";
 import { GenericForm } from "@workspace/ui/shared/GenericForm";
@@ -49,7 +48,7 @@ const timingColumns: ColumnConfig<CUBranchType["branchTimings"][number]>[] = [
 ];
 
 const BranchForm = ({ formType, entityId }: BaseCUFormProps) => (
-  <GenericForm<BranchResponse, CUBranchType>
+  <GenericForm
     entityId={entityId}
     formType={formType}
     entityName="Branch"
@@ -57,41 +56,9 @@ const BranchForm = ({ formType, entityId }: BaseCUFormProps) => (
     schema={CUBranchSchema}
     useQuery={useBranch}
     defaultValues={{
-      name: "",
-      slug: "",
-      email: "",
-      phone: "",
-      whatsapp: undefined,
-      street: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      country: "",
-      latitude: undefined,
-      longitude: undefined,
-      timezone: undefined,
       isActive: true,
       branchTimings: defaultBranchTimings,
     }}
-    mapDataToValues={(data) => ({
-      name: data.name,
-      slug: data.slug,
-      email: data.email,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
-      street: data.street,
-      city: data.city,
-      state: data.state,
-      postalCode: data.postalCode,
-      country: data.country,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      timezone: data.timezone,
-      isActive: data.isActive,
-      branchTimings: data.branchTimings?.length
-        ? data.branchTimings
-        : defaultBranchTimings,
-    })}
   >
     {(form) => (
       <>

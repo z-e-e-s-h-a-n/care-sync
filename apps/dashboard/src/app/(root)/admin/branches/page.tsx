@@ -10,7 +10,6 @@ import { getStatusVariant } from "@workspace/ui/lib/utils";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
 import ListPage from "@workspace/ui/shared/ListPage";
 import type { SearchByOption } from "@workspace/ui/shared/SearchToolbar";
-
 import { useBranches, useDeleteBranch } from "@/hooks/business";
 
 const branchColumns: ColumnConfig<BranchResponse, BranchQueryType>[] = [
@@ -39,7 +38,9 @@ const branchColumns: ColumnConfig<BranchResponse, BranchQueryType>[] = [
   {
     header: "Status",
     accessor: (branch) => (
-      <Badge variant={getStatusVariant(branch.isActive ? "active" : "inactive")}>
+      <Badge
+        variant={getStatusVariant(branch.isActive ? "active" : "inactive")}
+      >
         {branch.isActive ? "active" : "inactive"}
       </Badge>
     ),

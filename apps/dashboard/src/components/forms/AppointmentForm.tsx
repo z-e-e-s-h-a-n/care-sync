@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { toast } from "sonner";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
@@ -24,40 +23,13 @@ import {
 } from "@workspace/ui/components/select";
 
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
-import {
-  useCreateAppointment,
-  useDoctors,
-  useMyDoctorProfile,
-  usePatients,
-} from "@/hooks/healthcare";
+import { useCreateAppointment } from "@/hooks/appointment";
+import { useDoctors, useMyDoctorProfile } from "@/hooks/doctor";
+import { usePatients } from "@/hooks/patient";
 import { useBranches } from "@/hooks/business";
-
-type AppointmentFormValues = {
-  branchId: string;
-  patientId: string;
-  doctorId: string;
-  appointmentDate?: string;
-  startTime: string;
-  endTime: string;
-  timezone: string;
-  channel: "inPerson" | "virtual";
-  patientNotes: string;
-};
 
 const formatLabel = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
-
-const defaultValues: AppointmentFormValues = {
-  branchId: "",
-  patientId: "",
-  doctorId: "",
-  appointmentDate: undefined,
-  startTime: "",
-  endTime: "",
-  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-  channel: "inPerson",
-  patientNotes: "",
-};
 
 const combineDateAndTime = (dateIso: string, time: string) => {
   const date = new Date(dateIso);
@@ -88,50 +60,27 @@ const AppointmentForm = () => {
   const appointmentsPath = isDoctorWorkspace
     ? "/doctor/appointments"
     : "/admin/appointments";
-  const patientIdFromQuery = searchParams.get("patientId");
-  const doctorProfileQuery = useMyDoctorProfile();
+  const { data: doctorProfile, isLoading: isDoctorLoading } =
+    useMyDoctorProfile();
   const { createAppointment, isPending } = useCreateAppointment();
 
   const form = useForm({
-    defaultValues,
+    defaultValues: {
+      patientId: searchParams.get("patientId"),
+      doctorId: doctorProfile?.id,
+      branchId: doctorProfile?.branchId,
+      channel: "inPerson",
+      patientNotes: "",
+      scheduledEndAt: "",
+      scheduledStartAt: "",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    } as CreateAppointmentType & { appointmentDate?: string },
+    validators: {
+      onSubmit: createAppointmentSchema,
+    },
     onSubmit: async ({ value }) => {
-      if (!value.appointmentDate) {
-        toast.error("Appointment date is required.");
-        return;
-      }
-
-      if (!value.startTime || !value.endTime) {
-        toast.error("Start time and end time are required.");
-        return;
-      }
-
-      const payload: CreateAppointmentType = {
-        branchId: value.branchId,
-        patientId: value.patientId,
-        doctorId: value.doctorId,
-        channel: value.channel,
-        scheduledStartAt: combineDateAndTime(
-          value.appointmentDate,
-          value.startTime,
-        ),
-        scheduledEndAt: combineDateAndTime(
-          value.appointmentDate,
-          value.endTime,
-        ),
-        timezone: value.timezone,
-        patientNotes: value.patientNotes,
-        bookingSource: "admin",
-      };
-
-      const validation = createAppointmentSchema.safeParse(payload);
-      if (!validation.success) {
-        const issue = validation.error.issues[0];
-        toast.error(issue?.message ?? "Please check the appointment form.");
-        return;
-      }
-
       try {
-        const response = await createAppointment(payload);
+        const response = await createAppointment(value);
         toast.success("Appointment booked successfully.");
         router.push(`${appointmentsPath}/${response.data.id}`);
       } catch (error: any) {
@@ -142,24 +91,11 @@ const AppointmentForm = () => {
     },
   });
 
-  useEffect(() => {
-    if (patientIdFromQuery) {
-      form.setFieldValue("patientId", patientIdFromQuery);
-    }
-  }, [form, patientIdFromQuery]);
-
-  useEffect(() => {
-    if (!isDoctorWorkspace || !doctorProfileQuery.data) return;
-
-    form.setFieldValue("doctorId", doctorProfileQuery.data.id);
-    form.setFieldValue("branchId", doctorProfileQuery.data.branchId);
-  }, [doctorProfileQuery.data, form, isDoctorWorkspace]);
-
-  if (isDoctorWorkspace && doctorProfileQuery.isLoading) {
+  if (isDoctorWorkspace && isDoctorLoading) {
     return <CUFormSkeleton />;
   }
 
-  if (isDoctorWorkspace && !doctorProfileQuery.data) {
+  if (isDoctorWorkspace && !doctorProfile) {
     return (
       <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
         Your doctor profile needs a branch assignment before appointments can be
@@ -190,13 +126,13 @@ const AppointmentForm = () => {
             <div className="rounded-xl border border-border/60 px-4 py-3">
               <p className="text-sm text-muted-foreground">Doctor</p>
               <p className="mt-1 font-medium">
-                {doctorProfileQuery.data?.user?.displayName ?? "Doctor"}
+                {doctorProfile?.user?.displayName ?? "Doctor"}
               </p>
             </div>
             <div className="rounded-xl border border-border/60 px-4 py-3">
               <p className="text-sm text-muted-foreground">Branch</p>
               <p className="mt-1 font-medium">
-                {doctorProfileQuery.data?.branch?.name ?? "Branch not set"}
+                {doctorProfile?.branch?.name ?? "Branch not set"}
               </p>
             </div>
           </>
@@ -329,11 +265,16 @@ const AppointmentForm = () => {
         </FormField>
         <InputField
           form={form}
-          name="startTime"
+          name="scheduledStartAt"
           label="Start Time"
           type="time"
         />
-        <InputField form={form} name="endTime" label="End Time" type="time" />
+        <InputField
+          form={form}
+          name="scheduledEndAt"
+          label="End Time"
+          type="time"
+        />
         <InputField form={form} name="timezone" label="Timezone" />
         <InputField
           form={form}
