@@ -1,7 +1,11 @@
+import type { AuditLogResponse } from "../audit/types";
+import type { ContactMessageResponse } from "../contact/types";
+import type { NewsletterSubscriberResponse } from "../newsletter/types";
+
 // Shared primitives
 
 export interface DailyCount {
-  date: string; // "YYYY-MM-DD"
+  date: string;
   count: number;
 }
 
@@ -28,7 +32,7 @@ export interface DashboardAppointment {
   status: string;
   patientName: string;
   doctorName: string;
-  branchName: string | null;
+  branchName?: string;
 }
 
 // Admin dashboard
@@ -70,8 +74,8 @@ export interface AdminDashboardOverview {
   recentPatients: Array<{
     id: string;
     displayName: string;
-    email: string | null;
-    phone: string | null;
+    email?: string;
+    phone?: string;
     createdAt: string;
   }>;
   campaigns: Array<{
@@ -80,6 +84,33 @@ export interface AdminDashboardOverview {
     status: string;
     audience: string;
   }>;
+  auditLogs: Array<
+    Pick<
+      AuditLogResponse,
+      "id" | "action" | "entityType" | "entityId" | "ip" | "createdAt"
+    > & {
+      userName?: string;
+    }
+  >;
+  contactMessages: Array<
+    Pick<
+      ContactMessageResponse,
+      | "id"
+      | "firstName"
+      | "lastName"
+      | "email"
+      | "phone"
+      | "subject"
+      | "status"
+      | "createdAt"
+    >
+  >;
+  newsletterSubscribers: Array<
+    Pick<
+      NewsletterSubscriberResponse,
+      "id" | "name" | "email" | "isActive" | "subscribedAt"
+    >
+  >;
   focus: {
     pendingDoctorReviews: number;
     inactiveBranches: number;
@@ -94,9 +125,9 @@ export interface DoctorDashboardOverview {
   profile: {
     displayName: string;
     specialty: string;
-    branchName: string | null;
+    branchName?: string;
     consultationFee: number;
-    bio: string | null;
+    bio?: string;
     verificationStatus: string;
     isAvailable: boolean;
   };
@@ -120,7 +151,7 @@ export interface DoctorDashboardOverview {
   appointmentStatusMix: StatusCount[];
   upcomingAppointments: DashboardAppointment[];
   focus: {
-    branchName: string | null;
+    branchName?: string;
     completedVisits: number;
     settledPayments: number;
     pendingPaymentValue: number;

@@ -42,6 +42,12 @@ import {
   type ChartConfig,
 } from "@workspace/ui/components/chart";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@workspace/ui/components/tabs";
+import {
   formatCompactNumber,
   formatDate,
   formatPrice,
@@ -56,25 +62,24 @@ const CHART_COLORS = [
 ];
 
 const appointmentChartConfig = {
-  appointments: {
-    label: "Appointments",
-    color: "var(--chart-1)",
-  },
+  appointments: { label: "Appointments", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 const revenueChartConfig = {
-  settled: {
-    label: "Settled",
-    color: "var(--chart-2)",
-  },
-  pending: {
-    label: "Pending",
-    color: "var(--chart-4)",
-  },
+  settled: { label: "Settled", color: "var(--chart-2)" },
+  pending: { label: "Pending", color: "var(--chart-4)" },
 } satisfies ChartConfig;
 
 const titleCase = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+      {message}
+    </div>
+  );
+}
 
 export default function AdminOverviewPage() {
   const { data: overview } = useAdminDashboard();
@@ -120,8 +125,7 @@ export default function AdminOverviewPage() {
     {
       href: "/admin/patients/new",
       title: "Add patient",
-      description:
-        "Create a full patient record directly from the admin panel.",
+      description: "Create a full patient record directly from the admin panel.",
       icon: Users,
     },
     {
@@ -164,6 +168,7 @@ export default function AdminOverviewPage() {
         description="Monitor providers, bookings, payments, and branch activity from one operational dashboard shaped around the current healthcare modules."
       />
 
+      {/* ── Stat cards ── */}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OverviewStatCard
           label="Care team"
@@ -205,6 +210,7 @@ export default function AdminOverviewPage() {
         />
       </section>
 
+      {/* ── Charts ── */}
       <section className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
         <Card className="shadow-sm">
           <CardHeader>
@@ -246,11 +252,7 @@ export default function AdminOverviewPage() {
                   axisLine={false}
                   tickMargin={8}
                 />
-                <YAxis
-                  allowDecimals={false}
-                  tickLine={false}
-                  axisLine={false}
-                />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
                 <ChartTooltip
                   cursor={false}
                   content={
@@ -382,226 +384,355 @@ export default function AdminOverviewPage() {
                   </div>
                 </>
               ) : (
-                <div className="rounded-xl border border-dashed px-4 py-10 text-sm text-muted-foreground">
-                  No payment activity is available for charting yet.
-                </div>
+                <EmptyState message="No payment activity is available for charting yet." />
               )}
             </CardContent>
           </Card>
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      {/* ── Tab group 1: People & Appointments | Quick Actions ── */}
+      <section className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
         <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle>Upcoming appointments</CardTitle>
-              <CardDescription>
-                Next scheduled visits across patients and providers.
-              </CardDescription>
-            </div>
-            <Button href="/admin/appointments" variant="outline">
-              View all
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {(overview?.upcomingAppointments ?? []).length ? (
-              overview!.upcomingAppointments.map((appointment) => (
-                <div
-                  key={appointment.id}
-                  className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/30"
-                >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <p className="font-medium">
-                        {appointment.patientName} with {appointment.doctorName}
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {appointment.branchName ?? "Branch not assigned"}
-                      </p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {formatDate(appointment.scheduledStartAt, {
-                          mode: "datetime",
-                        })}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="w-fit capitalize">
-                      {titleCase(appointment.status)}
-                    </Badge>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No appointments are scheduled yet.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Quick actions</CardTitle>
-              <CardDescription>
-                Jump into the admin tasks that usually need attention first.
-              </CardDescription>
+          <Tabs defaultValue="appointments" className="gap-0">
+            <CardHeader className="border-b">
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="appointments">
+                  Upcoming Appointments
+                </TabsTrigger>
+                <TabsTrigger value="patients">Recent Patients</TabsTrigger>
+                <TabsTrigger value="doctors">Recent Doctors</TabsTrigger>
+              </TabsList>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              {quickActions.map((action) => {
-                const Icon = action.icon;
-
-                return (
-                  <Link
-                    key={action.href}
-                    href={action.href}
-                    className="group rounded-2xl border border-border/60 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
+            <CardContent className="pt-4">
+              <TabsContent value="appointments" className="mt-0 space-y-3">
+                {(overview?.upcomingAppointments ?? []).length ? (
+                  overview!.upcomingAppointments.map((appt) => (
+                    <div
+                      key={appt.id}
+                      className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/30"
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {appt.patientName} with {appt.doctorName}
+                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {appt.branchName ?? "Branch not assigned"}
+                          </p>
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {formatDate(appt.scheduledStartAt, {
+                              mode: "datetime",
+                            })}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="w-fit capitalize">
+                          {titleCase(appt.status)}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <EmptyState message="No appointments are scheduled yet." />
+                )}
+                <div className="flex justify-end pt-2">
+                  <Button
+                    href="/admin/appointments"
+                    variant="ghost"
+                    size="sm"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <Icon className="size-4" />
+                    View all appointments
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="patients" className="mt-0 space-y-3">
+                {(overview?.recentPatients ?? []).length ? (
+                  overview!.recentPatients.map((patient) => (
+                    <div
+                      key={patient.id}
+                      className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-medium">{patient.displayName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {patient.email ?? patient.phone ?? "No contact"}
+                        </p>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {formatDate(patient.createdAt)}
                       </span>
-                      <MoveRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                     </div>
-                    <p className="mt-4 font-medium">{action.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {action.description}
-                    </p>
-                  </Link>
-                );
-              })}
-            </CardContent>
-            <CardFooter className="flex-col items-stretch gap-3 border-t pt-6">
-              {focusItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="font-medium">{item.value}</span>
+                  ))
+                ) : (
+                  <EmptyState message="No patients are available yet." />
+                )}
+                <div className="flex justify-end pt-2">
+                  <Button href="/admin/patients" variant="ghost" size="sm">
+                    View all patients
+                  </Button>
                 </div>
-              ))}
-            </CardFooter>
-          </Card>
+              </TabsContent>
 
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
-              <div>
-                <CardTitle>Campaign pulse</CardTitle>
-                <CardDescription>
-                  Latest outreach items prepared for patients and staff.
-                </CardDescription>
-              </div>
-              <Button href="/admin/campaigns" variant="ghost">
-                Open
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {(overview?.campaigns ?? []).length ? (
-                overview!.campaigns.map((campaign) => (
-                  <div
-                    key={campaign.id}
-                    className="rounded-xl border border-border/60 px-4 py-3"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-medium">{campaign.title}</p>
-                      <Badge variant="outline" className="capitalize">
-                        {titleCase(campaign.status)}
-                      </Badge>
+              <TabsContent value="doctors" className="mt-0 space-y-3">
+                {(overview?.doctorRoster ?? []).length ? (
+                  overview!.doctorRoster.map((doctor) => (
+                    <div
+                      key={doctor.id}
+                      className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-medium">{doctor.displayName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {doctor.specialty}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="secondary" className="capitalize">
+                          {titleCase(doctor.verificationStatus)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {doctor.isAvailable ? "Available" : "Unavailable"}
+                        </span>
+                      </div>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Audience: {titleCase(campaign.audience)}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No campaigns have been created yet.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <div>
-              <CardTitle>Doctor roster</CardTitle>
-              <CardDescription>
-                Availability and verification at a glance.
-              </CardDescription>
-            </div>
-            <Button href="/admin/doctors" variant="ghost">
-              Open
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {(overview?.doctorRoster ?? []).length ? (
-              overview!.doctorRoster.map((doctor) => (
-                <div
-                  key={doctor.id}
-                  className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
-                >
-                  <div>
-                    <p className="font-medium">{doctor.displayName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {doctor.specialty}
-                    </p>
-                  </div>
-                  <div className="text-right text-sm">
-                    <Badge variant="secondary" className="capitalize">
-                      {titleCase(doctor.verificationStatus)}
-                    </Badge>
-                    <p className="mt-1 text-muted-foreground">
-                      {doctor.isAvailable ? "Available" : "Unavailable"}
-                    </p>
-                  </div>
+                  ))
+                ) : (
+                  <EmptyState message="No doctors yet." />
+                )}
+                <div className="flex justify-end pt-2">
+                  <Button href="/admin/doctors" variant="ghost" size="sm">
+                    View all doctors
+                  </Button>
                 </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No doctors yet.</p>
-            )}
-          </CardContent>
+              </TabsContent>
+            </CardContent>
+          </Tabs>
         </Card>
 
         <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between gap-3">
-            <div>
-              <CardTitle>Recent patients</CardTitle>
-              <CardDescription>
-                Most recent profiles coming into the system.
-              </CardDescription>
-            </div>
-            <Button href="/admin/patients" variant="ghost">
-              Open
-            </Button>
+          <CardHeader>
+            <CardTitle>Quick actions</CardTitle>
+            <CardDescription>
+              Jump into the admin tasks that usually need attention first.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {(overview?.recentPatients ?? []).length ? (
-              overview!.recentPatients.map((patient) => (
-                <div
-                  key={patient.id}
-                  className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="group rounded-2xl border border-border/60 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-muted/30"
                 >
-                  <div>
-                    <p className="font-medium">{patient.displayName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {patient.email ?? patient.phone ?? "No contact"}
-                    </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Icon className="size-4" />
+                    </span>
+                    <MoveRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {formatDate(patient.createdAt)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No patients are available yet.
-              </p>
-            )}
+                  <p className="mt-4 font-medium">{action.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {action.description}
+                  </p>
+                </Link>
+              );
+            })}
           </CardContent>
+          <CardFooter className="flex-col items-stretch gap-3 border-t pt-6">
+            {focusItems.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="text-muted-foreground">{item.label}</span>
+                <span className="font-medium">{item.value}</span>
+              </div>
+            ))}
+          </CardFooter>
+        </Card>
+      </section>
+
+      {/* ── Tab group 2: Outreach & Activity ── */}
+      <section>
+        <Card className="shadow-sm">
+          <Tabs defaultValue="campaigns" className="gap-0">
+            <CardHeader className="border-b">
+              <TabsList>
+                <TabsTrigger value="campaigns">Recent Campaigns</TabsTrigger>
+                <TabsTrigger value="leads">Leads & Outreach</TabsTrigger>
+                <TabsTrigger value="activity">Activity Log</TabsTrigger>
+              </TabsList>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <TabsContent value="campaigns" className="mt-0">
+                {(overview?.campaigns ?? []).length ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {overview!.campaigns.map((campaign) => (
+                      <div
+                        key={campaign.id}
+                        className="rounded-xl border border-border/60 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-medium leading-snug">
+                            {campaign.title}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 capitalize"
+                          >
+                            {titleCase(campaign.status)}
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Audience: {titleCase(campaign.audience)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState message="No campaigns have been created yet." />
+                )}
+                <div className="flex justify-end pt-4">
+                  <Button href="/admin/campaigns" variant="ghost" size="sm">
+                    View all campaigns
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="leads" className="mt-0 space-y-6">
+                <div>
+                  <p className="mb-3 text-sm font-medium text-muted-foreground">
+                    Contact Messages
+                  </p>
+                  {(overview?.contactMessages ?? []).length ? (
+                    <div className="space-y-2">
+                      {overview!.contactMessages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium">
+                              {msg.firstName}
+                              {msg.lastName ? ` ${msg.lastName}` : ""}
+                            </p>
+                            <p className="truncate text-sm text-muted-foreground">
+                              {msg.subject ?? msg.email}
+                            </p>
+                          </div>
+                          <div className="ml-4 flex shrink-0 flex-col items-end gap-1">
+                            <Badge variant="outline" className="capitalize">
+                              {titleCase(msg.status)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(msg.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState message="No contact messages yet." />
+                  )}
+                  <div className="flex justify-end pt-3">
+                    <Button
+                      href="/admin/leads/messages"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      View all messages
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-3 text-sm font-medium text-muted-foreground">
+                    Newsletter Subscribers
+                  </p>
+                  {(overview?.newsletterSubscribers ?? []).length ? (
+                    <div className="space-y-2">
+                      {overview!.newsletterSubscribers.map((sub) => (
+                        <div
+                          key={sub.id}
+                          className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                        >
+                          <div>
+                            <p className="font-medium">{sub.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {sub.email}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge
+                              variant={sub.isActive ? "default" : "secondary"}
+                            >
+                              {sub.isActive ? "Active" : "Unsubscribed"}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(sub.subscribedAt)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState message="No newsletter subscribers yet." />
+                  )}
+                  <div className="flex justify-end pt-3">
+                    <Button
+                      href="/admin/leads/subscribers"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      View all subscribers
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="activity" className="mt-0 space-y-2">
+                {(overview?.auditLogs ?? []).length ? (
+                  overview!.auditLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Badge
+                          variant={
+                            log.action === "delete"
+                              ? "destructive"
+                              : log.action === "create"
+                                ? "default"
+                                : "secondary"
+                          }
+                          className="capitalize"
+                        >
+                          {titleCase(log.action)}
+                        </Badge>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {titleCase(log.entityType)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {log.userName ?? "System"}
+                            {log.ip ? ` · ${log.ip}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(log.createdAt)}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <EmptyState message="No activity has been recorded yet." />
+                )}
+              </TabsContent>
+            </CardContent>
+          </Tabs>
         </Card>
       </section>
     </div>

@@ -1,18 +1,11 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import type {
-  AdminDashboardOverview,
-  DailyCount,
-  DailyEarnings,
-  DailyRevenue,
-  DoctorDashboardOverview,
-} from "@workspace/contracts/dashboard";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAdminOverview(): Promise<{ data: AdminDashboardOverview }> {
+  async getAdminOverview() {
     const now = new Date();
     const today = startOfDay(now);
     const tomorrow = addDays(today, 1);
@@ -40,6 +33,9 @@ export class DashboardService {
       doctorRoster,
       recentPatients,
       campaigns,
+      auditLogs,
+      contactMessages,
+      newsletterSubscribers,
     ] = await Promise.all([
       // Doctor verification counts grouped
       this.prisma.doctorProfile.groupBy({
@@ -186,6 +182,52 @@ export class DashboardService {
         orderBy: { createdAt: "desc" },
         select: { id: true, title: true, status: true, audience: true },
       }),
+
+      // Recent audit logs
+      this.prisma.auditLog.findMany({
+        take: 8,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          action: true,
+          entityType: true,
+          entityId: true,
+          ip: true,
+          createdAt: true,
+          user: { select: { displayName: true } },
+        },
+      }),
+
+      // Recent contact messages
+      this.prisma.contactMessage.findMany({
+        where: { deletedAt: null },
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          subject: true,
+          status: true,
+          createdAt: true,
+        },
+      }),
+
+      // Recent newsletter subscribers
+      this.prisma.newsletterSubscriber.findMany({
+        where: { deletedAt: null },
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          isActive: true,
+          subscribedAt: true,
+        },
+      }),
     ]);
 
     // Build derived values
@@ -303,6 +345,32 @@ export class DashboardService {
           status: c.status,
           audience: c.audience,
         })),
+        auditLogs: auditLogs.map((log) => ({
+          id: log.id,
+          action: log.action,
+          entityType: log.entityType,
+          entityId: log.entityId,
+          userName: log.user?.displayName,
+          ip: log.ip,
+          createdAt: log.createdAt,
+        })),
+        contactMessages: contactMessages.map((m) => ({
+          id: m.id,
+          firstName: m.firstName,
+          lastName: m.lastName,
+          email: m.email,
+          phone: m.phone,
+          subject: m.subject,
+          status: m.status,
+          createdAt: m.createdAt,
+        })),
+        newsletterSubscribers: newsletterSubscribers.map((s) => ({
+          id: s.id,
+          name: s.name,
+          email: s.email,
+          isActive: s.isActive,
+          subscribedAt: s.subscribedAt,
+        })),
         focus: {
           pendingDoctorReviews,
           inactiveBranches,
@@ -313,9 +381,7 @@ export class DashboardService {
     };
   }
 
-  async getDoctorOverview(
-    userId: string,
-  ): Promise<{ data: DoctorDashboardOverview }> {
+  async getDoctorOverview(userId: string) {
     const doctorProfile = await this.prisma.doctorProfile.findUnique({
       where: { userId },
       include: {
@@ -539,17 +605,14 @@ function groupByDay(dates: Date[]): Record<string, number> {
   );
 }
 
-function fillDailyCounts(
-  days: string[],
-  counts: Record<string, number>,
-): DailyCount[] {
+function fillDailyCounts(days: string[], counts: Record<string, number>) {
   return days.map((date) => ({ date, count: counts[date] ?? 0 }));
 }
 
 function fillDailyRevenue(
   days: string[],
   records: Array<{ date: Date; settled: number; pending: number }>,
-): DailyRevenue[] {
+) {
   const map: Record<string, { settled: number; pending: number }> = {};
   for (const r of records) {
     const key = toDateKey(r.date);
@@ -567,7 +630,7 @@ function fillDailyRevenue(
 function fillDailyEarnings(
   days: string[],
   records: Array<{ date: Date; earned: number; expected: number }>,
-): DailyEarnings[] {
+) {
   const map: Record<string, { earned: number; expected: number }> = {};
   for (const r of records) {
     const key = toDateKey(r.date);
