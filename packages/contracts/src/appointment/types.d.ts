@@ -18,9 +18,9 @@ export type UpdateAppointmentStatusType = z.input<
 >;
 
 export type AppointmentResponse = Sanitize<Appointment> & {
-  branch?: BranchResponse;
-  doctor?: DoctorProfileResponse;
-  patient?: PatientProfileResponse;
+  branch: BranchResponse;
+  doctor: DoctorProfileResponse;
+  patient: PatientProfileResponse;
   conversation?: ConversationResponse;
   payments?: PaymentResponse[];
 };

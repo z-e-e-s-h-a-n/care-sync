@@ -11,11 +11,17 @@ import type { UserQueryType } from "@workspace/contracts/admin";
 import type { UserResponse } from "@workspace/contracts/user";
 import { SafeUserRoleEnum } from "@workspace/contracts";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import UserAvatar from "@workspace/ui/shared/UserAvatar";
 
 const columns: ColumnConfig<UserResponse, UserQueryType>[] = [
   {
     header: "User",
-    accessor: (user) => user.displayName,
+    accessor: (user) => (
+      <div className="flex items-center gap-4 min-w-50">
+        <UserAvatar user={user} />
+        <p className="font-semibold">{user.displayName}</p>
+      </div>
+    ),
     sortKey: "displayName",
   },
   {
@@ -31,7 +37,7 @@ const columns: ColumnConfig<UserResponse, UserQueryType>[] = [
   {
     header: "Role",
     accessor: (user) => (
-      <Badge variant="outline" className="capitalize">
+      <Badge variant="info" className="capitalize">
         {user.role}
       </Badge>
     ),

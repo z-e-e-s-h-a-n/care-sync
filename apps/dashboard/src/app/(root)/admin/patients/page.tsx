@@ -7,11 +7,18 @@ import type {
   PatientProfileResponse,
   PatientQueryType,
 } from "@workspace/contracts/patient";
+import UserAvatar from "@workspace/ui/shared/UserAvatar";
+import { Badge } from "@workspace/ui/components/badge";
 
 const columns: ColumnConfig<PatientProfileResponse, PatientQueryType>[] = [
   {
     header: "Patient",
-    accessor: (patient) => patient.user?.displayName ?? patient.id,
+    accessor: (patient) => (
+      <div className="flex items-center gap-4 min-w-50">
+        <UserAvatar user={patient.user} />
+        <p className="font-semibold">{patient.user?.displayName}</p>
+      </div>
+    ),
     sortKey: "displayName",
   },
   {
@@ -25,7 +32,7 @@ const columns: ColumnConfig<PatientProfileResponse, PatientQueryType>[] = [
   },
   {
     header: "Gender",
-    accessor: (patient) => patient.gender ?? "N/A",
+    accessor: (patient) => <Badge>{patient.gender ?? "N/A"}</Badge>,
   },
 ];
 

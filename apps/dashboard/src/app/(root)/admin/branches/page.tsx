@@ -15,13 +15,15 @@ import { useBranches, useDeleteBranch } from "@/hooks/business";
 const branchColumns: ColumnConfig<BranchResponse, BranchQueryType>[] = [
   {
     header: "Branch",
-    accessor: "name",
+    accessor: (branch) => (
+      <div className="flex flex-col">
+        <span className="font-medium">{branch.name}</span>
+        <span className="text-xs text-muted-foreground">/{branch.slug}</span>
+      </div>
+    ),
     sortKey: "name",
   },
-  {
-    header: "Slug",
-    accessor: "slug",
-  },
+
   {
     header: "Contact",
     accessor: (branch) => (

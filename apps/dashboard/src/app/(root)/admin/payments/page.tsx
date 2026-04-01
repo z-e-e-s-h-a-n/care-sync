@@ -8,6 +8,8 @@ import type {
   PaymentResponse,
 } from "@workspace/contracts/payment";
 import { formatPrice } from "@workspace/shared/utils";
+import { Badge } from "@workspace/ui/components/badge";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const columns: ColumnConfig<PaymentResponse, PaymentQueryType>[] = [
   { header: "Payment", accessor: "id" },
@@ -23,8 +25,17 @@ const columns: ColumnConfig<PaymentResponse, PaymentQueryType>[] = [
     header: "Amount",
     accessor: (payment) => formatPrice(payment.amount),
   },
-  { header: "Provider", accessor: "provider" },
-  { header: "Status", accessor: "status", sortKey: "status" },
+  {
+    header: "Provider",
+    accessor: (payment) => <Badge>{payment.provider}</Badge>,
+  },
+  {
+    header: "Status",
+    accessor: (payment) => (
+      <Badge variant={getStatusVariant(payment.status)}>{payment.status}</Badge>
+    ),
+    sortKey: "status",
+  },
 ];
 
 export default function PaymentsPage() {

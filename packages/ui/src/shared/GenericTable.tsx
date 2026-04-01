@@ -44,6 +44,7 @@ export interface ColumnConfig<TData, TQuery extends BaseQueryType = never> {
   accessor: keyof TData | ((row: TData) => React.ReactNode);
   sortKey?: TQuery["sortBy"];
   className?: string;
+  wrapperCn?: string;
 }
 
 interface GenericTableProps<
@@ -232,7 +233,7 @@ function GenericTable<
               className="rounded-lg border bg-background p-4 shadow-sm space-y-6"
             >
               <div className="flex items-start justify-between gap-3 border-b pb-2">
-                <div className="min-w-0 flex-1">
+                <div className={cn("min-w-0 flex-1", primaryColumn.className)}>
                   {primaryColumn ? renderCellValue(row, primaryColumn) : null}
                 </div>
                 {!hasActions && renderActionsMenu(row)}
@@ -241,11 +242,19 @@ function GenericTable<
               {secondaryColumns.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
                   {secondaryColumns.map((column, index) => (
-                    <div key={`${row.id}-${index}`} className="space-y-1">
+                    <div
+                      key={`${row.id}-${index}`}
+                      className={cn("space-y-1", column.wrapperCn)}
+                    >
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {column.header}
                       </p>
-                      <div className="min-w-0 wrap-break-word text-sm">
+                      <div
+                        className={cn(
+                          "min-w-0 wrap-break-word text-sm",
+                          column.className,
+                        )}
+                      >
                         {renderCellValue(row, column)}
                       </div>
                     </div>

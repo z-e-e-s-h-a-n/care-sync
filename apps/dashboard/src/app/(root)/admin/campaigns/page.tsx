@@ -7,6 +7,8 @@ import type {
   CampaignQueryType,
   NotificationCampaignResponse,
 } from "@workspace/contracts/campaign";
+import { Badge } from "@workspace/ui/components/badge";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const columns: ColumnConfig<NotificationCampaignResponse, CampaignQueryType>[] =
   [
@@ -16,7 +18,7 @@ const columns: ColumnConfig<NotificationCampaignResponse, CampaignQueryType>[] =
     },
     {
       header: "Audience",
-      accessor: "audience",
+      accessor: (campaign) => <Badge>{campaign.audience}</Badge>,
     },
     {
       header: "Recipients",
@@ -24,7 +26,11 @@ const columns: ColumnConfig<NotificationCampaignResponse, CampaignQueryType>[] =
     },
     {
       header: "Status",
-      accessor: "status",
+      accessor: (campaign) => (
+        <Badge variant={getStatusVariant(campaign.status)}>
+          {campaign.status}
+        </Badge>
+      ),
       sortKey: "status",
     },
   ];

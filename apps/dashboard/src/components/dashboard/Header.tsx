@@ -30,7 +30,10 @@ const SidebarHeader = () => {
           >
             <Bell className="size-5" />
             {unreadCount > 0 && (
-              <Badge className="absolute -right-1 -top-1 min-w-5 px-1.5 text-[10px]">
+              <Badge
+                appearance="solid"
+                className="absolute -right-1 -top-1 min-w-5 px-1.5 text-[10px]"
+              >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
             )}

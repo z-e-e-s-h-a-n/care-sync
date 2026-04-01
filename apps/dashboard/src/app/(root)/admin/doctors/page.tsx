@@ -9,16 +9,22 @@ import type {
 } from "@workspace/contracts/doctor";
 import { Badge } from "@workspace/ui/components/badge";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import UserAvatar from "@workspace/ui/shared/UserAvatar";
 
 const columns: ColumnConfig<DoctorProfileResponse, DoctorQueryType>[] = [
   {
     header: "Doctor",
-    accessor: (doctor) => doctor.user?.displayName ?? doctor.slug ?? doctor.id,
+    accessor: (doctor) => (
+      <div className="flex items-center gap-4 min-w-50">
+        <UserAvatar user={doctor.user} />
+        <p className="font-semibold">{doctor.user?.displayName}</p>
+      </div>
+    ),
     sortKey: "displayName",
   },
   {
     header: "Specialty",
-    accessor: (doctor) => doctor.specialty ?? "Not set",
+    accessor: (doctor) => <Badge> {doctor.specialty ?? "Not set"}</Badge>,
     sortKey: "specialty",
   },
   {
@@ -28,7 +34,9 @@ const columns: ColumnConfig<DoctorProfileResponse, DoctorQueryType>[] = [
   {
     header: "Status",
     accessor: (doctor) => (
-      <Badge variant={getStatusVariant(doctor.isAvailable ? "active" : "closed")}>
+      <Badge
+        variant={getStatusVariant(doctor.isAvailable ? "active" : "closed")}
+      >
         {doctor.isAvailable ? "available" : "unavailable"}
       </Badge>
     ),

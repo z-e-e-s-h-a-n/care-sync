@@ -1,10 +1,5 @@
-import { cn } from "@workspace/ui/lib/utils";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar";
 import type { UserResponse } from "@workspace/contracts/user";
+import UserAvatar from "./UserAvatar";
 
 interface UserCardProps {
   currentUser?: UserResponse;
@@ -25,22 +20,7 @@ const UserCard = ({
 
   return (
     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-      <Avatar className={cn("size-8 rounded-lg", avatarSize)}>
-        <AvatarImage
-          src={currentUser.avatar?.url}
-          alt={currentUser.displayName}
-        />
-        <AvatarFallback
-          className={cn(
-            "uppercase",
-            variant === "avatar" ? "rounded-full" : "rounded-lg",
-            avatarSize,
-          )}
-        >
-          {currentUser.firstName.charAt(0)}
-          {currentUser.lastName?.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
+      <UserAvatar user={currentUser} className={avatarSize} />
       {variant === "default" && (
         <div className="grid flex-1 text-left text-sm leading-tight">
           <span className="truncate font-medium">

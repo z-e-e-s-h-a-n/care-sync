@@ -29,7 +29,7 @@ const newsletterColumns: ColumnConfig<
   {
     header: "Status",
     accessor: (subscriber) => (
-      <Badge variant="secondary">
+      <Badge variant={subscriber.isActive ? "success" : "destructive"}>
         {subscriber.isActive ? "active" : "inactive"}
       </Badge>
     ),

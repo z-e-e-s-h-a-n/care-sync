@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   CalendarRange,
   Clock3,
@@ -167,7 +166,9 @@ export default function DoctorOverviewPage() {
       helper: "Succeeded appointment payments visible in your role scope.",
       badge: formatPrice(overview?.earnings.average ?? 0),
       trendLabel: `${formatPrice(overview?.earnings.pending ?? 0)} still pending`,
-      bars: earningsTrendData.slice(-7).map((item) => item.earned + item.expected),
+      bars: earningsTrendData
+        .slice(-7)
+        .map((item) => item.earned + item.expected),
       icon: Wallet,
       tone: "warning",
     },
@@ -207,7 +208,8 @@ export default function DoctorOverviewPage() {
           description:
             "How the visible appointments are distributed by status.",
           data: appointmentStatusData,
-          emptyMessage: "No appointment activity is available for charting yet.",
+          emptyMessage:
+            "No appointment activity is available for charting yet.",
           formatLabel: titleCase,
         }}
       />
@@ -236,7 +238,9 @@ export default function DoctorOverviewPage() {
                     <div>
                       <p className="font-medium">{appointment.patientName}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {appointment.branchName ?? doctor?.branchName ?? "Branch not assigned"}
+                        {appointment.branchName ??
+                          doctor?.branchName ??
+                          "Branch not assigned"}
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
                         {formatDate(appointment.scheduledStartAt)}
@@ -256,62 +260,12 @@ export default function DoctorOverviewPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <DashboardQuickActions
-            title="Quick actions"
-            description="The doctor tasks you usually need in the middle of a workday."
-            actions={quickActions}
-            focusItems={focusItems}
-          />
-
-          <Card className="shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
-              <div>
-                <CardTitle>Profile snapshot</CardTitle>
-                <CardDescription>
-                  Core doctor information used across bookings and scheduling.
-                </CardDescription>
-              </div>
-              <Button asChild variant="ghost">
-                <Link href="/doctor/profile">Edit</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="rounded-xl border border-border/60 p-4">
-                <p className="text-muted-foreground">Doctor</p>
-                <p className="mt-1 font-medium">
-                  {doctor?.displayName ?? "Doctor profile"}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 p-4">
-                <p className="text-muted-foreground">Specialty</p>
-                <p className="mt-1 font-medium">
-                  {doctor?.specialty ?? "Specialty not set"}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 p-4">
-                <p className="text-muted-foreground">Branch</p>
-                <p className="mt-1 font-medium">
-                  {doctor?.branchName ?? "Unassigned"}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 p-4">
-                <p className="text-muted-foreground">Consultation fee</p>
-                <p className="mt-1 font-medium">
-                  {doctor?.consultationFee
-                    ? formatPrice(Number(doctor.consultationFee))
-                    : "Not set"}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 p-4">
-                <p className="text-muted-foreground">Bio</p>
-                <p className="mt-1 font-medium">
-                  {doctor?.bio ?? "No bio added yet."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <DashboardQuickActions
+          title="Quick actions"
+          description="The doctor tasks you usually need in the middle of a workday."
+          actions={quickActions}
+          focusItems={focusItems}
+        />
       </section>
     </div>
   );

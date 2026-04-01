@@ -10,6 +10,7 @@ import ListPage from "@workspace/ui/shared/ListPage";
 import type { ColumnConfig } from "@workspace/ui/shared/GenericTable";
 import type { SearchByOption } from "@workspace/ui/shared/SearchToolbar";
 import { formatDate } from "@workspace/shared/utils";
+import { Badge } from "@workspace/ui/components/badge";
 
 const trafficColumns: ColumnConfig<
   TrafficSourceResponse,
@@ -17,12 +18,12 @@ const trafficColumns: ColumnConfig<
 >[] = [
   {
     header: "Source",
-    accessor: (source) => source.utmSource ?? "—",
+    accessor: (source) => <Badge>{source.utmSource}</Badge>,
     sortKey: "createdAt",
   },
   {
     header: "Medium",
-    accessor: (source) => source.utmMedium ?? "—",
+    accessor: (source) => <Badge variant="warning">{source.utmMedium}</Badge>,
   },
   {
     header: "Campaign",

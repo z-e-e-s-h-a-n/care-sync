@@ -10,6 +10,7 @@ import type {
 import { Badge } from "@workspace/ui/components/badge";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 import { formatDate } from "@workspace/shared/utils";
+import UserAvatar from "@workspace/ui/shared/UserAvatar";
 
 const columns: ColumnConfig<AppointmentResponse, AppointmentQueryType>[] = [
   {
@@ -19,13 +20,23 @@ const columns: ColumnConfig<AppointmentResponse, AppointmentQueryType>[] = [
   },
   {
     header: "Doctor",
-    accessor: (appointment) =>
-      appointment.doctor?.user?.displayName ?? "Doctor",
+    accessor: (appointment) => (
+      <div className="flex items-center gap-4 min-w-50">
+        <UserAvatar user={appointment.doctor.user} />
+        <p className="font-semibold">{appointment.doctor.user.displayName}</p>
+      </div>
+    ),
+    wrapperCn: "space-y-4",
   },
   {
     header: "Patient",
-    accessor: (appointment) =>
-      appointment.patient?.user?.displayName ?? "Patient",
+    accessor: (appointment) => (
+      <div className="flex items-center gap-4 min-w-50">
+        <UserAvatar user={appointment.patient.user} />
+        <p className="font-semibold">{appointment.patient.user.displayName}</p>
+      </div>
+    ),
+    wrapperCn: "space-y-4",
   },
   {
     header: "Scheduled",
