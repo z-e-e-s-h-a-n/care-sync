@@ -205,6 +205,7 @@ export default function AdminOverviewPage() {
           data: appointmentWindowData,
           valueKey: "appointments",
           gradientId: "adminAppointments",
+          rangeMode: "head",
         }}
         bar={{
           title: "Revenue flow",

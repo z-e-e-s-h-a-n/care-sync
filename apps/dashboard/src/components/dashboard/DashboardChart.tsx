@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   Area,
   AreaChart,
@@ -15,6 +16,7 @@ import {
 
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -22,10 +24,25 @@ import {
 } from "@workspace/ui/components/card";
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@workspace/ui/components/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@workspace/ui/components/toggle-group";
+import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
+
 import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
 
 const CHART_COLORS = [
@@ -38,6 +55,14 @@ const CHART_COLORS = [
 
 type ChartRow = Record<string, unknown>;
 
+type RangeValue = "7d" | "14d" | "30d";
+
+const RANGE_OPTIONS: Array<{ value: RangeValue; label: string; days: number }> = [
+  { value: "30d", label: "Next 30 days", days: 30 },
+  { value: "14d", label: "Next 14 days", days: 14 },
+  { value: "7d", label: "Next 7 days", days: 7 },
+];
+
 export interface DashboardAreaChartCardProps {
   title: string;
   description: string;
@@ -47,6 +72,7 @@ export interface DashboardAreaChartCardProps {
   gradientId: string;
   heightClassName?: string;
   datePayloadKey?: string;
+  rangeMode?: "head" | "tail";
 }
 
 export interface DashboardBarChartCardProps {
@@ -74,6 +100,39 @@ interface DashboardChartProps {
 }
 
 export default function DashboardChart({ area, bar, pie }: DashboardChartProps) {
+  const isMobile = useIsMobile();
+  const showAreaRange = area.data.length > 7;
+
+  const availableRanges = React.useMemo(() => {
+    if (!showAreaRange) {
+      return [{ value: "7d", label: `Next ${area.data.length} days`, days: area.data.length }];
+    }
+
+    return RANGE_OPTIONS.filter((range) => range.days <= area.data.length);
+  }, [area.data.length, showAreaRange]);
+
+  const [areaRange, setAreaRange] = React.useState<RangeValue>(
+    availableRanges.some((range) => range.value === "14d") ? "14d" : "7d",
+  );
+
+  React.useEffect(() => {
+    if (!showAreaRange) {
+      return;
+    }
+
+    if (isMobile) {
+      setAreaRange("7d");
+    }
+  }, [isMobile, showAreaRange]);
+
+  const selectedAreaRangeDays =
+    availableRanges.find((range) => range.value === areaRange)?.days ?? 7;
+  const maxAreaDays = Math.min(selectedAreaRangeDays, area.data.length);
+  const normalizedAreaData =
+    area.rangeMode === "tail"
+      ? area.data.slice(-maxAreaDays)
+      : area.data.slice(0, maxAreaDays);
+
   const pieConfig = Object.fromEntries(
     pie.data.map((item, index) => [
       item.label,
@@ -86,17 +145,65 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
 
   return (
     <section className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
-      <Card className="shadow-sm">
+      <Card className="@container/card shadow-sm">
         <CardHeader>
           <CardTitle>{area.title}</CardTitle>
           <CardDescription>{area.description}</CardDescription>
+          <CardAction>
+            {showAreaRange ? (
+              <>
+                <ToggleGroup
+                  type="single"
+                  value={areaRange}
+                  onValueChange={(value) =>
+                    value && setAreaRange(value as RangeValue)
+                  }
+                  variant="outline"
+                  className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
+                >
+                  {availableRanges.map((range) => (
+                    <ToggleGroupItem key={range.value} value={range.value}>
+                      {range.label}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+                <Select
+                  value={areaRange}
+                  onValueChange={(value) => setAreaRange(value as RangeValue)}
+                >
+                  <SelectTrigger
+                    className="flex w-40 @[767px]/card:hidden"
+                    size="sm"
+                    aria-label="Select a time range"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {availableRanges.map((range) => (
+                      <SelectItem
+                        key={range.value}
+                        value={range.value}
+                        className="rounded-lg"
+                      >
+                        {range.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                Next {area.data.length} days
+              </span>
+            )}
+          </CardAction>
         </CardHeader>
         <CardContent>
           <ChartContainer
             config={area.config}
             className={area.heightClassName ?? "h-80 w-full"}
           >
-            <AreaChart accessibilityLayer data={area.data}>
+            <AreaChart accessibilityLayer data={normalizedAreaData}>
               <defs>
                 <linearGradient
                   id={area.gradientId}
@@ -148,6 +255,7 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
                 strokeWidth={2.5}
                 activeDot={{ r: 4 }}
               />
+              <ChartLegend content={<ChartLegendContent />} verticalAlign="top" />
             </AreaChart>
           </ChartContainer>
         </CardContent>
@@ -197,6 +305,10 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
                   dataKey={bar.keys[1]}
                   fill={`var(--color-${bar.keys[1]})`}
                   radius={[6, 6, 0, 0]}
+                />
+                <ChartLegend
+                  content={<ChartLegendContent />}
+                  verticalAlign="bottom"
                 />
               </BarChart>
             </ChartContainer>

@@ -269,6 +269,7 @@ export default function DoctorOverviewPage() {
           data: appointmentWindowData,
           valueKey: "appointments",
           gradientId: "doctorAppointments",
+          rangeMode: "head",
         }}
         bar={{
           title: "Earnings flow",
