@@ -20,6 +20,7 @@ import {
 } from "@workspace/ui/shared/GenericDetailsPage";
 import { formatDate } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import useUser from "@workspace/ui/hooks/use-user";
 
 const renderBadge = (value?: string | null) => (
   <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
@@ -165,7 +166,7 @@ const renderHeader = (data: PatientProfileResponse) => {
         <Avatar className="size-20 border border-border/60">
           <AvatarImage
             src={data.user?.avatar?.url ?? undefined}
-            alt={data.user?.displayName ?? "Patient"}
+            alt={data.user?.displayName}
             width={200}
             height={200}
             className="object-cover"
@@ -178,7 +179,7 @@ const renderHeader = (data: PatientProfileResponse) => {
         <div className="space-y-3">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">
-              {data.user?.displayName ?? "Patient"}
+              {data.user?.displayName}
             </h2>
             <p className="text-sm text-muted-foreground">
               {data.user?.email ??
@@ -194,6 +195,7 @@ const renderHeader = (data: PatientProfileResponse) => {
 
 const Page = ({ params }: AppPageProps) => {
   const { id } = React.use(params);
+  const { currentUser } = useUser();
 
   return (
     <GenericDetailsPage
@@ -207,7 +209,9 @@ const Page = ({ params }: AppPageProps) => {
       renderHeader={renderHeader}
       renderActions={(data) => (
         <Button asChild variant="outline">
-          <Link href={`/admin/appointments/new?patientId=${data.id}`}>
+          <Link
+            href={`/${currentUser?.role}/appointments/new?patientId=${data.id}`}
+          >
             Book Appointment
           </Link>
         </Button>

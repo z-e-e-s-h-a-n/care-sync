@@ -28,8 +28,8 @@ const formatLabel = (value?: string) =>
         .replace(/^./, (char) => char.toUpperCase())
     : "Not set";
 
-const renderBadge = (value?: string) => (
-  <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
+const renderBadge = (value: string) => (
+  <Badge variant={getStatusVariant(value)} className="capitalize">
     {formatLabel(value)}
   </Badge>
 );

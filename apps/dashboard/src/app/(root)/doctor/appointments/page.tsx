@@ -8,19 +8,41 @@ import type {
   AppointmentResponse,
 } from "@workspace/contracts/appointment";
 import { formatDate } from "@workspace/shared/utils";
+import UserAvatar from "@workspace/ui/shared/UserAvatar";
+import { Badge } from "@workspace/ui/components/badge";
+import { getStatusVariant } from "@workspace/ui/lib/utils";
 
 const columns: ColumnConfig<AppointmentResponse, AppointmentQueryType>[] = [
   {
     header: "Patient",
-    accessor: (appointment) => appointment.patient?.user.displayName,
+    accessor: (appointment) => (
+      <div className="flex items-center gap-4 min-w-50">
+        <UserAvatar user={appointment.patient.user} />
+        <p className="font-semibold">{appointment.patient.user.displayName}</p>
+      </div>
+    ),
+    wrapperCn: "space-y-4",
   },
-  { header: "Channel", accessor: "channel" },
+  {
+    header: "Channel",
+    accessor: (appointment) => (
+      <Badge variant="info">{appointment.channel}</Badge>
+    ),
+  },
   {
     header: "Scheduled",
     accessor: (appointment) => formatDate(appointment.scheduledStartAt),
     sortKey: "scheduledStartAt",
   },
-  { header: "Status", accessor: "status", sortKey: "status" },
+  {
+    header: "Status",
+    accessor: (appointment) => (
+      <Badge variant={getStatusVariant(appointment.status)}>
+        {appointment.status}
+      </Badge>
+    ),
+    sortKey: "status",
+  },
 ];
 
 export default function DoctorAppointmentsPage() {

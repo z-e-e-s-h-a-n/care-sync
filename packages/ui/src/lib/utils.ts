@@ -69,6 +69,7 @@ export const getStatusVariant = (status: string): BadgeVariants["variant"] => {
     closed: "destructive",
     revoked: "destructive",
     expired: "warning",
+    default: "default",
   };
 
   return map[status] ?? "secondary";
