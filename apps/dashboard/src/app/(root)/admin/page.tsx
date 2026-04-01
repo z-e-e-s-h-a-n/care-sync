@@ -24,13 +24,7 @@ import {
 
 import OverviewStatCard from "@/components/dashboard/OverviewStatCard";
 import PageIntro from "@/components/dashboard/PageIntro";
-import {
-  useAppointments,
-  useCampaigns,
-  useDoctors,
-  usePatients,
-  usePayments,
-} from "@/hooks/healthcare";
+import { useAdminDashboard } from "@/hooks/dashboard";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -47,7 +41,6 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@workspace/ui/components/chart";
-import { useBranches } from "@/hooks/business";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -96,173 +89,32 @@ const revenueChartConfig = {
   },
 } satisfies ChartConfig;
 
-const startOfDay = (value: Date) => {
-  const next = new Date(value);
-  next.setHours(0, 0, 0, 0);
-  return next;
-};
-
-const addDays = (value: Date, days: number) => {
-  const next = new Date(value);
-  next.setDate(next.getDate() + days);
-  return next;
-};
-
-const dateKey = (value: Date) => startOfDay(value).toISOString().slice(0, 10);
-
 const titleCase = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
 
-const sum = (values: number[]) =>
-  values.reduce((total, value) => total + value, 0);
-
 export default function AdminOverviewPage() {
-  const doctorsQuery = useDoctors({
-    page: 1,
-    limit: 24,
-    sortBy: "displayName",
-    sortOrder: "asc",
-    searchBy: "displayName",
-  });
-  const patientsQuery = usePatients({
-    page: 1,
-    limit: 60,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-    searchBy: "displayName",
-  });
-  const appointmentsQuery = useAppointments({
-    page: 1,
-    limit: 80,
-    sortBy: "scheduledStartAt",
-    sortOrder: "asc",
-    searchBy: "doctorName",
-  });
-  const paymentsQuery = usePayments({
-    page: 1,
-    limit: 60,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-    searchBy: "status",
-  });
-  const campaignsQuery = useCampaigns({
-    page: 1,
-    limit: 12,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-    searchBy: "title",
-  });
-  const branchesQuery = useBranches({
-    page: 1,
-    limit: 20,
-    sortBy: "name",
-    sortOrder: "asc",
-    searchBy: "name",
-  });
+  const { data: overview } = useAdminDashboard();
 
-  const doctors = doctorsQuery.data?.doctors ?? [];
-  const patients = patientsQuery.data?.patients ?? [];
-  const appointments = appointmentsQuery.data?.appointments ?? [];
-  const payments = paymentsQuery.data?.payments ?? [];
-  const campaigns = campaignsQuery.data?.campaigns ?? [];
-  const branches = branchesQuery.data?.branches ?? [];
-
-  const today = startOfDay(new Date());
-
-  const upcomingAppointments = appointments
-    .filter((appointment) => new Date(appointment.scheduledStartAt) >= today)
-    .sort(
-      (left, right) =>
-        new Date(left.scheduledStartAt).getTime() -
-        new Date(right.scheduledStartAt).getTime(),
-    );
-  const activeAppointments = upcomingAppointments.filter(
-    (appointment) =>
-      !["cancelled", "completed", "noShow"].includes(appointment.status),
-  );
-  const todayAppointments = activeAppointments.filter(
-    (appointment) =>
-      dateKey(new Date(appointment.scheduledStartAt)) === dateKey(today),
-  ).length;
-
-  const successfulPayments = payments.filter(
-    (payment) => payment.status === "succeeded",
-  );
-  const pendingPayments = payments.filter(
-    (payment) => payment.status !== "succeeded",
-  );
-  const collectedRevenue = sum(
-    successfulPayments.map((payment) => Number(payment.amount)),
-  );
-  const pendingRevenue = sum(
-    pendingPayments.map((payment) => Number(payment.amount)),
-  );
-
-  const verifiedDoctors = doctors.filter(
-    (doctor) => doctor.verificationStatus === "verified",
-  ).length;
-  const availableDoctors = doctors.filter(
-    (doctor) => doctor.isAvailable,
-  ).length;
-  const recentPatients = patients.filter((patient) => {
-    const createdAt = new Date(patient.createdAt);
-    return createdAt >= addDays(today, -30);
-  }).length;
-
-  const appointmentWindowData = Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(today, index);
-    const key = dateKey(date);
-    const count = activeAppointments.filter(
-      (appointment) => dateKey(new Date(appointment.scheduledStartAt)) === key,
-    ).length;
-
-    return {
-      label: weekdayFormatter.format(date),
-      date: shortDateFormatter.format(date),
+  const appointmentWindowData =
+    overview?.upcomingVisits.window.map(({ date, count }) => ({
+      label: weekdayFormatter.format(new Date(date)),
+      date: shortDateFormatter.format(new Date(date)),
       appointments: count,
-    };
-  });
+    })) ?? [];
 
-  const patientGrowthBars = Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(today, index - 6);
-    const key = dateKey(date);
-    return patients.filter(
-      (patient) => dateKey(new Date(patient.createdAt)) === key,
-    ).length;
-  });
-
-  const rosterBars = branches
-    .slice(0, 7)
-    .map((branch) => branch.doctors?.length ?? 0);
-
-  const revenueTrendData = Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(today, index - 6);
-    const key = dateKey(date);
-    const settled = successfulPayments
-      .filter((payment) => dateKey(new Date(payment.createdAt)) === key)
-      .reduce((total, payment) => total + Number(payment.amount), 0);
-    const pending = pendingPayments
-      .filter((payment) => dateKey(new Date(payment.createdAt)) === key)
-      .reduce((total, payment) => total + Number(payment.amount), 0);
-
-    return {
-      label: weekdayFormatter.format(date),
-      date: shortDateFormatter.format(date),
+  const revenueTrendData =
+    overview?.revenue.trend.map(({ date, settled, pending }) => ({
+      label: weekdayFormatter.format(new Date(date)),
+      date: shortDateFormatter.format(new Date(date)),
       settled,
       pending,
-    };
-  });
+    })) ?? [];
 
-  const paymentStatusData = Array.from(
-    payments.reduce((accumulator, payment) => {
-      accumulator.set(
-        payment.status,
-        (accumulator.get(payment.status) ?? 0) + 1,
-      );
-      return accumulator;
-    }, new Map<string, number>()),
-    ([label, value]) => ({ label, value }),
-  );
+  const paymentStatusData =
+    overview?.paymentStatusMix.map(({ status, count }) => ({
+      label: status,
+      value: count,
+    })) ?? [];
 
   const paymentStatusConfig: ChartConfig = Object.fromEntries(
     paymentStatusData.map((item, index) => [
@@ -305,20 +157,19 @@ export default function AdminOverviewPage() {
   const focusItems = [
     {
       label: "Pending doctor reviews",
-      value: doctors.filter((doctor) => doctor.verificationStatus === "pending")
-        .length,
+      value: overview?.focus.pendingDoctorReviews ?? 0,
     },
     {
       label: "Inactive branches",
-      value: branches.filter((branch) => !branch.isActive).length,
+      value: overview?.focus.inactiveBranches ?? 0,
     },
     {
       label: "Pending payment value",
-      value: currencyFormatter.format(pendingRevenue),
+      value: currencyFormatter.format(overview?.focus.pendingPaymentValue ?? 0),
     },
     {
       label: "Draft campaigns",
-      value: campaigns.filter((campaign) => campaign.status === "draft").length,
+      value: overview?.focus.draftCampaigns ?? 0,
     },
   ];
 
@@ -332,42 +183,44 @@ export default function AdminOverviewPage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OverviewStatCard
           label="Care team"
-          value={compactNumberFormatter.format(
-            doctorsQuery.data?.total ?? doctors.length,
-          )}
-          helper={`${branchesQuery.data?.total ?? branches.length} branches are represented in the current roster feed.`}
-          badge={`${verifiedDoctors} verified`}
-          trendLabel={`${availableDoctors} available for new bookings`}
-          bars={rosterBars}
+          value={compactNumberFormatter.format(overview?.careTeam.total ?? 0)}
+          helper={`${overview?.careTeam.branchTotal ?? 0} branches are represented in the current roster feed.`}
+          badge={`${overview?.careTeam.verified ?? 0} verified`}
+          trendLabel={`${overview?.careTeam.available ?? 0} available for new bookings`}
+          bars={overview?.careTeam.rosterBars ?? []}
           icon={Stethoscope}
           tone="success"
         />
         <OverviewStatCard
           label="Patient growth"
           value={compactNumberFormatter.format(
-            patientsQuery.data?.total ?? patients.length,
+            overview?.patientGrowth.total ?? 0,
           )}
           helper="Recent signups and profile creation activity from the last month."
-          badge={`+${recentPatients} this month`}
-          trendLabel={`${todayAppointments} appointments are on deck for today`}
-          bars={patientGrowthBars}
+          badge={`+${overview?.patientGrowth.newThisMonth ?? 0} this month`}
+          trendLabel={`${overview?.upcomingVisits.todayCount ?? 0} appointments are on deck for today`}
+          bars={
+            overview?.patientGrowth.growthBars.map((d) => d.count) ?? []
+          }
           icon={Users}
         />
         <OverviewStatCard
           label="Upcoming visits"
-          value={compactNumberFormatter.format(activeAppointments.length)}
+          value={compactNumberFormatter.format(
+            overview?.upcomingVisits.active ?? 0,
+          )}
           helper="Active appointments scheduled ahead, excluding completed and cancelled visits."
-          badge={`${upcomingAppointments.length} queued`}
-          trendLabel={`${appointmentWindowData[0]?.appointments ?? 0} appointments start today`}
+          badge={`${overview?.upcomingVisits.queued ?? 0} queued`}
+          trendLabel={`${overview?.upcomingVisits.todayCount ?? 0} appointments start today`}
           bars={appointmentWindowData.map((item) => item.appointments)}
           icon={CalendarClock}
         />
         <OverviewStatCard
           label="Collected revenue"
-          value={currencyFormatter.format(collectedRevenue)}
-          helper="Succeeded payments captured across the visible payment feed."
-          badge={`${payments.length ? Math.round((successfulPayments.length / payments.length) * 100) : 0}% success`}
-          trendLabel={`${currencyFormatter.format(pendingRevenue)} still pending`}
+          value={currencyFormatter.format(overview?.revenue.collected ?? 0)}
+          helper="Succeeded payments captured across all time."
+          badge={`${overview?.revenue.successRate ?? 0}% success`}
+          trendLabel={`${currencyFormatter.format(overview?.revenue.pending ?? 0)} still pending`}
           bars={revenueTrendData.map((item) => item.settled + item.pending)}
           icon={Wallet}
           tone="warning"
@@ -496,7 +349,7 @@ export default function AdminOverviewPage() {
             <CardHeader>
               <CardTitle>Payment status mix</CardTitle>
               <CardDescription>
-                Snapshot of payment outcomes in the currently loaded data set.
+                Snapshot of payment outcomes across all time.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
@@ -574,8 +427,8 @@ export default function AdminOverviewPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {upcomingAppointments.slice(0, 6).length ? (
-              upcomingAppointments.slice(0, 6).map((appointment) => (
+            {(overview?.upcomingAppointments ?? []).length ? (
+              overview!.upcomingAppointments.map((appointment) => (
                 <div
                   key={appointment.id}
                   className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/30"
@@ -583,11 +436,10 @@ export default function AdminOverviewPage() {
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="font-medium">
-                        {appointment.patient?.user?.displayName ?? "Patient"}{" "}
-                        with {appointment.doctor?.user?.displayName ?? "Doctor"}
+                        {appointment.patientName} with {appointment.doctorName}
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {appointment.branch?.name ?? "Branch not assigned"}
+                        {appointment.branchName ?? "Branch not assigned"}
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
                         {dateFormatter.format(
@@ -667,8 +519,8 @@ export default function AdminOverviewPage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-3">
-              {campaigns.slice(0, 4).length ? (
-                campaigns.slice(0, 4).map((campaign) => (
+              {(overview?.campaigns ?? []).length ? (
+                overview!.campaigns.map((campaign) => (
                   <div
                     key={campaign.id}
                     className="rounded-xl border border-border/60 px-4 py-3"
@@ -708,18 +560,16 @@ export default function AdminOverviewPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            {doctors.slice(0, 5).length ? (
-              doctors.slice(0, 5).map((doctor) => (
+            {(overview?.doctorRoster ?? []).length ? (
+              overview!.doctorRoster.map((doctor) => (
                 <div
                   key={doctor.id}
                   className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
                 >
                   <div>
-                    <p className="font-medium">
-                      {doctor.user?.displayName ?? doctor.slug ?? doctor.id}
-                    </p>
+                    <p className="font-medium">{doctor.displayName}</p>
                     <p className="text-sm text-muted-foreground">
-                      {doctor.specialty ?? "No specialty"}
+                      {doctor.specialty}
                     </p>
                   </div>
                   <div className="text-right text-sm">
@@ -751,20 +601,16 @@ export default function AdminOverviewPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            {patients.slice(0, 5).length ? (
-              patients.slice(0, 5).map((patient) => (
+            {(overview?.recentPatients ?? []).length ? (
+              overview!.recentPatients.map((patient) => (
                 <div
                   key={patient.id}
                   className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3"
                 >
                   <div>
-                    <p className="font-medium">
-                      {patient.user?.displayName ?? patient.id}
-                    </p>
+                    <p className="font-medium">{patient.displayName}</p>
                     <p className="text-sm text-muted-foreground">
-                      {patient.user?.email ??
-                        patient.user?.phone ??
-                        "No contact"}
+                      {patient.email ?? patient.phone ?? "No contact"}
                     </p>
                   </div>
                   <span className="text-sm text-muted-foreground">

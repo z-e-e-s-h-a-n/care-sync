@@ -25,11 +25,7 @@ import {
 
 import OverviewStatCard from "@/components/dashboard/OverviewStatCard";
 import PageIntro from "@/components/dashboard/PageIntro";
-import {
-  useAppointments,
-  useMyDoctorProfile,
-  usePayments,
-} from "@/hooks/healthcare";
+import { useDoctorDashboard } from "@/hooks/dashboard";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -94,116 +90,34 @@ const earningsChartConfig = {
   },
 } satisfies ChartConfig;
 
-const startOfDay = (value: Date) => {
-  const next = new Date(value);
-  next.setHours(0, 0, 0, 0);
-  return next;
-};
-
-const addDays = (value: Date, days: number) => {
-  const next = new Date(value);
-  next.setDate(next.getDate() + days);
-  return next;
-};
-
-const dateKey = (value: Date) => startOfDay(value).toISOString().slice(0, 10);
-
 const titleCase = (value: string) =>
   value
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (char) => char.toUpperCase());
 
-const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
-
 export default function DoctorOverviewPage() {
-  const doctorQuery = useMyDoctorProfile();
-  const appointmentsQuery = useAppointments({
-    page: 1,
-    limit: 80,
-    sortBy: "scheduledStartAt",
-    sortOrder: "asc",
-    searchBy: "doctorName",
-  });
-  const paymentsQuery = usePayments({
-    page: 1,
-    limit: 60,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-    searchBy: "status",
-  });
+  const { data: overview } = useDoctorDashboard();
 
-  const doctor = doctorQuery.data;
-  const appointments = appointmentsQuery.data?.appointments ?? [];
-  const payments = paymentsQuery.data?.payments ?? [];
-
-  const today = startOfDay(new Date());
-  const upcomingAppointments = appointments
-    .filter((appointment) => new Date(appointment.scheduledStartAt) >= today)
-    .sort(
-      (left, right) =>
-        new Date(left.scheduledStartAt).getTime() -
-        new Date(right.scheduledStartAt).getTime(),
-    );
-  const activeAppointments = upcomingAppointments.filter(
-    (appointment) => !["cancelled", "completed", "noShow"].includes(appointment.status),
-  );
-  const completedAppointments = appointments.filter(
-    (appointment) => appointment.status === "completed",
-  );
-  const todayAppointments = activeAppointments.filter(
-    (appointment) => dateKey(new Date(appointment.scheduledStartAt)) === dateKey(today),
-  ).length;
-
-  const successfulPayments = payments.filter((payment) => payment.status === "succeeded");
-  const pendingPayments = payments.filter((payment) => payment.status !== "succeeded");
-  const earnings = sum(successfulPayments.map((payment) => Number(payment.amount)));
-  const pendingValue = sum(pendingPayments.map((payment) => Number(payment.amount)));
-  const averageTicket = successfulPayments.length
-    ? earnings / successfulPayments.length
-    : 0;
-
-  const appointmentWindowData = Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(today, index);
-    const key = dateKey(date);
-    const count = activeAppointments.filter(
-      (appointment) => dateKey(new Date(appointment.scheduledStartAt)) === key,
-    ).length;
-
-    return {
-      label: weekdayFormatter.format(date),
-      date: shortDateFormatter.format(date),
+  const appointmentWindowData =
+    overview?.bookingAccess.window.map(({ date, count }) => ({
+      label: weekdayFormatter.format(new Date(date)),
+      date: shortDateFormatter.format(new Date(date)),
       appointments: count,
-    };
-  });
+    })) ?? [];
 
-  const earningsTrendData = Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(today, index - 6);
-    const key = dateKey(date);
-    const earned = successfulPayments
-      .filter((payment) => dateKey(new Date(payment.createdAt)) === key)
-      .reduce((total, payment) => total + Number(payment.amount), 0);
-    const expected = pendingPayments
-      .filter((payment) => dateKey(new Date(payment.createdAt)) === key)
-      .reduce((total, payment) => total + Number(payment.amount), 0);
-
-    return {
-      label: weekdayFormatter.format(date),
-      date: shortDateFormatter.format(date),
+  const earningsTrendData =
+    overview?.earnings.trend.map(({ date, earned, expected }) => ({
+      label: weekdayFormatter.format(new Date(date)),
+      date: shortDateFormatter.format(new Date(date)),
       earned,
       expected,
-    };
-  });
+    })) ?? [];
 
-  const appointmentStatusData = Array.from(
-    appointments.reduce((accumulator, appointment) => {
-      accumulator.set(
-        appointment.status,
-        (accumulator.get(appointment.status) ?? 0) + 1,
-      );
-      return accumulator;
-    }, new Map<string, number>()),
-    ([label, value]) => ({ label, value }),
-  );
+  const appointmentStatusData =
+    overview?.appointmentStatusMix.map(({ status, count }) => ({
+      label: status,
+      value: count,
+    })) ?? [];
 
   const appointmentStatusConfig: ChartConfig = Object.fromEntries(
     appointmentStatusData.map((item, index) => [
@@ -245,19 +159,19 @@ export default function DoctorOverviewPage() {
   const focusItems = [
     {
       label: "Assigned branch",
-      value: doctor?.branch?.name ?? "Unassigned",
+      value: overview?.focus.branchName ?? "Unassigned",
     },
     {
       label: "Completed visits",
-      value: completedAppointments.length,
+      value: overview?.focus.completedVisits ?? 0,
     },
     {
       label: "Settled payments",
-      value: successfulPayments.length,
+      value: overview?.focus.settledPayments ?? 0,
     },
     {
       label: "Pending payment value",
-      value: currencyFormatter.format(pendingValue),
+      value: currencyFormatter.format(overview?.focus.pendingPaymentValue ?? 0),
     },
   ];
 
@@ -271,39 +185,43 @@ export default function DoctorOverviewPage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OverviewStatCard
           label="Verification"
-          value={titleCase(doctor?.verificationStatus ?? "pending")}
+          value={titleCase(overview?.profile.verificationStatus ?? "pending")}
           helper="Current admin review state for your doctor profile."
-          badge={doctor?.branch?.name ?? "Branch pending"}
-          trendLabel={doctor?.specialty ?? "Specialty not added yet"}
+          badge={overview?.profile.branchName ?? "Branch pending"}
+          trendLabel={overview?.profile.specialty ?? "Specialty not added yet"}
           bars={appointmentStatusData.map((item) => item.value)}
           icon={ShieldCheck}
-          tone={doctor?.verificationStatus === "verified" ? "success" : "warning"}
+          tone={overview?.profile.verificationStatus === "verified" ? "success" : "warning"}
         />
         <OverviewStatCard
           label="Booking access"
-          value={doctor?.isAvailable ? "Open" : "Paused"}
+          value={overview?.profile.isAvailable ? "Open" : "Paused"}
           helper="Controls whether new patients can book from your profile."
-          badge={doctor?.consultationFee ? currencyFormatter.format(Number(doctor.consultationFee)) : "Fee missing"}
-          trendLabel={`${todayAppointments} appointments start today`}
+          badge={
+            overview?.profile.consultationFee
+              ? currencyFormatter.format(overview.profile.consultationFee)
+              : "Fee missing"
+          }
+          trendLabel={`${overview?.bookingAccess.todayCount ?? 0} appointments start today`}
           bars={appointmentWindowData.map((item) => item.appointments)}
           icon={Clock3}
-          tone={doctor?.isAvailable ? "success" : "warning"}
+          tone={overview?.profile.isAvailable ? "success" : "warning"}
         />
         <OverviewStatCard
           label="Upcoming visits"
-          value={compactNumberFormatter.format(activeAppointments.length)}
+          value={compactNumberFormatter.format(overview?.upcomingVisits.active ?? 0)}
           helper="Future consultations currently assigned to your account."
-          badge={`${upcomingAppointments.length} total queued`}
-          trendLabel={`${completedAppointments.length} already completed`}
+          badge={`${overview?.upcomingVisits.queued ?? 0} total queued`}
+          trendLabel={`${overview?.upcomingVisits.completed ?? 0} already completed`}
           bars={appointmentWindowData.map((item) => item.appointments)}
           icon={CalendarRange}
         />
         <OverviewStatCard
           label="Captured earnings"
-          value={currencyFormatter.format(earnings)}
+          value={currencyFormatter.format(overview?.earnings.total ?? 0)}
           helper="Succeeded appointment payments visible in your role scope."
-          badge={currencyFormatter.format(averageTicket || 0)}
-          trendLabel={`${currencyFormatter.format(pendingValue)} still pending`}
+          badge={currencyFormatter.format(overview?.earnings.average ?? 0)}
+          trendLabel={`${currencyFormatter.format(overview?.earnings.pending ?? 0)} still pending`}
           bars={earningsTrendData.map((item) => item.earned + item.expected)}
           icon={Wallet}
           tone="warning"
@@ -414,8 +332,7 @@ export default function DoctorOverviewPage() {
                           <span
                             className="size-2.5 rounded-full"
                             style={{
-                              backgroundColor:
-                                CHART_COLORS[index % CHART_COLORS.length],
+                              backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
                             }}
                           />
                           <span>{titleCase(item.label)}</span>
@@ -449,19 +366,17 @@ export default function DoctorOverviewPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {upcomingAppointments.slice(0, 6).length ? (
-              upcomingAppointments.slice(0, 6).map((appointment) => (
+            {overview?.upcomingAppointments.length ? (
+              overview.upcomingAppointments.map((appointment) => (
                 <div
                   key={appointment.id}
                   className="rounded-2xl border border-border/60 p-4 transition-colors hover:bg-muted/30"
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <p className="font-medium">
-                        {appointment.patient?.user?.displayName ?? "Patient"}
-                      </p>
+                      <p className="font-medium">{appointment.patientName}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {appointment.branch?.name ?? doctor?.branch?.name ?? "Branch not assigned"}
+                        {appointment.branchName ?? overview.profile.branchName ?? "Branch not assigned"}
                       </p>
                       <p className="mt-2 text-sm text-muted-foreground">
                         {dateFormatter.format(new Date(appointment.scheduledStartAt))}
@@ -539,33 +454,33 @@ export default function DoctorOverviewPage() {
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Doctor</p>
                 <p className="mt-1 font-medium">
-                  {doctor?.user?.displayName ?? "Doctor profile"}
+                  {overview?.profile.displayName ?? "Doctor profile"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Specialty</p>
                 <p className="mt-1 font-medium">
-                  {doctor?.specialty ?? "Specialty not set"}
+                  {overview?.profile.specialty ?? "Specialty not set"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Branch</p>
                 <p className="mt-1 font-medium">
-                  {doctor?.branch?.name ?? "Unassigned"}
+                  {overview?.profile.branchName ?? "Unassigned"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Consultation fee</p>
                 <p className="mt-1 font-medium">
-                  {doctor?.consultationFee
-                    ? currencyFormatter.format(Number(doctor.consultationFee))
+                  {overview?.profile.consultationFee
+                    ? currencyFormatter.format(overview.profile.consultationFee)
                     : "Not set"}
                 </p>
               </div>
               <div className="rounded-xl border border-border/60 p-4">
                 <p className="text-muted-foreground">Bio</p>
                 <p className="mt-1 font-medium">
-                  {doctor?.bio ?? "No bio added yet."}
+                  {overview?.profile.bio ?? "No bio added yet."}
                 </p>
               </div>
             </CardContent>
@@ -575,6 +490,3 @@ export default function DoctorOverviewPage() {
     </div>
   );
 }
-
-
-
