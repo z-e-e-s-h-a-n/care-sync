@@ -69,6 +69,12 @@ Default local endpoints:
 - Website: `http://localhost:3000`
 - Dashboard: `http://localhost:3001`
 
+## Google OAuth notes
+
+- Set `server/.env` values: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `CLIENT_ENDPOINT`, `ADMIN_ENDPOINT`.
+- `GOOGLE_CALLBACK_URL` must match the Google Cloud Console “Authorized redirect URI” (e.g. `https://your-api.com/oauth/google/callback`).
+- The frontend should start OAuth via `GET /oauth/google?redirectUrl=<app-origin>` (the SDK does this), and the server uses that `redirectUrl` to detect which client app is logging in.
+
 ## Useful Commands
 
 ```bash

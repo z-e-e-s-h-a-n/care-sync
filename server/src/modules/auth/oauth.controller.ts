@@ -14,6 +14,7 @@ import { UseOAuthGuard } from "@/decorators/oauth.decorator";
 import { TokenService } from "@/modules/token/token.service";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { ClientService } from "@/modules/client/client.service";
+import { Public } from "@/lib/decorators/public.decorator";
 
 @Controller("oauth")
 export class OAuthController {
@@ -29,6 +30,7 @@ export class OAuthController {
   googleLogin() {}
 
   @Get("google/callback")
+  @Public()
   @UseGuards(AuthGuard("google"))
   googleCallback(@Req() req: Request, @Res() res: Response) {
     return this.handleOAuthCallback(req, res);
@@ -37,7 +39,7 @@ export class OAuthController {
   private async handleOAuthCallback(req: Request, res: Response) {
     const user = req.user!;
     const redirectUrl = this.extractRedirectUrl(req);
-
+    req.headers["x-client-url"] = redirectUrl.origin;
     this.authService.checkUserStatus(user.status);
     await this.client.assertRoleAccess(req, user.role);
 
@@ -48,10 +50,10 @@ export class OAuthController {
       data: { lastLoginAt: new Date() },
     });
 
-    return res.redirect(redirectUrl);
+    return res.redirect(redirectUrl.href);
   }
 
-  private extractRedirectUrl(req: Request): string {
+  private extractRedirectUrl(req: Request) {
     const state = req.query.state;
 
     if (typeof state !== "string") {
@@ -59,9 +61,10 @@ export class OAuthController {
     }
 
     try {
-      return Buffer.from(state, "base64").toString("utf-8");
+      const redirectUrl = Buffer.from(state, "base64").toString("utf-8");
+      return new URL(redirectUrl);
     } catch {
-      throw new BadRequestException("Invalid OAuth state encoding");
+      throw new BadRequestException("Invalid OAuth redirect URL");
     }
   }
 }
