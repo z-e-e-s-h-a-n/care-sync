@@ -52,7 +52,8 @@ import { getStatusVariant } from "@workspace/ui/lib/utils";
 import type { DashboardStatCardProps } from "@/components/dashboard/DashboardStatCard";
 
 const appointmentChartConfig = {
-  appointments: { label: "Appointments", color: "var(--chart-1)" },
+  appointments: { label: "Booked", color: "var(--chart-1)" },
+  forecast: { label: "Prediction", color: "var(--chart-2)" },
 } satisfies ChartConfig;
 
 const revenueChartConfig = {
@@ -74,18 +75,14 @@ const auditActionIconMap: Record<string, React.ElementType> = {
 
 export default function AdminOverviewPage() {
   const { data: overview } = useAdminDashboard();
-
-  const appointmentWindowData =
+  const appointmentHistoryData =
     overview?.upcomingVisits.window.map(({ date, count }) => ({
-      label: formatDate(date, { mode: "shortDate" }),
-      date: formatDate(date, { mode: "shortDate" }),
+      date,
       appointments: count,
     })) ?? [];
-
   const revenueTrendData =
     overview?.revenue.trend.map(({ date, settled, pending }) => ({
-      label: formatDate(date, { mode: "shortDate" }),
-      date: formatDate(date, { mode: "shortDate" }),
+      date,
       settled,
       pending,
     })) ?? [];
@@ -171,7 +168,7 @@ export default function AdminOverviewPage() {
         "Active appointments scheduled ahead, excluding completed and cancelled visits.",
       badge: `${overview?.upcomingVisits.queued ?? 0} queued`,
       trendLabel: `${overview?.upcomingVisits.todayCount ?? 0} appointments start today`,
-      bars: appointmentWindowData.map((item) => item.appointments),
+      bars: appointmentHistoryData.slice(-7).map((item) => item.appointments),
       icon: CalendarClock,
     },
     {
@@ -200,12 +197,13 @@ export default function AdminOverviewPage() {
       <DashboardChart
         area={{
           title: "Appointment load",
-          description: "Daily booking pressure across the next seven days.",
+          description: "Booked appointments over the last 90 days, with a simple prediction line.",
           config: appointmentChartConfig,
-          data: appointmentWindowData,
+          data: appointmentHistoryData,
           valueKey: "appointments",
+          secondaryValueKey: "forecast",
+          forecastDays: 14,
           gradientId: "adminAppointments",
-          rangeMode: "head",
         }}
         bar={{
           title: "Revenue flow",

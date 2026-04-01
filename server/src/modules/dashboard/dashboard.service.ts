@@ -10,7 +10,7 @@ export class DashboardService {
     const today = startOfDay(now);
     const tomorrow = addDays(today, 1);
     const sevenDaysAgo = addDays(today, -7);
-    const sevenDaysAhead = addDays(today, 7);
+    const ninetyDaysAgo = addDays(today, -89);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [
@@ -22,7 +22,7 @@ export class DashboardService {
       patientsLast7Days,
       activeUpcomingTotal,
       todayAppointments,
-      appointmentsNext7Days,
+      appointmentsLast90Days,
       paymentStatusCounts,
       paymentsLast7Days,
       pendingDoctorReviews,
@@ -92,11 +92,11 @@ export class DashboardService {
         },
       }),
 
-      // Appointments next 7 days (for window chart)
+      // Appointments last 90 days (for window chart)
       this.prisma.appointment.findMany({
         where: {
-          scheduledStartAt: { gte: today, lt: sevenDaysAhead },
-          status: { notIn: ["cancelled", "completed", "noShow"] },
+          scheduledStartAt: { gte: ninetyDaysAgo, lt: tomorrow },
+          status: { notIn: ["cancelled", "noShow"] },
         },
         select: { scheduledStartAt: true },
       }),
@@ -259,7 +259,7 @@ export class DashboardService {
 
     // 7-day windows
     const last7Days = buildDateRange(sevenDaysAgo, 7);
-    const next7Days = buildDateRange(today, 7);
+    const last90Days = buildDateRange(ninetyDaysAgo, 90);
 
     const growthBars = fillDailyCounts(
       last7Days,
@@ -267,8 +267,8 @@ export class DashboardService {
     );
 
     const appointmentWindow = fillDailyCounts(
-      next7Days,
-      groupByDay(appointmentsNext7Days.map((r) => r.scheduledStartAt)),
+      last90Days,
+      groupByDay(appointmentsLast90Days.map((r) => r.scheduledStartAt)),
     );
 
     const revenueTrend = fillDailyRevenue(
@@ -400,7 +400,7 @@ export class DashboardService {
     const today = startOfDay(now);
     const tomorrow = addDays(today, 1);
     const sevenDaysAgo = addDays(today, -7);
-    const sevenDaysAhead = addDays(today, 7);
+    const ninetyDaysAgo = addDays(today, -89);
 
     const [
       appointmentStatusCounts,
@@ -408,7 +408,7 @@ export class DashboardService {
       allUpcoming,
       completedCount,
       todayCount,
-      appointmentsNext7Days,
+      appointmentsLast90Days,
       doctorPayments,
       paymentsLast7Days,
       upcomingAppointments,
@@ -448,12 +448,12 @@ export class DashboardService {
         },
       }),
 
-      // Appointments next 7 days for window chart
+      // Appointments last 90 days for window chart
       this.prisma.appointment.findMany({
         where: {
           doctorId,
-          scheduledStartAt: { gte: today, lt: sevenDaysAhead },
-          status: { notIn: ["cancelled", "completed", "noShow"] },
+          scheduledStartAt: { gte: ninetyDaysAgo, lt: tomorrow },
+          status: { notIn: ["cancelled", "noShow"] },
         },
         select: { scheduledStartAt: true },
       }),
@@ -505,11 +505,11 @@ export class DashboardService {
 
     // 7-day windows
     const last7Days = buildDateRange(sevenDaysAgo, 7);
-    const next7Days = buildDateRange(today, 7);
+    const last90Days = buildDateRange(ninetyDaysAgo, 90);
 
     const appointmentWindow = fillDailyCounts(
-      next7Days,
-      groupByDay(appointmentsNext7Days.map((a) => a.scheduledStartAt)),
+      last90Days,
+      groupByDay(appointmentsLast90Days.map((a) => a.scheduledStartAt)),
     );
 
     const earningsTrend = fillDailyEarnings(

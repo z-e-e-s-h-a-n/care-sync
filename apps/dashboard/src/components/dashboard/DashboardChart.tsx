@@ -55,13 +55,98 @@ const CHART_COLORS = [
 
 type ChartRow = Record<string, unknown>;
 
-type RangeValue = "7d" | "14d" | "30d";
+type HistoryRangeValue = "7d" | "30d" | "90d";
 
-const RANGE_OPTIONS: Array<{ value: RangeValue; label: string; days: number }> = [
-  { value: "30d", label: "Next 30 days", days: 30 },
-  { value: "14d", label: "Next 14 days", days: 14 },
-  { value: "7d", label: "Next 7 days", days: 7 },
+const HISTORY_RANGES: Array<{
+  value: HistoryRangeValue;
+  label: string;
+  days: number;
+}> = [
+  { value: "90d", label: "Last 90 days", days: 90 },
+  { value: "30d", label: "Last 30 days", days: 30 },
+  { value: "7d", label: "Last 7 days", days: 7 },
 ];
+
+function isIsoDay(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function formatIsoDay(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function addIsoDays(value: string, days: number): string {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function weekdayShort(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+  return date.toLocaleDateString(undefined, { weekday: "short" });
+}
+
+function safeNumber(value: unknown) {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function buildWeekdayForecast(options: {
+  history: ChartRow[];
+  dateKey: string;
+  valueKey: string;
+  days: number;
+}) {
+  const { history, dateKey, valueKey, days } = options;
+
+  const weekdayBuckets: Array<{ total: number; count: number }> = Array.from(
+    { length: 7 },
+    () => ({ total: 0, count: 0 }),
+  );
+
+  for (const row of history) {
+    const iso = row[dateKey];
+    if (!isIsoDay(iso)) {
+      continue;
+    }
+
+    const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
+    const bucket = weekdayBuckets[weekday];
+    if (!bucket) continue;
+
+    const value = safeNumber(row[valueKey]);
+    bucket.total += value;
+    bucket.count += 1;
+  }
+
+  const averages = weekdayBuckets.map((bucket) =>
+    bucket.count ? bucket.total / bucket.count : 0,
+  );
+
+  const lastRow = history.at(-1);
+  const lastIso = lastRow?.[dateKey];
+
+  if (!isIsoDay(lastIso)) {
+    return [];
+  }
+
+  return Array.from({ length: days }, (_, index) => {
+    const iso = addIsoDays(lastIso, index + 1);
+    const weekday = new Date(`${iso}T00:00:00Z`).getUTCDay();
+
+    return {
+      label: weekdayShort(iso),
+      [dateKey]: iso,
+      [valueKey]: Math.max(0, Math.round(averages[weekday] ?? 0)),
+    } as ChartRow;
+  });
+}
 
 export interface DashboardAreaChartCardProps {
   title: string;
@@ -71,8 +156,9 @@ export interface DashboardAreaChartCardProps {
   valueKey: string;
   gradientId: string;
   heightClassName?: string;
-  datePayloadKey?: string;
-  rangeMode?: "head" | "tail";
+  dateKey?: string;
+  secondaryValueKey?: string;
+  forecastDays?: number;
 }
 
 export interface DashboardBarChartCardProps {
@@ -82,7 +168,7 @@ export interface DashboardBarChartCardProps {
   data: ChartRow[];
   keys: [string, string];
   heightClassName?: string;
-  datePayloadKey?: string;
+  dateKey?: string;
 }
 
 export interface DashboardPieChartCardProps {
@@ -101,37 +187,63 @@ interface DashboardChartProps {
 
 export default function DashboardChart({ area, bar, pie }: DashboardChartProps) {
   const isMobile = useIsMobile();
-  const showAreaRange = area.data.length > 7;
 
   const availableRanges = React.useMemo(() => {
-    if (!showAreaRange) {
-      return [{ value: "7d", label: `Next ${area.data.length} days`, days: area.data.length }];
-    }
+    const max = area.data.length;
+    return HISTORY_RANGES.filter((range) => range.days <= max);
+  }, [area.data.length]);
 
-    return RANGE_OPTIONS.filter((range) => range.days <= area.data.length);
-  }, [area.data.length, showAreaRange]);
-
-  const [areaRange, setAreaRange] = React.useState<RangeValue>(
-    availableRanges.some((range) => range.value === "14d") ? "14d" : "7d",
+  const [historyRange, setHistoryRange] = React.useState<HistoryRangeValue>(
+    availableRanges.some((range) => range.value === "30d") ? "30d" : "7d",
   );
 
   React.useEffect(() => {
-    if (!showAreaRange) {
-      return;
-    }
-
     if (isMobile) {
-      setAreaRange("7d");
+      setHistoryRange("7d");
     }
-  }, [isMobile, showAreaRange]);
+  }, [isMobile]);
 
-  const selectedAreaRangeDays =
-    availableRanges.find((range) => range.value === areaRange)?.days ?? 7;
-  const maxAreaDays = Math.min(selectedAreaRangeDays, area.data.length);
-  const normalizedAreaData =
-    area.rangeMode === "tail"
-      ? area.data.slice(-maxAreaDays)
-      : area.data.slice(0, maxAreaDays);
+  const historyDays =
+    availableRanges.find((range) => range.value === historyRange)?.days ?? 7;
+
+  const dateKey = area.dateKey ?? "date";
+  const historySlice = area.data.slice(-Math.min(historyDays, area.data.length));
+
+  const combinedAreaData = React.useMemo(() => {
+    if (!area.secondaryValueKey) {
+      return historySlice;
+    }
+
+    const secondaryKey = area.secondaryValueKey;
+    const baseHistory = historySlice.map((row, index) => {
+      if (index !== historySlice.length - 1) {
+        return { ...row, [secondaryKey]: null };
+      }
+
+      return {
+        ...row,
+        [secondaryKey]: safeNumber(row[area.valueKey]),
+      };
+    });
+
+    const forecastDays = area.forecastDays ?? 14;
+    const forecastHistory = area.data.slice(-Math.min(28, area.data.length));
+    const forecastPoints = buildWeekdayForecast({
+      history: forecastHistory,
+      dateKey,
+      valueKey: secondaryKey,
+      days: forecastDays,
+    }).map((row) => ({ ...row, [area.valueKey]: null }));
+
+    return [...baseHistory, ...forecastPoints];
+  }, [
+    area.data,
+    area.forecastDays,
+    area.secondaryValueKey,
+    area.valueKey,
+    dateKey,
+    historySlice,
+  ]);
 
   const pieConfig = Object.fromEntries(
     pie.data.map((item, index) => [
@@ -150,60 +262,52 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
           <CardTitle>{area.title}</CardTitle>
           <CardDescription>{area.description}</CardDescription>
           <CardAction>
-            {showAreaRange ? (
-              <>
-                <ToggleGroup
-                  type="single"
-                  value={areaRange}
-                  onValueChange={(value) =>
-                    value && setAreaRange(value as RangeValue)
-                  }
-                  variant="outline"
-                  className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
-                >
-                  {availableRanges.map((range) => (
-                    <ToggleGroupItem key={range.value} value={range.value}>
-                      {range.label}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-                <Select
-                  value={areaRange}
-                  onValueChange={(value) => setAreaRange(value as RangeValue)}
-                >
-                  <SelectTrigger
-                    className="flex w-40 @[767px]/card:hidden"
-                    size="sm"
-                    aria-label="Select a time range"
+            <ToggleGroup
+              type="single"
+              value={historyRange}
+              onValueChange={(value) =>
+                value && setHistoryRange(value as HistoryRangeValue)
+              }
+              variant="outline"
+              className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
+            >
+              {availableRanges.map((range) => (
+                <ToggleGroupItem key={range.value} value={range.value}>
+                  {range.label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <Select
+              value={historyRange}
+              onValueChange={(value) => setHistoryRange(value as HistoryRangeValue)}
+            >
+              <SelectTrigger
+                className="flex w-40 @[767px]/card:hidden"
+                size="sm"
+                aria-label="Select a time range"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {availableRanges.map((range) => (
+                  <SelectItem
+                    key={range.value}
+                    value={range.value}
+                    className="rounded-lg"
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {availableRanges.map((range) => (
-                      <SelectItem
-                        key={range.value}
-                        value={range.value}
-                        className="rounded-lg"
-                      >
-                        {range.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </>
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                Next {area.data.length} days
-              </span>
-            )}
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </CardAction>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           <ChartContainer
             config={area.config}
-            className={area.heightClassName ?? "h-80 w-full"}
+            className={area.heightClassName ?? "aspect-auto h-80 w-full"}
           >
-            <AreaChart accessibilityLayer data={normalizedAreaData}>
+            <AreaChart accessibilityLayer data={combinedAreaData}>
               <defs>
                 <linearGradient
                   id={area.gradientId}
@@ -215,7 +319,7 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
                   <stop
                     offset="5%"
                     stopColor={`var(--color-${area.valueKey})`}
-                    stopOpacity={0.75}
+                    stopOpacity={0.8}
                   />
                   <stop
                     offset="95%"
@@ -226,23 +330,32 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
               </defs>
               <CartesianGrid vertical={false} />
               <XAxis
-                dataKey="label"
+                dataKey={dateKey}
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                minTickGap={28}
+                tickFormatter={(value) =>
+                  isIsoDay(value)
+                    ? new Date(`${value}T00:00:00Z`).toLocaleDateString(
+                        undefined,
+                        {
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )
+                    : String(value)
+                }
               />
               <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
               <ChartTooltip
                 cursor={false}
                 content={
                   <ChartTooltipContent
+                    className="min-w-40"
                     indicator="dot"
-                    labelFormatter={(_, payload) =>
-                      String(
-                        payload?.[0]?.payload?.[
-                          area.datePayloadKey ?? "date"
-                        ] ?? "",
-                      )
+                    labelFormatter={(value) =>
+                      isIsoDay(value) ? formatIsoDay(value) : String(value)
                     }
                   />
                 }
@@ -252,9 +365,23 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
                 dataKey={area.valueKey}
                 stroke={`var(--color-${area.valueKey})`}
                 fill={`url(#${area.gradientId})`}
-                strokeWidth={2.5}
+                strokeWidth={2}
                 activeDot={{ r: 4 }}
+                connectNulls={false}
               />
+              {area.secondaryValueKey ? (
+                <Area
+                  type="monotone"
+                  dataKey={area.secondaryValueKey}
+                  stroke={`var(--color-${area.secondaryValueKey})`}
+                  fill="transparent"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  dot={false}
+                  activeDot={{ r: 3 }}
+                  connectNulls
+                />
+              ) : null}
               <ChartLegend content={<ChartLegendContent />} verticalAlign="top" />
             </AreaChart>
           </ChartContainer>
@@ -270,28 +397,36 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
           <CardContent>
             <ChartContainer
               config={bar.config}
-              className={bar.heightClassName ?? "h-64 w-full"}
+              className={bar.heightClassName ?? "aspect-auto h-64 w-full"}
             >
               <BarChart accessibilityLayer data={bar.data}>
                 <CartesianGrid vertical={false} />
                 <XAxis
-                  dataKey="label"
+                  dataKey={bar.dateKey ?? "date"}
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
+                  tickFormatter={(value) =>
+                    isIsoDay(value)
+                      ? new Date(`${value}T00:00:00Z`).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )
+                      : String(value)
+                  }
                 />
                 <YAxis tickLine={false} axisLine={false} width={40} />
                 <ChartTooltip
                   cursor={false}
                   content={
                     <ChartTooltipContent
+                      className="min-w-44"
                       indicator="dashed"
-                      labelFormatter={(_, payload) =>
-                        String(
-                          payload?.[0]?.payload?.[
-                            bar.datePayloadKey ?? "date"
-                          ] ?? "",
-                        )
+                      labelFormatter={(value) =>
+                        isIsoDay(value) ? formatIsoDay(value) : String(value)
                       }
                     />
                   }
