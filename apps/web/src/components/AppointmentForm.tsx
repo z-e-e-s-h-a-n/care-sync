@@ -68,7 +68,7 @@ const AppointmentForm = ({ doctorId, onSuccess }: AppointmentFormProps) => {
         toast.success("Appointment booked successfully.");
         onSuccess?.();
         router.push(
-          `/user/appointments/success/?appointmentId=${appointment.data.id}`,
+          `/patient/appointments/success/?appointmentId=${appointment.data.id}`,
         );
       } catch (error: any) {
         toast.error("Booking failed", {
