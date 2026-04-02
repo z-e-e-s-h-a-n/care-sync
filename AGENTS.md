@@ -6,13 +6,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project: care-sync
 
-**care-sync** is a production healthcare management platform built for **Ready Set and Go ABA** — an ABA (Applied Behavior Analysis) therapy practice. It handles appointment scheduling, e-commerce (products/orders), multi-channel notifications, payment processing (Stripe/PayPal), chat/messaging, campaign management, and business/branch configuration.
+**care-sync** is a production healthcare management platform built for **Ready Set and Go ABA** — an ABA (Applied Behavior Analysis) therapy practice. It handles appointment scheduling, e-commerce (products/orders), ABA clinical workflows, multi-channel notifications, payment processing (Stripe/PayPal), chat/messaging, campaign management, and business/branch configuration.
 
 ## Client Context
 
 - **Client:** Ready Set and Go ABA (ABA therapy practice)
-- **Reference platform:** Rethink Behavioral Health (rethinkbh.com) — used as a UX and feature reference only. ABA clinical features from Rethink (behavior programs, goal tracking, data collection, insurance billing) are **not in scope for the current build**. They are documented in the Future Roadmap section below.
-- **Delivery order:** Web platform first → Mobile apps second (after web is complete and stable)
+- **Reference platform:** Rethink Behavioral Health (rethinkbh.com) — UI/UX and feature reference. ABA clinical features from Rethink **are in scope** and should be added as thoroughly as possible. See ABA Clinical Features section.
+- **Confirmed scope:** Full ABA clinical platform — appointments, e-commerce, staff management, clinical workflows, and patient mobile app.
+- **Delivery order:** Web platform first (complete) → Patient mobile app second
 
 ## Roles & Apps
 
@@ -20,23 +21,24 @@ Four roles: `admin`, `staff`, `doctor`, `patient`.
 
 ### Web Apps (Current Phase)
 
-- `apps/web` — Public-facing site + patient portal. Accessible to unauthenticated visitors (public pages) and authenticated `patient` role (portal pages).
+- `apps/web` — Public-facing marketing site + patient portal.
+  - Public pages: home, about, services, doctors, shop, resources, contact (no auth required)
+  - Patient portal (`/patient/*`): appointments, profile, orders, notifications, messages — `patient` role only
+  - Patients can **browse and purchase** products from the shop. They cannot manage products or orders.
 - `apps/dashboard` — Internal portal for `admin`, `doctor`, and `staff` roles. All three share one Next.js app, separated by route groups:
-  - `/(admin)` — admin-only pages
-  - `/(doctor)` — doctor-only pages
-  - `/(staff)` — staff-only pages
-  - `/(shared)` — pages accessible to all internal roles (account, notifications, etc.)
+  - `/(admin)` — admin-only pages (users, payments, analytics, business config, audit logs)
+  - `/(doctor)` — doctor-only pages (appointments, patients, availability, session notes, caseload)
+  - `/(staff)` — staff-only pages (assigned patients, appointments, session notes, order status updates)
+  - `/(shared)` — pages accessible to all internal roles (account, notifications, messages)
+  - All three internal roles (admin, doctor, staff) can manage products, inventory, and orders.
 
 ### Mobile App (Future Phase — after web is complete)
 
-- `apps/mobile` — Single Expo React Native app for all roles.
-  - Public route group: marketing/info pages visible before login
-  - After login, redirect to role-specific route group:
-    - `/(patient)` — patient portal
-    - `/(doctor)` — doctor portal
-    - `/(staff)` — staff portal
-    - `/(admin)` — admin portal
+- `apps/mobile` — Single Expo React Native app for **patients only**.
+  - Public screens: marketing/info pages before login
+  - Authenticated screens: patient portal (appointments, profile, orders, messages, notifications)
   - Shared on iOS (App Store) and Android (Play Store)
+  - Admin, doctor, and staff always use the web dashboard — no mobile portal needed for them.
 
 Role isolation is enforced server-side via `ClientService.assertRoleAccess` (tied to request origin), and the `@Roles()` decorator on individual endpoints.
 
@@ -65,10 +67,10 @@ Role isolation is enforced server-side via `ClientService.assertRoleAccess` (tie
 
 ## Feature Scope
 
-### In Scope (Current Build)
+### Already Built
 
-#### Already Built
-- Patient portal: signup, login, appointments, profile, notifications, chat
+- **apps/web public site:** home, about, services, doctors, resources, contact pages — complete
+- Patient portal: signup, login, appointments, profile, notifications
 - Doctor portal: appointment management, patient list, availability/schedule, messages
 - Admin portal: users, doctors, patients, payments, branches, campaigns, leads, traffic analytics, audit logs, business profile
 - Payments: Stripe, PayPal, manual — full integration with refund management
@@ -80,42 +82,91 @@ Role isolation is enforced server-side via `ClientService.assertRoleAccess` (tie
 - OAuth: Google login
 - Audit logs: all admin/doctor actions tracked
 
-#### New — Staff Role & Portal
+### In Progress / Next — Staff Role & Portal
+
 A fourth internal role (`staff`) for therapists, front-desk, BCBAs, and support staff.
 
-- Staff have their own login and dashboard at `apps/dashboard/(staff)/`
-- Staff can: view and manage appointments, view assigned patients, record session notes, send messages
-- Staff cannot: access admin-only settings, financial data, or system configuration
+- Staff log in via `apps/dashboard` — same app as admin and doctor, route group `/(staff)/`
+- Staff can: view and manage appointments, view assigned patients, record session notes, send messages, view and update product order status
+- Staff cannot: access admin-only settings, financial/payment data, system configuration, or analytics
 - `UserRole` enum must include `staff`
 - All server endpoints must handle `@Roles('staff')` where appropriate
-- `ClientService.assertRoleAccess` must recognize staff as a valid dashboard role
-- Staff are assigned to patients and appointments by admin/doctor
+- `ClientService.assertRoleAccess` must recognize `staff` as a valid dashboard role
+- Staff are assigned to patients and appointments by admin or doctor
 
-#### New — E-Commerce (Products, Cart, Orders)
-Patients can browse and purchase products (supplements, toys, learning materials) directly from the patient portal.
+### In Scope — E-Commerce (Products, Cart, Orders)
 
-- **Products:** name, description, price, images, category, stock count, active/inactive status
-- **Cart:** add/remove items, update quantities, persisted per patient session
-- **Checkout:** delivery address, payment via Stripe or PayPal, order confirmation email
-- **Orders:** status tracking (pending → processing → shipped → delivered), patient order history
-- **Admin management:** product catalog CRUD, order management, inventory tracking
-- **Staff management:** staff can view and update order status
+Patients browse and purchase from the shop on `apps/web`. Admin, doctor, and staff manage the catalog and orders from `apps/dashboard`.
+
+**Patient-facing (apps/web):**
+- `/shop` — public product catalog (browse without login)
+- `/patient/orders` — order history (login required)
+- Cart and checkout flow with Stripe / PayPal
+- Order confirmation email on purchase
+
+**Dashboard management (apps/dashboard — admin, doctor, staff):**
+- Product catalog CRUD: name, description, price, images, category, stock count, active/inactive
+- Order management: view all orders, update status (pending → processing → shipped → delivered)
+- Inventory tracking: stock counts, low-stock alerts
+- Both delivery and pickup options supported
+- Client will provide the product listing
+
+**Rules:**
 - All product prices use `Decimal @db.Decimal(10, 2)` — never Float
-- Product images stored via Cloudinary (MediaType: `product`)
-- `NotificationPurpose` already includes `orderStatus` and `refundStatus` — wire these up
+- Product images stored via Cloudinary (`MediaType: product`)
+- `NotificationPurpose` already includes `orderStatus` and `refundStatus` — wire these for order updates
 
-### Future Roadmap (Not in Current Scope)
+### In Scope — ABA Clinical Features (Rethink-inspired)
 
-These are ABA clinical features from Rethink Behavioral Health. Documented here for reference only — do not build unless explicitly requested:
+The client confirmed: add as many clinical features as possible, modeled after Rethink Behavioral Health. These are core to the platform — not optional extras.
 
-- Behavior programs / individualized behavior intervention plans (BIP)
-- Trial-by-trial data collection during therapy sessions
-- Skill acquisition and behavior reduction goal tracking
-- Progress report generation for parents and insurance
-- Parent/caregiver portal with child progress visibility
-- Insurance authorization tracking (approved hours per patient)
-- CPT code / insurance billing generation
-- BCBA caseload management and supervision workflows
+#### Behavior Programs
+- Create individualized behavior intervention plans (BIP) per patient
+- Programs have targets: skill acquisition goals and behavior reduction goals
+- Each target has a status (active, mastered, discontinued), baseline data, and phase lines
+
+#### Session Notes
+- Therapists (staff/doctor) record structured notes after each therapy session
+- Notes include: date, duration, therapist, patient, goals addressed, client behavior summary, next steps
+- Session notes are linked to the patient's treatment plan
+
+#### Goal Tracking
+- Track progress toward each target across sessions over time
+- Visual progress data (percentage correct, frequency counts, duration)
+- Mastery criteria per target — auto-flag when met
+
+#### Data Collection
+- Record trial-by-trial data during or after therapy sessions
+- Supports discrete trial, interval recording, and frequency/rate data types
+- Data stored per session and aggregated for graphing
+
+#### Progress Reports
+- Generate PDF-style progress reports per patient for a date range
+- Reports show goal status, trend graphs, session attendance, and therapist notes
+- Intended for parents and insurance/funding bodies
+
+#### Staff Caseload Management
+- Assign patients to specific therapists (staff members)
+- View each staff member's caseload — number of patients, hours, session frequency
+- Admin and doctor can reassign patients between staff
+
+#### Parent/Caregiver Access
+- Parents can log in to view their child's progress: goals, session notes, progress reports
+- Parents have read-only access — they cannot edit clinical data
+- This is a sub-role or permission flag on the `patient` role, not a separate role
+- Parent access is managed per patient from the admin/doctor portal
+
+#### Insurance Authorization Tracking
+- Track authorized therapy hours per patient per insurance authorization period
+- Fields: authorization number, start/end date, approved hours, used hours, remaining hours
+- Alerts when a patient is approaching their authorized limit
+- Linked to session records to auto-decrement used hours
+
+### Not in Scope
+
+- CPT code generation / insurance billing submission (possible future phase)
+- Telehealth video integration (future)
+- Custom mobile apps for doctors/staff (web dashboard is sufficient per client)
 
 ## Monorepo Architecture Rules
 
