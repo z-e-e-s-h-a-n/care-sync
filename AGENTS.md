@@ -6,15 +6,37 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project: care-sync
 
-**care-sync** is a production healthcare management platform for doctors, patients, and administrators. It handles appointment scheduling, medical commerce (products/orders), multi-channel notifications, payment processing (Stripe/PayPal), chat/messaging, campaign management, and business/branch configuration.
+**care-sync** is a production healthcare management platform built for **Ready Set and Go ABA** — an ABA (Applied Behavior Analysis) therapy practice. It handles appointment scheduling, e-commerce (products/orders), multi-channel notifications, payment processing (Stripe/PayPal), chat/messaging, campaign management, and business/branch configuration.
+
+## Client Context
+
+- **Client:** Ready Set and Go ABA (ABA therapy practice)
+- **Reference platform:** Rethink Behavioral Health (rethinkbh.com) — used as a UX and feature reference only. ABA clinical features from Rethink (behavior programs, goal tracking, data collection, insurance billing) are **not in scope for the current build**. They are documented in the Future Roadmap section below.
+- **Delivery order:** Web platform first → Mobile apps second (after web is complete and stable)
 
 ## Roles & Apps
 
-Three roles: `admin`, `patient`, `doctor`.
+Four roles: `admin`, `staff`, `doctor`, `patient`.
 
-Two frontend apps:
-- `apps/web` — patient-facing (signup, appointments, orders, chat). Only `patient` role can access.
-- `apps/dashboard` — admin/doctor portal (schedule, analytics, business config, moderation). `admin` and `doctor` roles only.
+### Web Apps (Current Phase)
+
+- `apps/web` — Public-facing site + patient portal. Accessible to unauthenticated visitors (public pages) and authenticated `patient` role (portal pages).
+- `apps/dashboard` — Internal portal for `admin`, `doctor`, and `staff` roles. All three share one Next.js app, separated by route groups:
+  - `/(admin)` — admin-only pages
+  - `/(doctor)` — doctor-only pages
+  - `/(staff)` — staff-only pages
+  - `/(shared)` — pages accessible to all internal roles (account, notifications, etc.)
+
+### Mobile App (Future Phase — after web is complete)
+
+- `apps/mobile` — Single Expo React Native app for all roles.
+  - Public route group: marketing/info pages visible before login
+  - After login, redirect to role-specific route group:
+    - `/(patient)` — patient portal
+    - `/(doctor)` — doctor portal
+    - `/(staff)` — staff portal
+    - `/(admin)` — admin portal
+  - Shared on iOS (App Store) and Android (Play Store)
 
 Role isolation is enforced server-side via `ClientService.assertRoleAccess` (tied to request origin), and the `@Roles()` decorator on individual endpoints.
 
@@ -26,7 +48,8 @@ Role isolation is enforced server-side via `ClientService.assertRoleAccess` (tie
 | Server | NestJS 11, Node 24 |
 | Database | PostgreSQL + Prisma 7.6 |
 | ORM IDs | ULID (not UUID) |
-| Frontend | Next.js 16, React 19 |
+| Frontend (Web) | Next.js 16, React 19 |
+| Frontend (Mobile) | Expo (React Native) — future phase |
 | Auth | JWT (jose), argon2, httpOnly cookies, sessions in DB |
 | MFA | Email / SMS / WhatsApp / AuthApp OTP |
 | OAuth | Google (Passport) |
@@ -40,14 +63,69 @@ Role isolation is enforced server-side via `ClientService.assertRoleAccess` (tie
 | Geolocation | IPStack API |
 | Validation | Zod (server + contracts) |
 
+## Feature Scope
+
+### In Scope (Current Build)
+
+#### Already Built
+- Patient portal: signup, login, appointments, profile, notifications, chat
+- Doctor portal: appointment management, patient list, availability/schedule, messages
+- Admin portal: users, doctors, patients, payments, branches, campaigns, leads, traffic analytics, audit logs, business profile
+- Payments: Stripe, PayPal, manual — full integration with refund management
+- Notifications: email, SMS, WhatsApp, push (multi-channel)
+- Chat/messaging: patient ↔ doctor conversations with attachments
+- Media: Cloudinary uploads (avatars, documents, prescriptions)
+- Multi-branch: manage multiple clinic locations with hours
+- MFA: email / SMS / WhatsApp / Auth App OTP
+- OAuth: Google login
+- Audit logs: all admin/doctor actions tracked
+
+#### New — Staff Role & Portal
+A fourth internal role (`staff`) for therapists, front-desk, BCBAs, and support staff.
+
+- Staff have their own login and dashboard at `apps/dashboard/(staff)/`
+- Staff can: view and manage appointments, view assigned patients, record session notes, send messages
+- Staff cannot: access admin-only settings, financial data, or system configuration
+- `UserRole` enum must include `staff`
+- All server endpoints must handle `@Roles('staff')` where appropriate
+- `ClientService.assertRoleAccess` must recognize staff as a valid dashboard role
+- Staff are assigned to patients and appointments by admin/doctor
+
+#### New — E-Commerce (Products, Cart, Orders)
+Patients can browse and purchase products (supplements, toys, learning materials) directly from the patient portal.
+
+- **Products:** name, description, price, images, category, stock count, active/inactive status
+- **Cart:** add/remove items, update quantities, persisted per patient session
+- **Checkout:** delivery address, payment via Stripe or PayPal, order confirmation email
+- **Orders:** status tracking (pending → processing → shipped → delivered), patient order history
+- **Admin management:** product catalog CRUD, order management, inventory tracking
+- **Staff management:** staff can view and update order status
+- All product prices use `Decimal @db.Decimal(10, 2)` — never Float
+- Product images stored via Cloudinary (MediaType: `product`)
+- `NotificationPurpose` already includes `orderStatus` and `refundStatus` — wire these up
+
+### Future Roadmap (Not in Current Scope)
+
+These are ABA clinical features from Rethink Behavioral Health. Documented here for reference only — do not build unless explicitly requested:
+
+- Behavior programs / individualized behavior intervention plans (BIP)
+- Trial-by-trial data collection during therapy sessions
+- Skill acquisition and behavior reduction goal tracking
+- Progress report generation for parents and insurance
+- Parent/caregiver portal with child progress visibility
+- Insurance authorization tracking (approved hours per patient)
+- CPT code / insurance billing generation
+- BCBA caseload management and supervision workflows
+
 ## Monorepo Architecture Rules
 
 ### Package Boundaries
 
 - `apps/web` and `apps/dashboard` should stay thin. They compose packages and feature pages, but should not become the main home for shared infrastructure.
+- `apps/mobile` (future) will share `packages/contracts`, `packages/sdk`, and `packages/shared`. UI components will be mobile-specific — do not force web UI into mobile.
 - `packages/contracts` is the single source of truth for shared enums, DTOs, validation schemas, request/response types, and app-level shared types.
 - `packages/sdk` is the client-side API boundary. Prefer adding or updating SDK helpers here instead of calling `fetch` or `axios` directly from app code.
-- `packages/ui` is the home for reusable UI primitives, shared providers, reusable hooks, generic CRUD building blocks, shared media components, and cross-app form helpers.
+- `packages/ui` is the home for reusable UI primitives, shared providers, reusable hooks, generic CRUD building blocks, shared media components, and cross-app form helpers. Web only — not for mobile.
 - `packages/shared` is for framework-agnostic constants and utilities.
 - `packages/templates` is for email or notification templates, not general UI.
 - `packages/db` owns Prisma and database-facing shared code. All models use ULID primary keys.
@@ -75,6 +153,7 @@ When building a feature that spans the stack, prefer this order:
 - Prefer shared building blocks such as provider wrappers, shared hooks, generic tables, generic forms, generic detail pages, search toolbars, media helpers, and skeletons before creating page-local alternatives.
 - Route files should primarily assemble data hooks, shared UI, and route-specific config.
 - Keep app-specific components in the app only when they are truly route- or domain-specific.
+- Dashboard role route groups `(admin)`, `(doctor)`, `(staff)`, `(shared)` must each have their own layout that enforces the correct role. Never mix role-specific logic across groups.
 
 ## Server Conventions
 
@@ -109,6 +188,8 @@ These items are **not yet implemented** and are required before production:
 - [ ] Wire `DashboardModule` into `app.module.ts` (currently missing)
 - [ ] Implement `DashboardService.getOverview()` (stub — returns nothing)
 - [ ] Update `server/.env.example` header (still says "Mi MedCare Server")
+- [ ] Add `staff` to `ClientService.assertRoleAccess` for dashboard client
+- [ ] Wire staff role into all relevant server guards and role checks
 
 ## Quality Bar
 
