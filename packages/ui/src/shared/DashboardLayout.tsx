@@ -13,7 +13,7 @@ import { footerSidebarMenu, getSidebarMenu } from "../lib/constants";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  skelton: React.ReactNode;
+  skelton?: React.ReactNode;
   appType: "web" | "dashboard";
 }
 
