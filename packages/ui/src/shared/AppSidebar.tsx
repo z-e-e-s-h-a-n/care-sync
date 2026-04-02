@@ -2,15 +2,13 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { redirect } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 
 import {
   IconDotsVertical,
   IconLogout,
-  IconInnerShadowTop,
+  IconDashboard,
 } from "@tabler/icons-react";
-
-import { appName } from "@workspace/shared/constants";
 
 import {
   Sidebar,
@@ -35,6 +33,8 @@ import SidebarNav from "@workspace/ui/shared/AppSidebarNav";
 import UserCard from "@workspace/ui/shared/UserCard";
 import type { NavGroup } from "@workspace/contracts";
 import DropdownNav from "./DropdownNav";
+import { cn } from "../lib/utils";
+import Link from "next/link";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   mainMenu: NavGroup[];
@@ -42,7 +42,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 const AppSidebar = ({ mainMenu, footerMenu, ...props }: AppSidebarProps) => {
-  const { isMobile, setOpenMobile, toggleSidebar } = useSidebar();
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const { currentUser, isLoading, logoutUser, isLogoutPending, logoutError } =
     useUser();
@@ -68,19 +69,27 @@ const AppSidebar = ({ mainMenu, footerMenu, ...props }: AppSidebarProps) => {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-              onClick={toggleSidebar}
+              tooltip="Overview"
+              className={cn(
+                pathname === `/${currentUser?.role}` &&
+                  "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear",
+              )}
+              asChild
             >
-              <IconInnerShadowTop className="size-5!" />
-              <span className="transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:opacity-0">
-                {appName.default}
-              </span>
+              <Link href={`/${currentUser?.role}`} onClick={closeSidebar}>
+                <IconDashboard />
+                <span>Overview</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="scrollbar-hidden">
-        <SidebarNav closeSidebar={closeSidebar} groups={mainMenu} />
+        <SidebarNav
+          pathname={pathname}
+          closeSidebar={closeSidebar}
+          groups={mainMenu}
+        />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

@@ -1,9 +1,8 @@
 "use client";
 
-import { Dot, HeartPulse, Menu } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import { headerMenu, userMenu } from "@/lib/constants";
+import { headerMenu } from "@/lib/constants";
 import { redirect, usePathname } from "next/navigation";
 import { cn } from "@workspace/ui/lib/utils";
 import useUser from "@workspace/ui/hooks/use-user";
@@ -19,6 +18,8 @@ import { IconLogout } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useDialog } from "@workspace/ui/hooks/use-dialog";
 import AppointmentForm from "./AppointmentForm";
+import { userSidebarMenu } from "@workspace/ui/lib/constants";
+import Logo from "@workspace/ui/shared/Logo";
 
 const Header = () => {
   const pathname = usePathname();
@@ -40,12 +41,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 pt-5">
       <div className="section">
         <div className="flex items-center justify-between rounded-full border border-card/70 bg-card/70 px-4 py-3 shadow-card backdrop-blur md:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-              <HeartPulse className="h-5 w-5" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">MedMe</span>
-          </div>
+          <Logo />
 
           <nav className="hidden items-center gap-6 lg:flex">
             {headerMenu.map((item) => {
@@ -69,6 +65,11 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-3">
+            {!currentUser && (
+              <Button href="/auth/sign-in" variant="outline">
+                Sign in
+              </Button>
+            )}
             <Button
               variant="gradient"
               className="cta-pluse"
@@ -93,7 +94,7 @@ const Header = () => {
                     />
                   </DropdownMenuTrigger>
                   <DropdownNav
-                    groups={userMenu}
+                    groups={userSidebarMenu}
                     header={
                       <DropdownMenuLabel className="p-0 font-normal">
                         <UserCard

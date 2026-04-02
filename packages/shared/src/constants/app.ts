@@ -1,4 +1,4 @@
 export const appName = {
-  short: "CareSync",
-  default: "CareSync",
+  short: "MedMe",
+  default: "MedMe",
 };

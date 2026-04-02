@@ -24,7 +24,7 @@ const UserAccountPage = ({ className }: UserAccountPageProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex-center h-64">
         <Loader2 className="size-8 animate-spin" />
       </div>
     );

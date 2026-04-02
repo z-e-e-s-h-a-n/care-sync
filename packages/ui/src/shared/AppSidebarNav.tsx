@@ -24,9 +24,10 @@ import type { NavGroup } from "@workspace/contracts";
 interface SidebarNavProps {
   closeSidebar: () => void;
   groups: NavGroup[];
+  pathname: string;
 }
 
-const SidebarNav = ({ closeSidebar, groups }: SidebarNavProps) => {
+const SidebarNav = ({ closeSidebar, groups, pathname }: SidebarNavProps) => {
   return groups.map(({ items, groupLabel }, i) => (
     <SidebarGroup
       key={i}
@@ -47,8 +48,7 @@ const SidebarNav = ({ closeSidebar, groups }: SidebarNavProps) => {
                   <SidebarMenuButton
                     tooltip={item.label}
                     className={cn(
-                      "",
-                      item.label === "Dashboard" &&
+                      pathname === item.href &&
                         "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear",
                     )}
                     asChild
