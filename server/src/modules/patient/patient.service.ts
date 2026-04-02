@@ -186,9 +186,5 @@ export class PatientService {
       orderBy: { scheduledStartAt: "desc" },
       take: 10,
     },
-    orders: {
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    },
   } satisfies Prisma.PatientProfileInclude;
 }

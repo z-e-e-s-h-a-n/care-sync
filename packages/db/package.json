@@ -14,8 +14,7 @@
     "prisma:studio": "prisma studio",
     "prisma:validate": "prisma validate",
     "prisma:reset": "prisma migrate reset",
-    "prisma:seed": "prisma db seed",
-    "prisma:seed:prod": "tsx prisma/seed.prod.ts"
+    "prisma:seed": "prisma db seed"
   },
   "exports": {
     ".": {

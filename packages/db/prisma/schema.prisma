@@ -232,23 +232,6 @@ enum DoctorVerificationStatus {
     rejected
 }
 
-enum OrderStatus {
-    pending
-    paid
-    processing
-    shipped
-    delivered
-    cancelled
-    refunded
-}
-
-enum ShipmentStatus {
-    pending
-    shipped
-    delivered
-    cancelled
-}
-
 model User {
     id String @id @default(ulid())
 
@@ -468,14 +451,12 @@ model Media {
 
     messageAttachments MessageAttachment[]
 
-    users            User[]            @relation("UserAvatar")
-    businessLogos    BusinessProfile[] @relation("BusinessLogo")
-    businessCovers   BusinessProfile[] @relation("BusinessCoverImage")
-    businessFavIcons BusinessProfile[] @relation("BusinessFavicon")
-    productImages    Product[]         @relation("ProductImage")
-
-    patientIdentificationDocuments PatientProfile[] @relation("PatientIdentificationDocument")
-    doctorLicenseDocuments         DoctorProfile[]  @relation("DoctorLicenseDocument")
+    users                          User[]            @relation("UserAvatar")
+    businessLogos                  BusinessProfile[] @relation("BusinessLogo")
+    businessCovers                 BusinessProfile[] @relation("BusinessCoverImage")
+    businessFavIcons               BusinessProfile[] @relation("BusinessFavicon")
+    patientIdentificationDocuments PatientProfile[]  @relation("PatientIdentificationDocument")
+    doctorLicenseDocuments         DoctorProfile[]   @relation("DoctorLicenseDocument")
 
     @@index([name])
     @@index([type])
@@ -515,11 +496,8 @@ model PatientProfile {
 
     appointments  Appointment[]
     conversations Conversation[] @relation("PatientConversations")
-    cart          Cart?
-    orders        Order[]
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
 }
 
 model DoctorProfile {
@@ -726,167 +704,11 @@ model MessageAttachment {
     @@index([mediaId])
 }
 
-model ProductCategory {
-    id String @id @default(ulid())
-
-    name        String
-    slug        String  @unique
-    description String?
-
-    isActive Boolean @default(true)
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    products Product[]
-
-    @@index([isActive])
-}
-
-model Product {
-    id String @id @default(ulid())
-
-    categoryId String?
-    category   ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-    imageId String?
-    image   Media?  @relation("ProductImage", fields: [imageId], references: [id], onDelete: SetNull)
-
-    name        String
-    slug        String  @unique
-    sku         String  @unique
-    description String?
-
-    price     Decimal  @db.Decimal(10, 2)
-    salePrice Decimal? @db.Decimal(10, 2)
-
-    stockQuantity Int @default(0)
-
-    isActive Boolean @default(true)
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    cartItems  CartItem[]
-    orderItems OrderItem[]
-
-    @@index([categoryId])
-    @@index([isActive])
-}
-
-model Cart {
-    id String @id @default(ulid())
-
-    patientId String         @unique
-    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-    items CartItem[]
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-}
-
-model CartItem {
-    id String @id @default(ulid())
-
-    cartId String
-    cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
-
-    productId String
-    product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-
-    quantity   Int
-    unitPrice  Decimal @db.Decimal(10, 2)
-    totalPrice Decimal @db.Decimal(10, 2)
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@unique([cartId, productId])
-}
-
-model Order {
-    id          String @id @default(ulid())
-    orderNumber String @unique
-
-    patientId String
-    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
-
-    status        OrderStatus   @default(pending)
-    paymentStatus PaymentStatus @default(pending)
-
-    shippingAddress Json?
-    billingAddress  Json?
-    notes           String?
-
-    subtotalAmount Decimal @db.Decimal(10, 2)
-    shippingAmount Decimal @default(0) @db.Decimal(10, 2)
-    totalAmount    Decimal @db.Decimal(10, 2)
-
-    paidAt      DateTime?
-    cancelledAt DateTime?
-    deliveredAt DateTime?
-
-    items    OrderItem[]
-    payments Payment[]
-    shipment Shipment?
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@index([patientId, status])
-}
-
-model OrderItem {
-    id String @id @default(ulid())
-
-    orderId String
-    order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-    productId String?
-    product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-
-    name       String
-    sku        String?
-    quantity   Int
-    unitPrice  Decimal @db.Decimal(10, 2)
-    totalPrice Decimal @db.Decimal(10, 2)
-
-    createdAt DateTime @default(now())
-
-    @@index([orderId])
-}
-
-model Shipment {
-    id String @id @default(ulid())
-
-    orderId String @unique
-    order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-    status ShipmentStatus @default(pending)
-
-    carrier        String?
-    trackingNumber String?
-    trackingUrl    String?
-
-    notes String?
-
-    shippedAt   DateTime?
-    deliveredAt DateTime?
-    returnedAt  DateTime?
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-}
-
 model Payment {
     id String @id @default(ulid())
 
     appointmentId String?
     appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-
-    orderId String?
-    order   Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
     provider   PaymentProvider
     methodType PaymentMethodType
@@ -911,7 +733,6 @@ model Payment {
     refunds Refund[]
 
     @@index([appointmentId, createdAt])
-    @@index([orderId, createdAt])
     @@index([status, createdAt])
     @@index([transactionId])
 }

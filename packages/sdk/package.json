@@ -23,7 +23,6 @@
     "./patient": "./src/patient/index.ts",
     "./payment": "./src/payment/index.ts",
     "./chat": "./src/chat/index.ts",
-    "./commerce": "./src/commerce/index.ts",
     "./campaign": "./src/campaign/index.ts",
     "./audit": "./src/audit/index.ts",
     "./user": "./src/user/index.ts",

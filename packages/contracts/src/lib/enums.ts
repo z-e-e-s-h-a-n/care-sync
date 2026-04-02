@@ -42,8 +42,6 @@ export const PaymentProviderEnum = z.enum($Enums.PaymentProvider);
 export const PaymentMethodTypeEnum = z.enum($Enums.PaymentMethodType);
 export const PaymentStatusEnum = z.enum($Enums.PaymentStatus);
 export const RefundStatusEnum = z.enum($Enums.RefundStatus);
-export const OrderStatusEnum = z.enum($Enums.OrderStatus);
-export const ShipmentStatusEnum = z.enum($Enums.ShipmentStatus);
 export const CampaignStatusEnum = z.enum($Enums.CampaignStatus);
 export const CampaignAudienceEnum = z.enum($Enums.CampaignAudience);
 export const DoctorVerificationStatusEnum = z.enum(
@@ -92,15 +90,10 @@ export const AppointmentSortByEnum = z.enum([
 
 export const PaymentSearchByEnum = z.enum([
   "appointmentId",
-  "orderId",
   "status",
   "transactionId",
 ]);
 export const PaymentSortByEnum = z.enum(["createdAt", "paidAt", "status"]);
-export const ProductSearchByEnum = z.enum(["name", "sku", "slug"]);
-export const ProductSortByEnum = z.enum(["name", "price", "stockQuantity"]);
-export const OrderSearchByEnum = z.enum(["orderNumber", "status"]);
-export const OrderSortByEnum = z.enum(["createdAt", "totalAmount", "status"]);
 export const CampaignSearchByEnum = z.enum(["title", "status", "audience"]);
 export const CampaignSortByEnum = z.enum([
   "createdAt",

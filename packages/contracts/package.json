@@ -54,10 +54,6 @@
       "import": "./dist/payment.js",
       "types": "./dist/payment.d.ts"
     },
-    "./commerce": {
-      "import": "./dist/commerce.js",
-      "types": "./dist/commerce.d.ts"
-    },
     "./campaign": {
       "import": "./dist/campaign.js",
       "types": "./dist/campaign.d.ts"

@@ -19,17 +19,38 @@ export class PaymentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createPayment(dto: CreatePaymentIntentDto, currentUser: Express.User) {
-    const target = await this.resolveTarget(dto, currentUser);
+    if (!dto.appointmentId) {
+      throw new BadRequestException("Payment must target an appointment.");
+    }
+
+    const appointment = await this.prisma.appointment.findUniqueOrThrow({
+      where: { id: dto.appointmentId },
+      include: { patient: true, doctor: true },
+    });
+
+    if (currentUser.role === "patient") {
+      const patient = await this.prisma.patientProfile.findUniqueOrThrow({
+        where: { userId: currentUser.id },
+      });
+      if (appointment.patientId !== patient.id) {
+        throw new ForbiddenException(
+          "You can only pay for your own appointments.",
+        );
+      }
+    }
+
+    if (currentUser.role === "doctor") {
+      throw new ForbiddenException(
+        "Doctors cannot create appointment payments.",
+      );
+    }
+
     const existing = await this.prisma.payment.findFirst({
-      where: {
-        ...(dto.appointmentId ? { appointmentId: dto.appointmentId } : {}),
-        ...(dto.orderId ? { orderId: dto.orderId } : {}),
-      },
+      where: { appointmentId: dto.appointmentId },
     });
 
     const payload = {
       appointmentId: dto.appointmentId,
-      orderId: dto.orderId,
       amount: dto.amount,
       provider: dto.provider,
       methodType: dto.methodType,
@@ -41,14 +62,12 @@ export class PaymentService {
           where: { id: existing.id },
           data: payload,
         })
-      : await this.prisma.payment.create({
-          data: payload,
-        });
+      : await this.prisma.payment.create({ data: payload });
 
     return {
       message: "Payment intent created successfully.",
       data: payment,
-      meta: { targetType: target.type, targetId: target.id },
+      meta: { targetType: "appointment", targetId: appointment.id },
     };
   }
 
@@ -61,14 +80,12 @@ export class PaymentService {
       search,
       searchBy,
       appointmentId,
-      orderId,
       status,
     } = query;
 
     const where: Prisma.PaymentWhereInput = {};
 
     if (appointmentId) where.appointmentId = appointmentId;
-    if (orderId) where.orderId = orderId;
     if (status) where.status = status;
 
     await this.applyRoleScope(where, currentUser);
@@ -77,7 +94,6 @@ export class PaymentService {
       const searchWhereMap: Record<typeof searchBy, Prisma.PaymentWhereInput> =
         {
           appointmentId: { appointmentId: search },
-          orderId: { orderId: search },
           status: { status: search as PaymentStatus },
           transactionId: {
             transactionId: { contains: search, mode: "insensitive" },
@@ -216,72 +232,6 @@ export class PaymentService {
     return { message: "Refund updated successfully.", data: refund };
   }
 
-  private async resolveTarget(
-    dto: CreatePaymentIntentDto,
-    currentUser: Express.User,
-  ) {
-    if (!dto.appointmentId && !dto.orderId) {
-      throw new BadRequestException(
-        "Payment must target an appointment or order.",
-      );
-    }
-
-    if (dto.appointmentId && dto.orderId) {
-      throw new BadRequestException(
-        "Only one payment target is allowed per request.",
-      );
-    }
-
-    if (dto.appointmentId) {
-      const appointment = await this.prisma.appointment.findUniqueOrThrow({
-        where: { id: dto.appointmentId },
-        include: {
-          patient: true,
-          doctor: true,
-        },
-      });
-
-      if (currentUser.role === "patient") {
-        const patient = await this.prisma.patientProfile.findUniqueOrThrow({
-          where: { userId: currentUser.id },
-        });
-        if (appointment.patientId !== patient.id) {
-          throw new ForbiddenException(
-            "You can only pay for your own appointments.",
-          );
-        }
-      }
-
-      if (currentUser.role === "doctor") {
-        throw new ForbiddenException(
-          "Doctors cannot create appointment payments.",
-        );
-      }
-
-      return { type: "appointment", id: appointment.id };
-    }
-
-    const order = await this.prisma.order.findUniqueOrThrow({
-      where: { id: dto.orderId! },
-      include: { patient: true },
-    });
-
-    if (currentUser.role === "patient") {
-      const patient = await this.prisma.patientProfile.findUniqueOrThrow({
-        where: { userId: currentUser.id },
-      });
-      if (order.patientId !== patient.id) {
-        throw new ForbiddenException("You can only pay for your own orders.");
-      }
-    }
-
-    if (currentUser.role === "doctor") {
-      throw new ForbiddenException("Doctors cannot create order payments.");
-    }
-
-    return { type: "order", id: order.id };
-  }
-
   private async applyRoleScope(
     where: Prisma.PaymentWhereInput,
     currentUser: Express.User,
@@ -300,10 +250,7 @@ export class PaymentService {
       where: { userId: currentUser.id },
     });
 
-    where.OR = [
-      { appointment: { patientId: patient.id } },
-      { order: { patientId: patient.id } },
-    ];
+    where.appointment = { patientId: patient.id };
   }
 
   private async assertPaymentAccess(payment: any, currentUser: Express.User) {
@@ -325,10 +272,7 @@ export class PaymentService {
       where: { userId: currentUser.id },
     });
 
-    const matchesAppointment = payment.appointment?.patientId === patient.id;
-    const matchesOrder = payment.order?.patientId === patient.id;
-
-    if (!matchesAppointment && !matchesOrder) {
+    if (payment.appointment?.patientId !== patient.id) {
       throw new ForbiddenException(
         "You can only view your own payment records.",
       );
@@ -347,74 +291,43 @@ export class PaymentService {
   }
 
   private async handleSuccessfulPayment(payment: any) {
-    if (payment.appointmentId) {
-      const commissionPercent = Number(
-        payment.appointment?.doctor?.commissionPercent ?? 0,
-      );
-      const grossAmount = Number(payment.amount);
-      const commissionAmount = Number(
-        ((grossAmount * commissionPercent) / 100).toFixed(2),
-      );
-      const doctorNetAmount = Number(
-        (grossAmount - commissionAmount).toFixed(2),
-      );
+    if (!payment.appointmentId) return;
 
-      await this.prisma.appointment.update({
-        where: { id: payment.appointmentId },
-        data: {
-          status: "booked",
-          paymentStatus: "succeeded",
-          paidAt: new Date(),
-        },
-      });
+    const commissionPercent = Number(
+      payment.appointment?.doctor?.commissionPercent ?? 0,
+    );
+    const grossAmount = Number(payment.amount);
+    const commissionAmount = Number(
+      ((grossAmount * commissionPercent) / 100).toFixed(2),
+    );
+    const doctorNetAmount = Number((grossAmount - commissionAmount).toFixed(2));
 
-      await this.prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          commissionAmount,
-          doctorNetAmount,
-        },
-      });
-    }
+    await this.prisma.appointment.update({
+      where: { id: payment.appointmentId },
+      data: {
+        status: "booked",
+        paymentStatus: "succeeded",
+        paidAt: new Date(),
+      },
+    });
 
-    if (payment.orderId) {
-      await this.prisma.order.update({
-        where: { id: payment.orderId },
-        data: {
-          paymentStatus: "succeeded",
-          status: "paid",
-          paidAt: new Date(),
-        },
-      });
-    }
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: { commissionAmount, doctorNetAmount },
+    });
   }
 
   private async handleProcessedRefund(refund: any) {
     const payment = await this.prisma.payment.update({
       where: { id: refund.paymentId },
-      data: {
-        status: "refunded",
-        refundedAt: new Date(),
-      },
+      data: { status: "refunded", refundedAt: new Date() },
       include: this.paymentInclude,
     });
 
-    if (payment.orderId) {
-      await this.prisma.order.update({
-        where: { id: payment.orderId },
-        data: {
-          paymentStatus: "refunded",
-          status: "refunded",
-        },
-      });
-    }
-
-    if (payment.appointment) {
+    if (payment.appointmentId) {
       await this.prisma.appointment.update({
-        where: { id: payment.appointmentId! },
-        data: {
-          paymentStatus: "refunded",
-        },
+        where: { id: payment.appointmentId },
+        data: { paymentStatus: "refunded" },
       });
     }
   }
@@ -426,7 +339,6 @@ export class PaymentService {
         patient: true,
       },
     },
-    order: true,
     refunds: true,
   } satisfies Prisma.PaymentInclude;
 

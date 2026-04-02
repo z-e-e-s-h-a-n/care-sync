@@ -2,6 +2,7 @@ import { cn } from "@workspace/ui/lib/utils";
 
 interface SectionHeaderProps {
   title: string;
+  subtitle?: string;
   description?: string;
   className?: string;
   align?: "default" | "center";

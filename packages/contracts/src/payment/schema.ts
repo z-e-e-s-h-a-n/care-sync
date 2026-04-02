@@ -16,7 +16,6 @@ import {
 
 export const createPaymentIntentSchema = z.object({
   appointmentId: idSchema.optional(),
-  orderId: idSchema.optional(),
   amount: numberSchema,
   provider: PaymentProviderEnum.default("stripe"),
   methodType: PaymentMethodTypeEnum.default("card"),
@@ -46,6 +45,5 @@ export const paymentQuerySchema = baseQuerySchema(
   PaymentSearchByEnum,
 ).extend({
   appointmentId: idSchema.optional(),
-  orderId: idSchema.optional(),
   status: PaymentStatusEnum.optional(),
 });

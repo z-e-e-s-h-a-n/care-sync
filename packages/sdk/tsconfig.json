@@ -2,10 +2,9 @@
   "extends": "@workspace/config/typescript/node",
   "compilerOptions": {
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "baseUrl": ".",
     "rootDir": ".",
     "paths": {
-      "@workspace/sdk/*": ["src/*"]
+      "@workspace/sdk/*": ["./src/*"]
     }
   },
   "include": ["."],

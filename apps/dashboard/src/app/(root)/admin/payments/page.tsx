@@ -14,12 +14,9 @@ import { getStatusVariant } from "@workspace/ui/lib/utils";
 const columns: ColumnConfig<PaymentResponse, PaymentQueryType>[] = [
   { header: "Payment", accessor: "id" },
   {
-    header: "Target",
+    header: "Appointment",
     accessor: (payment) =>
-      payment.appointment?.appointmentNumber ??
-      payment.order?.orderNumber ??
-      payment.orderId ??
-      "N/A",
+      payment.appointment?.appointmentNumber ?? "N/A",
   },
   {
     header: "Amount",
@@ -50,7 +47,6 @@ export default function PaymentsPage() {
       searchByOptions={[
         { label: "Status", value: "status" },
         { label: "Appointment", value: "appointmentId" },
-        { label: "Order", value: "orderId" },
         { label: "Transaction", value: "transactionId" },
       ]}
       useListHook={usePayments}

@@ -1,5 +1,6 @@
 import "dotenv/config";
 import argon2 from "argon2";
+import { faker } from "@faker-js/faker";
 import { PrismaPg } from "@prisma/adapter-pg";
 import {
   AppointmentCancellationSource,
@@ -18,13 +19,11 @@ import {
   NotificationChannel,
   NotificationPurpose,
   NotificationStatus,
-  OrderStatus,
   PaymentMethodType,
   PaymentProvider,
   PaymentStatus,
   PrismaClient,
   RefundStatus,
-  ShipmentStatus,
   ThemeMode,
   UserRole,
   UserStatus,
@@ -37,11 +36,28 @@ if (!connectionString) {
   throw new Error("DB_URI is required to run the Prisma seed.");
 }
 
+faker.seed(42);
+
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 const DEFAULT_PASSWORD = "Test@123456";
-const DEFAULT_TIMEZONE = "Asia/Karachi";
+const DEFAULT_TIMEZONE = "America/New_York";
+
+const DOCTOR_AVATAR_URLS = [
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982442/dr-green_pdhuvj.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982442/dr-livingston_i43hxl.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982442/dr-lee_ry7b3x.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982442/dr-peter_bbyhrp.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982442/dr-sharma_wpohkb.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982441/dr-cameron_pjdtyj.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982441/dr-cruz_quesgp.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982441/dr-remirez_awgz8x.png",
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982441/dr-powell_ijzxbe.png",
+];
+
+const ADMIN_AVATAR_URL =
+  "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982441/admin_c0a0gt.png";
 
 const daysFromNow = (days: number, hour = 9, minute = 0) => {
   const date = new Date();
@@ -53,20 +69,21 @@ const daysFromNow = (days: number, hour = 9, minute = 0) => {
 const hoursAfter = (date: Date, hours: number, minutes = 0) =>
   new Date(date.getTime() + hours * 60 * 60 * 1000 + minutes * 60 * 1000);
 
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
 async function clearDatabase() {
   console.log("Clearing existing seed data...");
 
-  // Delete in order of dependencies
   await prisma.messageAttachment.deleteMany();
   await prisma.message.deleteMany();
   await prisma.conversation.deleteMany();
   await prisma.refund.deleteMany();
   await prisma.payment.deleteMany();
-  await prisma.shipment.deleteMany();
-  await prisma.orderItem.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.cartItem.deleteMany();
-  await prisma.cart.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.doctorBlockedTime.deleteMany();
   await prisma.doctorAvailability.deleteMany();
@@ -78,13 +95,14 @@ async function clearDatabase() {
   await prisma.session.deleteMany();
   await prisma.doctorProfile.deleteMany();
   await prisma.patientProfile.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.productCategory.deleteMany();
   await prisma.media.deleteMany();
   await prisma.branchTiming.deleteMany();
   await prisma.branch.deleteMany();
   await prisma.businessProfile.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.contactMessage.deleteMany();
+  await prisma.newsletterSubscriber.deleteMany();
+  await prisma.trafficSource.deleteMany();
 }
 
 async function seedFoundation() {
@@ -94,10 +112,10 @@ async function seedFoundation() {
 
   const admin = await prisma.user.create({
     data: {
-      firstName: "System",
-      lastName: "Admin",
-      displayName: "System Admin",
-      email: "admin@example.com",
+      firstName: "Alex",
+      lastName: "Morgan",
+      displayName: "Alex Morgan",
+      email: "admin@caresync.demo",
       phone: "+15550000001",
       password: hashedPassword,
       role: UserRole.admin,
@@ -110,122 +128,80 @@ async function seedFoundation() {
     },
   });
 
-  const doctorUser1 = await prisma.user.create({
-    data: {
-      firstName: "John",
-      lastName: "Smith",
-      displayName: "Dr. John Smith",
-      email: "dr.smith@example.com",
-      phone: "+15550000011",
-      password: hashedPassword,
-      role: UserRole.doctor,
-      status: UserStatus.active,
-      isEmailVerified: true,
-      isPhoneVerified: true,
-      pushNotifications: true,
-    },
-  });
+  const doctorSeeds = [
+    { firstName: "Olivia", lastName: "Green", specialty: "Family Medicine" },
+    { firstName: "Ethan", lastName: "Livingston", specialty: "Cardiology" },
+    { firstName: "Mia", lastName: "Lee", specialty: "Dermatology" },
+    { firstName: "Noah", lastName: "Peter", specialty: "Pediatrics" },
+    { firstName: "Ava", lastName: "Sharma", specialty: "Internal Medicine" },
+    { firstName: "Lucas", lastName: "Cameron", specialty: "Orthopedics" },
+    { firstName: "Sophia", lastName: "Cruz", specialty: "Gynecology" },
+    { firstName: "Mateo", lastName: "Ramirez", specialty: "Neurology" },
+    { firstName: "Isabella", lastName: "Powell", specialty: "Psychiatry" },
+  ] as const;
 
-  const doctorUser2 = await prisma.user.create({
-    data: {
-      firstName: "Emily",
-      lastName: "Jones",
-      displayName: "Dr. Emily Jones",
-      email: "dr.jones@example.com",
-      phone: "+15550000012",
-      password: hashedPassword,
-      role: UserRole.doctor,
-      status: UserStatus.active,
-      isEmailVerified: true,
-      isPhoneVerified: true,
-      pushNotifications: true,
-    },
-  });
+  const doctors = await Promise.all(
+    doctorSeeds.map((doctor, index) =>
+      prisma.user.create({
+        data: {
+          firstName: doctor.firstName,
+          lastName: doctor.lastName,
+          displayName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+          email: `dr.${doctor.lastName.toLowerCase()}@caresync.demo`,
+          phone: `+1555000001${index + 1}`,
+          password: hashedPassword,
+          role: UserRole.doctor,
+          status: UserStatus.active,
+          isEmailVerified: true,
+          isPhoneVerified: true,
+          pushNotifications: true,
+        },
+      }),
+    ),
+  );
 
-  const doctorUser3 = await prisma.user.create({
-    data: {
-      firstName: "Sarah",
-      lastName: "Khan",
-      displayName: "Dr. Sarah Khan",
-      email: "dr.pending@example.com",
-      phone: "+15550000013",
-      password: hashedPassword,
-      role: UserRole.doctor,
-      status: UserStatus.pending,
-      isEmailVerified: true,
-      isPhoneVerified: true,
-    },
-  });
+  const patients = await Promise.all(
+    Array.from({ length: 14 }).map((_, index) => {
+      const firstName = faker.person.firstName();
+      const lastName = faker.person.lastName();
+      const email = `patient${index + 1}@caresync.demo`;
+      const phone = `+1555000002${(index + 1).toString().padStart(2, "0")}`;
 
-  const patientUser1 = await prisma.user.create({
-    data: {
-      firstName: "Alice",
-      lastName: "Brown",
-      displayName: "Alice Brown",
-      email: "patient1@example.com",
-      phone: "+15550000021",
-      password: hashedPassword,
-      role: UserRole.patient,
-      status: UserStatus.active,
-      isEmailVerified: true,
-      isPhoneVerified: true,
-      pushNotifications: true,
-    },
-  });
+      return prisma.user.create({
+        data: {
+          firstName,
+          lastName,
+          displayName: `${firstName} ${lastName}`,
+          email,
+          phone,
+          password: hashedPassword,
+          role: UserRole.patient,
+          status: UserStatus.active,
+          isEmailVerified: true,
+          isPhoneVerified: true,
+          pushNotifications: index % 2 === 0,
+        },
+      });
+    }),
+  );
 
-  const patientUser2 = await prisma.user.create({
-    data: {
-      firstName: "Bob",
-      lastName: "Wilson",
-      displayName: "Bob Wilson",
-      email: "patient2@example.com",
-      phone: "+15550000022",
-      password: hashedPassword,
-      role: UserRole.patient,
-      status: UserStatus.active,
-      isEmailVerified: true,
-      isPhoneVerified: true,
-    },
-  });
-
-  const patientUser3 = await prisma.user.create({
-    data: {
-      firstName: "Nina",
-      lastName: "Ahmed",
-      displayName: "Nina Ahmed",
-      email: "patient3@example.com",
-      phone: "+15550000023",
-      password: hashedPassword,
-      role: UserRole.patient,
-      status: UserStatus.active,
-      isEmailVerified: true,
-      isPhoneVerified: true,
-    },
-  });
-
-  return {
-    admin,
-    doctorUser1,
-    doctorUser2,
-    doctorUser3,
-    patientUser1,
-    patientUser2,
-    patientUser3,
-  };
+  return { admin, doctors, patients, doctorSeeds };
 }
 
-async function seedMedia(users: Awaited<ReturnType<typeof seedFoundation>>) {
+async function seedMedia(
+  foundation: Awaited<ReturnType<typeof seedFoundation>>,
+) {
   console.log("Seeding media...");
 
   const adminAvatar = await prisma.media.create({
     data: {
-      uploadedById: users.admin.id,
-      publicId: "seed/admin-avatar",
-      url: "https://images.example.com/admin-avatar.png",
+      uploadedById: foundation.admin.id,
+      publicId: "prod-seed/admin-avatar",
+      url: `${ADMIN_AVATAR_URL}?v=admin-avatar`,
       mimeType: "image/png",
       resourceType: "image",
-      size: 1024,
-      hash: "seed-admin-avatar-hash",
+      size: 125000,
+      hash: "prod-seed-admin-avatar-hash",
       name: "admin-avatar.png",
       type: MediaType.avatar,
       visibility: MediaVisibility.public,
@@ -233,235 +209,91 @@ async function seedMedia(users: Awaited<ReturnType<typeof seedFoundation>>) {
     },
   });
 
-  const doctor1IdDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.doctorUser1.id,
-      publicId: "seed/doctor-1-id",
-      url: "https://files.example.com/doctor-1-id.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 314572,
-      hash: "seed-doctor-1-id-hash",
-      name: "doctor-1-id.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
+  const doctorAvatars = await Promise.all(
+    foundation.doctors.map((doctor, index) =>
+      prisma.media.create({
+        data: {
+          uploadedById: foundation.admin.id,
+          publicId: `prod-seed/doctor-${index + 1}-avatar`,
+          url: `${DOCTOR_AVATAR_URLS[index]}?v=doctor-${index + 1}`,
+          mimeType: "image/png",
+          resourceType: "image",
+          size: 160000,
+          hash: `prod-seed-doctor-${index + 1}-avatar-hash`,
+          name: `doctor-${index + 1}-avatar.png`,
+          type: MediaType.avatar,
+          visibility: MediaVisibility.public,
+          altText: `${doctor.displayName} avatar`,
+        },
+      }),
+    ),
+  );
 
-  const doctor1LicenseDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.doctorUser1.id,
-      publicId: "seed/doctor-1-license",
-      url: "https://files.example.com/doctor-1-license.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 421000,
-      hash: "seed-doctor-1-license-hash",
-      name: "doctor-1-license.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const doctor2IdDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.doctorUser2.id,
-      publicId: "seed/doctor-2-id",
-      url: "https://files.example.com/doctor-2-id.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 299120,
-      hash: "seed-doctor-2-id-hash",
-      name: "doctor-2-id.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const doctor2LicenseDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.doctorUser2.id,
-      publicId: "seed/doctor-2-license",
-      url: "https://files.example.com/doctor-2-license.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 388450,
-      hash: "seed-doctor-2-license-hash",
-      name: "doctor-2-license.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const doctor3IdDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.doctorUser3.id,
-      publicId: "seed/doctor-3-id",
-      url: "https://files.example.com/doctor-3-id.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 287000,
-      hash: "seed-doctor-3-id-hash",
-      name: "doctor-3-id.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const doctor3LicenseDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.doctorUser3.id,
-      publicId: "seed/doctor-3-license",
-      url: "https://files.example.com/doctor-3-license.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 365200,
-      hash: "seed-doctor-3-license-hash",
-      name: "doctor-3-license.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const patient1IdDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.patientUser1.id,
-      publicId: "seed/patient-1-id",
-      url: "https://files.example.com/patient-1-id.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 240100,
-      hash: "seed-patient-1-id-hash",
-      name: "patient-1-id.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const patient2IdDoc = await prisma.media.create({
-    data: {
-      uploadedById: users.patientUser2.id,
-      publicId: "seed/patient-2-id",
-      url: "https://files.example.com/patient-2-id.pdf",
-      mimeType: "application/pdf",
-      resourceType: "raw",
-      size: 252900,
-      hash: "seed-patient-2-id-hash",
-      name: "patient-2-id.pdf",
-      type: MediaType.document,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const prescriptionImage = await prisma.media.create({
-    data: {
-      uploadedById: users.patientUser1.id,
-      publicId: "seed/prescription-1",
-      url: "https://files.example.com/prescription-1.jpg",
-      mimeType: "image/jpeg",
-      resourceType: "image",
-      size: 180400,
-      hash: "seed-prescription-1-hash",
-      name: "prescription-1.jpg",
-      type: MediaType.prescription,
-      visibility: MediaVisibility.private,
-    },
-  });
-
-  const vitaminImage = await prisma.media.create({
-    data: {
-      uploadedById: users.admin.id,
-      publicId: "seed/product-vitamin-c",
-      url: "https://images.example.com/products/vitamin-c.jpg",
-      mimeType: "image/jpeg",
-      resourceType: "image",
-      size: 94212,
-      hash: "seed-product-vitamin-c-hash",
-      name: "vitamin-c.jpg",
-      type: MediaType.product,
-      visibility: MediaVisibility.public,
-    },
-  });
-
-  const creamImage = await prisma.media.create({
-    data: {
-      uploadedById: users.admin.id,
-      publicId: "seed/product-cream",
-      url: "https://images.example.com/products/cream.jpg",
-      mimeType: "image/jpeg",
-      resourceType: "image",
-      size: 90112,
-      hash: "seed-product-cream-hash",
-      name: "cream.jpg",
-      type: MediaType.product,
-      visibility: MediaVisibility.public,
-    },
-  });
-
-  // Business media
   const businessLogo = await prisma.media.create({
     data: {
-      uploadedById: users.admin.id,
-      publicId: "seed/business-logo",
-      url: "https://images.example.com/business-logo.png",
+      uploadedById: foundation.admin.id,
+      publicId: "prod-seed/business-logo",
+      url: `${ADMIN_AVATAR_URL}?v=business-logo`,
       mimeType: "image/png",
       resourceType: "image",
-      size: 5120,
-      hash: "seed-business-logo-hash",
+      size: 65000,
+      hash: "prod-seed-business-logo-hash",
       name: "business-logo.png",
       type: MediaType.other,
       visibility: MediaVisibility.public,
+      altText: "CareSync logo",
     },
   });
 
   const businessFavicon = await prisma.media.create({
     data: {
-      uploadedById: users.admin.id,
-      publicId: "seed/business-favicon",
-      url: "https://images.example.com/favicon.ico",
-      mimeType: "image/x-icon",
+      uploadedById: foundation.admin.id,
+      publicId: "prod-seed/business-favicon",
+      url: `${ADMIN_AVATAR_URL}?v=business-favicon`,
+      mimeType: "image/png",
       resourceType: "image",
-      size: 1520,
-      hash: "seed-business-favicon-hash",
-      name: "favicon.ico",
+      size: 12000,
+      hash: "prod-seed-business-favicon-hash",
+      name: "business-favicon.png",
       type: MediaType.other,
       visibility: MediaVisibility.public,
+      altText: "CareSync favicon",
     },
   });
 
   const businessCover = await prisma.media.create({
     data: {
-      uploadedById: users.admin.id,
-      publicId: "seed/business-cover",
-      url: "https://images.example.com/business-cover.jpg",
-      mimeType: "image/jpeg",
+      uploadedById: foundation.admin.id,
+      publicId: "prod-seed/business-cover",
+      url: `${DOCTOR_AVATAR_URLS[0]}?v=business-cover`,
+      mimeType: "image/png",
       resourceType: "image",
-      size: 204800,
-      hash: "seed-business-cover-hash",
-      name: "business-cover.jpg",
+      size: 240000,
+      hash: "prod-seed-business-cover-hash",
+      name: "business-cover.png",
       type: MediaType.other,
       visibility: MediaVisibility.public,
+      altText: "CareSync cover image",
     },
   });
 
   await prisma.user.update({
-    where: { id: users.admin.id },
+    where: { id: foundation.admin.id },
     data: { avatarId: adminAvatar.id },
   });
 
+  await Promise.all(
+    foundation.doctors.map((doctor, index) =>
+      prisma.user.update({
+        where: { id: doctor.id },
+        data: { avatarId: doctorAvatars[index]?.id },
+      }),
+    ),
+  );
+
   return {
     adminAvatar,
-    doctor1IdDoc,
-    doctor1LicenseDoc,
-    doctor2IdDoc,
-    doctor2LicenseDoc,
-    doctor3IdDoc,
-    doctor3LicenseDoc,
-    patient1IdDoc,
-    patient2IdDoc,
-    prescriptionImage,
-    vitaminImage,
-    creamImage,
+    doctorAvatars,
     businessLogo,
     businessFavicon,
     businessCover,
@@ -469,7 +301,7 @@ async function seedMedia(users: Awaited<ReturnType<typeof seedFoundation>>) {
 }
 
 async function seedBusinessAndBranches(
-  users: Awaited<ReturnType<typeof seedFoundation>>,
+  foundation: Awaited<ReturnType<typeof seedFoundation>>,
   media: Awaited<ReturnType<typeof seedMedia>>,
 ) {
   console.log("Seeding business profile and branches...");
@@ -477,64 +309,81 @@ async function seedBusinessAndBranches(
   const businessProfile = await prisma.businessProfile.create({
     data: {
       name: "CareSync Health",
-      legalName: "CareSync Healthcare Pvt Ltd",
+      legalName: "CareSync Health Inc.",
       description:
-        "Integrated healthcare platform connecting patients with doctors and pharmacy.",
+        "A modern healthcare platform connecting patients with verified doctors, clinics, and pharmacy services.",
       faviconId: media.businessFavicon.id,
       logoId: media.businessLogo.id,
       coverId: media.businessCover.id,
-      email: "contact@caresync.test",
-      phone: "+923001110000",
-      whatsapp: "+923001110000",
-      website: "https://caresync.test",
-      facebook: "caresync",
-      instagram: "caresync",
-      tiktok: "caresync",
-      twitter: "caresync",
-      linkedin: "caresync",
-      metaTitle: "CareSync - Your Health Partner",
+      email: "support@caresync.demo",
+      phone: "+15551234567",
+      whatsapp: "+15551234567",
+      website: "https://caresync.demo",
+      facebook: "caresyncdemo",
+      instagram: "caresyncdemo",
+      tiktok: "caresyncdemo",
+      twitter: "caresyncdemo",
+      linkedin: "caresyncdemo",
+      metaTitle: "CareSync - Book a Doctor in Minutes",
       metaDescription:
-        "Connecting patients with trusted doctors and quality medications.",
+        "Find doctors, book appointments, chat securely, and order pharmacy items—all in one place.",
     },
   });
 
-  const downtownBranch = await prisma.branch.create({
+  const nycBranch = await prisma.branch.create({
     data: {
       businessProfileId: businessProfile.id,
-      name: "Downtown Branch",
-      slug: "downtown",
-      email: "downtown@caresync.test",
-      phone: "+923001110001",
-      whatsapp: "+923001110001",
-      street: "12 Main Boulevard",
-      city: "Lahore",
-      state: "Punjab",
-      postalCode: "54000",
-      country: "Pakistan",
-      timezone: DEFAULT_TIMEZONE,
+      name: "Manhattan Clinic",
+      slug: "manhattan",
+      email: "manhattan@caresync.demo",
+      phone: "+12125550101",
+      whatsapp: "+12125550101",
+      street: "350 5th Ave",
+      city: "New York",
+      state: "NY",
+      postalCode: "10118",
+      country: "United States",
+      timezone: "America/New_York",
       isActive: true,
     },
   });
 
-  const northBranch = await prisma.branch.create({
+  const austinBranch = await prisma.branch.create({
     data: {
       businessProfileId: businessProfile.id,
-      name: "North Branch",
-      slug: "north",
-      email: "north@caresync.test",
-      phone: "+923001110002",
-      whatsapp: "+923001110002",
-      street: "44 North Avenue",
-      city: "Lahore",
-      state: "Punjab",
-      postalCode: "54000",
-      country: "Pakistan",
-      timezone: DEFAULT_TIMEZONE,
+      name: "Downtown Austin Clinic",
+      slug: "austin-downtown",
+      email: "austin@caresync.demo",
+      phone: "+15125550102",
+      whatsapp: "+15125550102",
+      street: "200 Congress Ave",
+      city: "Austin",
+      state: "TX",
+      postalCode: "78701",
+      country: "United States",
+      timezone: "America/Chicago",
       isActive: true,
     },
   });
 
-  // Create branch timings for downtown (Mon-Fri 9-5)
+  const santaMonicaBranch = await prisma.branch.create({
+    data: {
+      businessProfileId: businessProfile.id,
+      name: "Santa Monica Clinic",
+      slug: "santa-monica",
+      email: "santamonica@caresync.demo",
+      phone: "+13105550103",
+      whatsapp: "+13105550103",
+      street: "1301 2nd St",
+      city: "Santa Monica",
+      state: "CA",
+      postalCode: "90401",
+      country: "United States",
+      timezone: "America/Los_Angeles",
+      isActive: true,
+    },
+  });
+
   const weekdays = [
     Weekday.monday,
     Weekday.tuesday,
@@ -542,165 +391,131 @@ async function seedBusinessAndBranches(
     Weekday.thursday,
     Weekday.friday,
   ];
-  for (const weekday of weekdays) {
-    await prisma.branchTiming.create({
-      data: {
-        branchId: downtownBranch.id,
-        weekday,
-        openTime: "09:00",
-        closeTime: "17:00",
-        isClosed: false,
-      },
+
+  for (const branch of [nycBranch, austinBranch, santaMonicaBranch]) {
+    for (const weekday of weekdays) {
+      await prisma.branchTiming.create({
+        data: {
+          branchId: branch.id,
+          weekday,
+          openTime: "09:00",
+          closeTime: "18:00",
+          isClosed: false,
+        },
+      });
+    }
+
+    await prisma.branchTiming.createMany({
+      data: [
+        {
+          branchId: branch.id,
+          weekday: Weekday.saturday,
+          openTime: "10:00",
+          closeTime: "14:00",
+          isClosed: false,
+        },
+        {
+          branchId: branch.id,
+          weekday: Weekday.sunday,
+          openTime: "00:00",
+          closeTime: "00:00",
+          isClosed: true,
+        },
+      ],
     });
   }
 
-  // North branch timings (Mon-Fri 10-6)
-  for (const weekday of weekdays) {
-    await prisma.branchTiming.create({
-      data: {
-        branchId: northBranch.id,
-        weekday,
-        openTime: "10:00",
-        closeTime: "18:00",
-        isClosed: false,
-      },
-    });
-  }
-
-  return { businessProfile, downtownBranch, northBranch };
+  return { businessProfile, nycBranch, austinBranch, santaMonicaBranch };
 }
 
 async function seedProfiles(
-  users: Awaited<ReturnType<typeof seedFoundation>>,
-  media: Awaited<ReturnType<typeof seedMedia>>,
+  foundation: Awaited<ReturnType<typeof seedFoundation>>,
   branches: Awaited<ReturnType<typeof seedBusinessAndBranches>>,
 ) {
   console.log("Seeding patient and doctor profiles...");
 
-  const patient1 = await prisma.patientProfile.create({
-    data: {
-      userId: users.patientUser1.id,
-      identificationDocumentId: media.patient1IdDoc.id,
-      birthDate: new Date("1992-04-12"),
-      gender: Gender.female,
-      address: "House 22, Garden Town, Lahore",
-      occupation: "Teacher",
-      emergencyContactName: "Jane Brown",
-      emergencyContactNumber: "+15550000991",
-      insuranceProvider: "HealthSecure",
-      insurancePolicyNumber: "HS-12345-01",
-      allergies: "Penicillin",
-      currentMedication: "Albuterol inhaler",
-      familyMedicalHistory: "Family history of asthma.",
-      pastMedicalHistory: "Asthma during childhood.",
-      identificationType: IdentificationType.passport,
-      identificationNumber: "PAK-P1-8821",
-    },
-  });
+  const patients = await Promise.all(
+    foundation.patients.map((user, index) =>
+      prisma.patientProfile.create({
+        data: {
+          userId: user.id,
+          birthDate: faker.date.birthdate({ min: 18, max: 70, mode: "age" }),
+          gender: ([Gender.male, Gender.female, Gender.other] as const)[
+            index % 3
+          ],
+          address: faker.location.streetAddress({ useFullAddress: true }),
+          occupation: faker.person.jobTitle(),
+          emergencyContactName: faker.person.fullName(),
+          emergencyContactNumber: "+15550000999",
+          insuranceProvider: ["Aetna", "UnitedHealthcare", "Blue Cross"][
+            index % 3
+          ],
+          insurancePolicyNumber: `US-${faker.string.alphanumeric({
+            length: 10,
+            casing: "upper",
+          })}`,
+          allergies: index % 3 === 0 ? "Penicillin" : "None reported",
+          currentMedication: index % 4 === 0 ? "Lisinopril" : "None",
+          familyMedicalHistory:
+            index % 2 === 0 ? "Family history of hypertension." : null,
+          pastMedicalHistory: index % 3 === 0 ? "Seasonal allergies." : null,
+          identificationType:
+            index % 2 === 0
+              ? IdentificationType.driversLicense
+              : IdentificationType.passport,
+          identificationNumber:
+            index % 2 === 0
+              ? `DL-${faker.string.alphanumeric({
+                  length: 9,
+                  casing: "upper",
+                })}`
+              : `P-${faker.string.alphanumeric({
+                  length: 9,
+                  casing: "upper",
+                })}`,
+        },
+      }),
+    ),
+  );
 
-  const patient2 = await prisma.patientProfile.create({
-    data: {
-      userId: users.patientUser2.id,
-      identificationDocumentId: media.patient2IdDoc.id,
-      birthDate: new Date("1987-09-03"),
-      gender: Gender.male,
-      address: "Street 8, DHA, Karachi",
-      occupation: "Software Engineer",
-      emergencyContactName: "Sarah Wilson",
-      emergencyContactNumber: "+15550000992",
-      insuranceProvider: "LifeCare",
-      insurancePolicyNumber: "LC-99128",
-      allergies: "None reported",
-      currentMedication: "Lisinopril",
-      familyMedicalHistory: "Family history of hypertension.",
-      pastMedicalHistory: "Mild hypertension.",
-      identificationType: IdentificationType.nationalId,
-      identificationNumber: "35202-5555555-1",
-    },
-  });
+  const branchPool = [
+    branches.nycBranch,
+    branches.austinBranch,
+    branches.santaMonicaBranch,
+  ];
 
-  const patient3 = await prisma.patientProfile.create({
-    data: {
-      userId: users.patientUser3.id,
-      address: "Unfinished profile testing user",
-      birthDate: new Date("2000-09-03"),
-      gender: Gender.female,
-    },
-  });
+  const doctors = await Promise.all(
+    foundation.doctors.map((user, index) => {
+      const seed = foundation.doctorSeeds[index];
+      const fullName = `${seed.firstName} ${seed.lastName}`;
+      const slug = `dr-${slugify(fullName)}`;
 
-  const doctor1 = await prisma.doctorProfile.create({
-    data: {
-      userId: users.doctorUser1.id,
-      branchId: branches.downtownBranch.id,
-      createdById: users.admin.id,
-      verifiedById: users.admin.id,
-      licenseDocumentId: media.doctor1LicenseDoc.id,
-      slug: "dr-john-smith",
-      title: "Dr.",
-      specialty: "Cardiology",
-      bio: "Cardiologist focused on preventive heart care and hypertension management.",
-      licenseNumber: "DOC-CARD-1001",
-      yearsExperience: 15,
-      education: "MBBS, FCPS Cardiology",
-      qualifications:
-        "Board-certified cardiologist with chronic care experience.",
-      languages: ["English", "Urdu"],
-      consultationFee: 8500,
-      commissionPercent: 12.5,
-      verificationStatus: DoctorVerificationStatus.verified,
-      verifiedAt: new Date(),
-      isAvailable: true,
-    },
-  });
+      return prisma.doctorProfile.create({
+        data: {
+          userId: user.id,
+          branchId: branchPool[index % branchPool.length].id,
+          createdById: foundation.admin.id,
+          verifiedById: foundation.admin.id,
+          slug,
+          title: "Dr.",
+          specialty: seed.specialty,
+          bio: `${seed.specialty} physician available for in-person and virtual consults.`,
+          licenseNumber: `US-MD-${1000 + index}`,
+          yearsExperience: 5 + index,
+          education: "MD (USA)",
+          qualifications: "Board certified (demo data).",
+          languages: ["English", index % 2 === 0 ? "Spanish" : "French"],
+          consultationFee: 120 + index * 10,
+          commissionPercent: 12.5,
+          verificationStatus: DoctorVerificationStatus.verified,
+          verifiedAt: new Date(),
+          isAvailable: true,
+        },
+      });
+    }),
+  );
 
-  const doctor2 = await prisma.doctorProfile.create({
-    data: {
-      userId: users.doctorUser2.id,
-      branchId: branches.northBranch.id,
-      createdById: users.admin.id,
-      verifiedById: users.admin.id,
-      licenseDocumentId: media.doctor2LicenseDoc.id,
-      slug: "dr-emily-jones",
-      title: "Dr.",
-      specialty: "Dermatology",
-      bio: "Dermatologist specializing in acne, eczema, and skin allergy treatment.",
-      licenseNumber: "DOC-DERM-2001",
-      yearsExperience: 9,
-      education: "MBBS, MCPS Dermatology",
-      qualifications:
-        "Clinic dermatologist with outpatient consultation experience.",
-      languages: ["English", "Urdu"],
-      consultationFee: 7000,
-      commissionPercent: 10,
-      verificationStatus: DoctorVerificationStatus.verified,
-      verifiedAt: new Date(),
-      isAvailable: true,
-    },
-  });
-
-  const doctor3 = await prisma.doctorProfile.create({
-    data: {
-      userId: users.doctorUser3.id,
-      branchId: branches.downtownBranch.id,
-      createdById: users.doctorUser3.id,
-      licenseDocumentId: media.doctor3LicenseDoc.id,
-      title: "Dr.",
-      specialty: "General Medicine",
-      slug: users.doctorUser3.displayName,
-      bio: "Pending verification doctor for admin workflow testing.",
-      licenseNumber: "DOC-GEN-3001",
-      yearsExperience: 4,
-      education: "MBBS",
-      qualifications: "General practitioner.",
-      languages: ["English", "Urdu"],
-      consultationFee: 5000,
-      commissionPercent: 12.5,
-      verificationStatus: DoctorVerificationStatus.pending,
-      isAvailable: false,
-    },
-  });
-
-  return { patient1, patient2, patient3, doctor1, doctor2, doctor3 };
+  return { patients, doctors };
 }
 
 async function seedAvailability(
@@ -716,38 +531,31 @@ async function seedAvailability(
     Weekday.friday,
   ];
 
-  for (const weekday of weekdays) {
-    await prisma.doctorAvailability.create({
-      data: {
-        doctorId: profiles.doctor1.id,
-        weekday,
-        startTime: "09:00",
-        endTime: "13:00",
-        slotDurationMinute: 30,
-        isActive: true,
-      },
-    });
+  for (const doctor of profiles.doctors) {
+    for (const weekday of weekdays) {
+      await prisma.doctorAvailability.create({
+        data: {
+          doctorId: doctor.id,
+          weekday,
+          startTime: "09:00",
+          endTime: "17:00",
+          slotDurationMinute: 30,
+          isActive: true,
+        },
+      });
+    }
+  }
 
-    await prisma.doctorAvailability.create({
+  if (profiles.doctors[0]) {
+    await prisma.doctorBlockedTime.create({
       data: {
-        doctorId: profiles.doctor2.id,
-        weekday,
-        startTime: "14:00",
-        endTime: "18:00",
-        slotDurationMinute: 30,
-        isActive: true,
+        doctorId: profiles.doctors[0].id,
+        startAt: daysFromNow(3, 10, 0),
+        endAt: daysFromNow(3, 12, 0),
+        reason: "Conference block (demo)",
       },
     });
   }
-
-  await prisma.doctorBlockedTime.create({
-    data: {
-      doctorId: profiles.doctor1.id,
-      startAt: daysFromNow(3, 10, 0),
-      endAt: daysFromNow(3, 12, 0),
-      reason: "Conference block for availability testing",
-    },
-  });
 }
 
 async function seedAppointments(
@@ -757,149 +565,128 @@ async function seedAppointments(
 ) {
   console.log("Seeding appointments...");
 
-  const bookedStart = daysFromNow(1, 10, 0);
-  const confirmedStart = daysFromNow(2, 15, 0);
-  const completedStart = daysFromNow(-4, 11, 0);
-  const cancelledStart = daysFromNow(5, 9, 30);
+  const branchPool = [
+    branches.nycBranch,
+    branches.austinBranch,
+    branches.santaMonicaBranch,
+  ];
 
-  const appointment1 = await prisma.appointment.create({
-    data: {
-      appointmentNumber: "APT-1001",
-      branchId: branches.downtownBranch.id,
-      patientId: profiles.patient1.id,
-      doctorId: profiles.doctor1.id,
-      createdById: foundation.patientUser1.id,
-      status: AppointmentStatus.booked,
-      bookingSource: BookingSource.app,
-      channel: AppointmentChannel.inPerson,
-      paymentStatus: PaymentStatus.pending,
-      scheduledStartAt: bookedStart,
-      scheduledEndAt: hoursAfter(bookedStart, 0, 30),
-      timezone: DEFAULT_TIMEZONE,
-      patientNotes: "Occasional chest discomfort after exercise.",
-    },
-  });
+  const statusPool = [
+    AppointmentStatus.booked,
+    AppointmentStatus.confirmed,
+    AppointmentStatus.completed,
+    AppointmentStatus.cancelled,
+  ];
 
-  const appointment2 = await prisma.appointment.create({
-    data: {
-      appointmentNumber: "APT-1002",
-      branchId: branches.northBranch.id,
-      patientId: profiles.patient2.id,
-      doctorId: profiles.doctor2.id,
-      createdById: foundation.admin.id,
-      status: AppointmentStatus.confirmed,
-      bookingSource: BookingSource.admin,
-      channel: AppointmentChannel.inPerson,
-      paymentStatus: PaymentStatus.succeeded,
-      scheduledStartAt: confirmedStart,
-      scheduledEndAt: hoursAfter(confirmedStart, 0, 30),
-      timezone: DEFAULT_TIMEZONE,
-      patientNotes: "Recurring skin rash on forearm.",
-      confirmedAt: new Date(),
-      paidAt: new Date(),
-    },
-  });
+  const appointments = [];
 
-  const appointment3 = await prisma.appointment.create({
-    data: {
-      appointmentNumber: "APT-1003",
-      branchId: branches.northBranch.id,
-      patientId: profiles.patient1.id,
-      doctorId: profiles.doctor2.id,
-      createdById: foundation.patientUser1.id,
-      status: AppointmentStatus.completed,
-      bookingSource: BookingSource.app,
-      channel: AppointmentChannel.virtual,
-      paymentStatus: PaymentStatus.refunded,
-      scheduledStartAt: completedStart,
-      scheduledEndAt: hoursAfter(completedStart, 0, 30),
-      timezone: DEFAULT_TIMEZONE,
-      patientNotes: "Follow-up for eczema treatment plan.",
-      doctorNotes: "Continue current moisturizer and review in four weeks.",
-      confirmedAt: hoursAfter(completedStart, -24),
-      completedAt: hoursAfter(completedStart, 0, 30),
-      paidAt: hoursAfter(completedStart, -36),
-    },
-  });
+  for (let index = 0; index < 24; index++) {
+    const patient = profiles.patients[index % profiles.patients.length];
+    const doctor = profiles.doctors[index % profiles.doctors.length];
+    const branch = branchPool[index % branchPool.length];
+    const status = statusPool[index % statusPool.length];
+    const start = daysFromNow(index % 7, 9 + (index % 6), 0);
 
-  const appointment4 = await prisma.appointment.create({
-    data: {
-      appointmentNumber: "APT-1004",
-      branchId: branches.downtownBranch.id,
-      patientId: profiles.patient2.id,
-      doctorId: profiles.doctor1.id,
-      createdById: foundation.patientUser2.id,
-      status: AppointmentStatus.cancelled,
-      cancellationSource: AppointmentCancellationSource.patient,
-      bookingSource: BookingSource.app,
-      channel: AppointmentChannel.inPerson,
-      paymentStatus: PaymentStatus.failed,
-      scheduledStartAt: cancelledStart,
-      scheduledEndAt: hoursAfter(cancelledStart, 0, 30),
-      timezone: DEFAULT_TIMEZONE,
-      patientNotes: "Booked for blood pressure review.",
-      cancellationReason: "Patient requested a new date.",
-      cancelledAt: new Date(),
-      adminNotes: "Keep slot open for rebooking tests.",
-    },
-  });
+    appointments.push(
+      prisma.appointment.create({
+        data: {
+          appointmentNumber: `APT-US-${(1001 + index).toString()}`,
+          branchId: branch.id,
+          patientId: patient.id,
+          doctorId: doctor.id,
+          createdById:
+            index % 3 === 0 ? foundation.admin.id : foundation.patients[0]?.id,
+          status,
+          bookingSource:
+            index % 3 === 0 ? BookingSource.admin : BookingSource.app,
+          channel:
+            index % 2 === 0
+              ? AppointmentChannel.inPerson
+              : AppointmentChannel.virtual,
+          paymentStatus:
+            status === AppointmentStatus.completed
+              ? PaymentStatus.succeeded
+              : PaymentStatus.pending,
+          scheduledStartAt: start,
+          scheduledEndAt: hoursAfter(start, 0, 30),
+          timezone: DEFAULT_TIMEZONE,
+          patientNotes: faker.lorem.sentence(),
+          confirmedAt:
+            status === AppointmentStatus.confirmed ||
+            status === AppointmentStatus.completed
+              ? new Date()
+              : null,
+          completedAt:
+            status === AppointmentStatus.completed
+              ? hoursAfter(start, 0, 30)
+              : null,
+          cancelledAt:
+            status === AppointmentStatus.cancelled ? new Date() : null,
+          cancellationSource:
+            status === AppointmentStatus.cancelled
+              ? AppointmentCancellationSource.patient
+              : null,
+          cancellationReason:
+            status === AppointmentStatus.cancelled ? "Schedule conflict" : null,
+          paidAt: status === AppointmentStatus.completed ? new Date() : null,
+        },
+      }),
+    );
+  }
 
-  return { appointment1, appointment2, appointment3, appointment4 };
+  return Promise.all(appointments);
 }
 
 async function seedConversations(
   foundation: Awaited<ReturnType<typeof seedFoundation>>,
   profiles: Awaited<ReturnType<typeof seedProfiles>>,
   appointments: Awaited<ReturnType<typeof seedAppointments>>,
-  media: Awaited<ReturnType<typeof seedMedia>>,
   branches: Awaited<ReturnType<typeof seedBusinessAndBranches>>,
 ) {
   console.log("Seeding conversations and messages...");
 
-  const appointmentConversation = await prisma.conversation.create({
-    data: {
-      branchId: branches.downtownBranch.id,
-      patientId: profiles.patient1.id,
-      appointmentId: appointments.appointment1.id,
-      assignedToId: foundation.doctorUser1.id,
-      type: ConversationType.appointment,
-      status: ConversationStatus.open,
-      subject: "Appointment follow-up questions",
-      lastMessageAt: new Date(),
-    },
-  });
+  const messages = [];
 
-  const patientMessage = await prisma.message.create({
-    data: {
-      conversationId: appointmentConversation.id,
-      senderId: foundation.patientUser1.id,
-      body: "Hello doctor, should I bring my previous test reports to the visit?",
-    },
-  });
+  for (const appointment of appointments.slice(0, 8)) {
+    const conversation = await prisma.conversation.create({
+      data: {
+        appointmentId: appointment.id,
+        branchId: appointment.branchId,
+        patientId: appointment.patientId,
+        assignedToId: foundation.admin.id,
+        type: ConversationType.appointment,
+        status: ConversationStatus.open,
+        subject: "Appointment chat (demo)",
+        lastMessageAt: new Date(),
+      },
+    });
 
-  await prisma.message.create({
-    data: {
-      conversationId: appointmentConversation.id,
-      senderId: foundation.doctorUser1.id,
-      body: "Yes, please bring any ECG or blood pressure reports you already have.",
-    },
-  });
-
-  await prisma.messageAttachment.create({
-    data: {
-      messageId: patientMessage.id,
-      mediaId: media.prescriptionImage.id,
-    },
-  });
+    messages.push(
+      prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: foundation.patients[0]!.id,
+          body: "Hi doctor, I have a quick question before the visit.",
+        },
+      }),
+      prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: foundation.doctors[0]!.id,
+          body: "Sure — please share your symptoms and when they started.",
+        },
+      }),
+    );
+  }
 
   const supportConversation = await prisma.conversation.create({
     data: {
-      branchId: branches.northBranch.id,
-      patientId: profiles.patient2.id,
+      branchId: branches.nycBranch.id,
+      patientId: profiles.patients[0]!.id,
       assignedToId: foundation.admin.id,
       type: ConversationType.support,
       status: ConversationStatus.open,
-      subject: "Need help with order tracking",
+      subject: "Support: account & booking help",
       lastMessageAt: new Date(),
     },
   });
@@ -908,236 +695,120 @@ async function seedConversations(
     data: [
       {
         conversationId: supportConversation.id,
-        senderId: foundation.patientUser2.id,
-        body: "I want to confirm when my skincare order will arrive.",
+        senderId: foundation.patients[0]!.id,
+        body: "Can you help me reschedule my appointment?",
       },
       {
         conversationId: supportConversation.id,
         senderId: foundation.admin.id,
-        body: "Our team has marked it as shipped and shared the tracking number in your order.",
+        body: "Yes — please confirm your preferred day/time and we’ll update it.",
       },
     ],
   });
-}
 
-async function seedCommerce(
-  foundation: Awaited<ReturnType<typeof seedFoundation>>,
-  profiles: Awaited<ReturnType<typeof seedProfiles>>,
-  media: Awaited<ReturnType<typeof seedMedia>>,
-) {
-  console.log("Seeding commerce data...");
-
-  const supplementsCategory = await prisma.productCategory.create({
-    data: {
-      name: "Supplements",
-      slug: "supplements",
-      description: "General wellness and immune support supplements.",
-      isActive: true,
-    },
-  });
-
-  const skincareCategory = await prisma.productCategory.create({
-    data: {
-      name: "Skincare",
-      slug: "skincare",
-      description: "Recommended clinic skincare products.",
-      isActive: true,
-    },
-  });
-
-  const vitaminC = await prisma.product.create({
-    data: {
-      categoryId: supplementsCategory.id,
-      imageId: media.vitaminImage.id,
-      name: "Vitamin C 1000mg",
-      slug: "vitamin-c-1000mg",
-      sku: "SUP-VC-1000",
-      description: "Immune support supplement for daily use.",
-      price: 2400,
-      salePrice: 2100,
-      stockQuantity: 120,
-      isActive: true,
-    },
-  });
-
-  const repairCream = await prisma.product.create({
-    data: {
-      categoryId: skincareCategory.id,
-      imageId: media.creamImage.id,
-      name: "Skin Repair Cream",
-      slug: "skin-repair-cream",
-      sku: "SKN-RPR-001",
-      description:
-        "Barrier repair cream recommended for dry and sensitive skin.",
-      price: 3200,
-      stockQuantity: 60,
-      isActive: true,
-    },
-  });
-
-  const cart = await prisma.cart.create({
-    data: {
-      patientId: profiles.patient1.id,
-      items: {
-        create: [
-          {
-            productId: vitaminC.id,
-            quantity: 2,
-            unitPrice: 2100,
-            totalPrice: 4200,
-          },
-          {
-            productId: repairCream.id,
-            quantity: 1,
-            unitPrice: 3200,
-            totalPrice: 3200,
-          },
-        ],
-      },
-    },
-  });
-
-  const order = await prisma.order.create({
-    data: {
-      orderNumber: "ORD-2001",
-      patientId: profiles.patient1.id,
-      status: OrderStatus.shipped,
-      paymentStatus: PaymentStatus.succeeded,
-      shippingAddress: {
-        fullName: "Alice Brown",
-        phone: "+15550000021",
-        address: "House 22, Garden Town, Lahore",
-      },
-      billingAddress: {
-        fullName: "Alice Brown",
-        phone: "+15550000021",
-        address: "House 22, Garden Town, Lahore",
-      },
-      notes: "Seeded order for store and order tracking testing.",
-      subtotalAmount: 5300,
-      shippingAmount: 300,
-      totalAmount: 5600,
-      paidAt: new Date(),
-      items: {
-        create: [
-          {
-            productId: vitaminC.id,
-            name: vitaminC.name,
-            sku: vitaminC.sku,
-            quantity: 1,
-            unitPrice: 2100,
-            totalPrice: 2100,
-          },
-          {
-            productId: repairCream.id,
-            name: repairCream.name,
-            sku: repairCream.sku,
-            quantity: 1,
-            unitPrice: 3200,
-            totalPrice: 3200,
-          },
-        ],
-      },
-      shipment: {
-        create: {
-          status: ShipmentStatus.shipped,
-          carrier: "Leopards Courier",
-          trackingNumber: "LCS-TRACK-2001",
-          trackingUrl: "https://tracking.example.com/LCS-TRACK-2001",
-          notes: "Out for delivery in the next 24 hours.",
-          shippedAt: new Date(),
-        },
-      },
-    },
-  });
-
-  return { cart, order, vitaminC, repairCream };
+  await Promise.all(messages);
 }
 
 async function seedPayments(
   foundation: Awaited<ReturnType<typeof seedFoundation>>,
   appointments: Awaited<ReturnType<typeof seedAppointments>>,
-  commerce: Awaited<ReturnType<typeof seedCommerce>>,
 ) {
   console.log("Seeding payments and refunds...");
 
-  await prisma.payment.create({
-    data: {
-      appointmentId: appointments.appointment1.id,
-      provider: PaymentProvider.stripe,
-      methodType: PaymentMethodType.card,
-      status: PaymentStatus.pending,
-      amount: 8500,
-      metadata: {
-        label: "Upcoming consultation payment",
-      },
-    },
-  });
+  const createdAt = (daysAgo: number, hour = 10, minute = 0) =>
+    daysFromNow(-daysAgo, hour, minute);
 
-  await prisma.payment.create({
-    data: {
-      appointmentId: appointments.appointment2.id,
-      provider: PaymentProvider.paypal,
-      methodType: PaymentMethodType.wallet,
-      status: PaymentStatus.succeeded,
-      amount: 7000,
-      transactionId: "PAY-APT-1002",
-      paidAt: new Date(),
-      commissionAmount: 700,
-      doctorNetAmount: 6300,
-      metadata: {
-        label: "Confirmed appointment payment",
-      },
-    },
-  });
+  const bookedAppointment = appointments.find(
+    (appointment) => appointment.status === AppointmentStatus.booked,
+  );
+  const confirmedAppointment = appointments.find(
+    (appointment) => appointment.status === AppointmentStatus.confirmed,
+  );
+  const completedAppointment = appointments.find(
+    (appointment) => appointment.status === AppointmentStatus.completed,
+  );
+  const cancelledAppointment = appointments.find(
+    (appointment) => appointment.status === AppointmentStatus.cancelled,
+  );
 
-  const refundedPayment = await prisma.payment.create({
-    data: {
-      appointmentId: appointments.appointment3.id,
-      provider: PaymentProvider.stripe,
-      methodType: PaymentMethodType.card,
-      status: PaymentStatus.refunded,
-      amount: 7000,
-      transactionId: "PAY-APT-1003",
-      paidAt: daysFromNow(-5, 10, 30),
-      refundedAt: new Date(),
-      commissionAmount: 700,
-      doctorNetAmount: 6300,
-      metadata: {
-        label: "Refunded tele-consultation payment",
+  if (bookedAppointment) {
+    await prisma.payment.create({
+      data: {
+        appointmentId: bookedAppointment.id,
+        provider: PaymentProvider.stripe,
+        methodType: PaymentMethodType.card,
+        status: PaymentStatus.pending,
+        amount: 140,
+        createdAt: createdAt(6, 11),
+        metadata: { label: "Upcoming appointment payment", demo: true },
       },
-    },
-  });
+    });
+  }
 
-  await prisma.refund.create({
-    data: {
-      paymentId: refundedPayment.id,
-      processedById: foundation.admin.id,
-      amount: 7000,
-      reason: "Refunded for completed testing scenario.",
-      status: RefundStatus.processed,
-      requestedAt: new Date(),
-      processedAt: new Date(),
-      metadata: {
-        reasonCode: "seed_test_case",
+  if (confirmedAppointment) {
+    await prisma.payment.create({
+      data: {
+        appointmentId: confirmedAppointment.id,
+        provider: PaymentProvider.paypal,
+        methodType: PaymentMethodType.wallet,
+        status: PaymentStatus.succeeded,
+        amount: 160,
+        transactionId: `PAY-APT-${confirmedAppointment.appointmentNumber}`,
+        createdAt: createdAt(5, 14),
+        paidAt: createdAt(5, 14),
+        commissionAmount: 20,
+        doctorNetAmount: 140,
+        metadata: { label: "Confirmed appointment payment", demo: true },
       },
-    },
-  });
+    });
+  }
 
-  await prisma.payment.create({
-    data: {
-      orderId: commerce.order.id,
-      provider: PaymentProvider.stripe,
-      methodType: PaymentMethodType.card,
-      status: PaymentStatus.succeeded,
-      amount: 5600,
-      transactionId: "PAY-ORD-2001",
-      paidAt: new Date(),
-      metadata: {
-        label: "Store order payment",
+  if (cancelledAppointment) {
+    await prisma.payment.create({
+      data: {
+        appointmentId: cancelledAppointment.id,
+        provider: PaymentProvider.stripe,
+        methodType: PaymentMethodType.card,
+        status: PaymentStatus.failed,
+        amount: 150,
+        createdAt: createdAt(4, 9),
+        failureMessage: "Card authorization failed (demo).",
+        metadata: { label: "Failed appointment payment", demo: true },
       },
-    },
-  });
+    });
+  }
+
+  if (completedAppointment) {
+    const refundedPayment = await prisma.payment.create({
+      data: {
+        appointmentId: completedAppointment.id,
+        provider: PaymentProvider.stripe,
+        methodType: PaymentMethodType.card,
+        status: PaymentStatus.refunded,
+        amount: 150,
+        transactionId: `PAY-APT-${completedAppointment.appointmentNumber}`,
+        createdAt: createdAt(3, 16),
+        paidAt: createdAt(3, 16),
+        refundedAt: createdAt(2, 12),
+        commissionAmount: 18.75,
+        doctorNetAmount: 131.25,
+        metadata: { label: "Refunded appointment payment", demo: true },
+      },
+    });
+
+    await prisma.refund.create({
+      data: {
+        paymentId: refundedPayment.id,
+        processedById: foundation.admin.id,
+        amount: 150,
+        reason: "Demo refund for reporting coverage.",
+        status: RefundStatus.processed,
+        requestedAt: createdAt(2, 12),
+        processedAt: createdAt(2, 12),
+        metadata: { demo: true },
+      },
+    });
+  }
 }
 
 async function seedNotifications(
@@ -1148,11 +819,11 @@ async function seedNotifications(
   const campaign = await prisma.notificationCampaign.create({
     data: {
       createdById: foundation.admin.id,
-      title: "Ramadan Wellness Reminder",
-      subject: "Stay healthy this month",
+      title: "Welcome to CareSync",
+      subject: "Thanks for joining CareSync",
       message:
-        "Hydration, sleep, and medication timing matter. Contact us if you need guidance.",
-      channel: NotificationChannel.email, // single enum
+        "Book your first appointment, chat with your doctor, and explore our demo store.",
+      channel: NotificationChannel.email,
       audience: CampaignAudience.patients,
       status: CampaignStatus.sent,
       sentAt: new Date(),
@@ -1160,115 +831,125 @@ async function seedNotifications(
   });
 
   await prisma.campaignRecipient.createMany({
-    data: [
-      {
-        campaignId: campaign.id,
-        userId: foundation.patientUser1.id,
-        sentAt: new Date(),
-      },
-      {
-        campaignId: campaign.id,
-        userId: foundation.patientUser2.id,
-        sentAt: new Date(),
-      },
-      {
-        campaignId: campaign.id,
-        userId: foundation.patientUser3.id,
-        sentAt: new Date(),
-      },
-    ],
+    data: foundation.patients.slice(0, 10).map((patient) => ({
+      campaignId: campaign.id,
+      userId: patient.id,
+      sentAt: new Date(),
+    })),
   });
 
   await prisma.notification.createMany({
     data: [
       {
-        userId: foundation.patientUser1.id,
+        userId: foundation.patients[0]!.id,
         title: "Appointment booked",
-        message: "Your appointment with Dr. John Smith has been booked.",
-        recipient: "patient1@example.com",
+        message: "Your appointment has been booked successfully.",
+        recipient: foundation.patients[0]!.email!,
         purpose: NotificationPurpose.appointmentStatus,
         channels: [NotificationChannel.email],
         status: NotificationStatus.sent,
       },
       {
-        userId: foundation.patientUser2.id,
-        title: "Appointment confirmed",
-        message: "Your dermatology appointment has been confirmed.",
-        recipient: "patient2@example.com",
+        userId: foundation.patients[1]!.id,
+        title: "Appointment reminder",
+        message: "Reminder: you have an appointment tomorrow.",
+        recipient: foundation.patients[1]!.email!,
         purpose: NotificationPurpose.appointmentReminder,
-        channels: [NotificationChannel.push],
+        channels: [NotificationChannel.email],
         status: NotificationStatus.sent,
       },
       {
-        userId: foundation.doctorUser1.id,
-        title: "New patient message",
+        userId: foundation.doctors[0]!.id,
+        title: "New message",
         message: "A patient sent a message in an appointment conversation.",
-        recipient: "dr.smith@example.com",
+        recipient: foundation.doctors[0]!.email!,
         purpose: NotificationPurpose.newChatMessage,
         channels: [NotificationChannel.email],
         status: NotificationStatus.sent,
       },
       {
-        userId: foundation.patientUser1.id,
+        userId: foundation.patients[0]!.id,
         title: "Order shipped",
         message: "Your pharmacy order has been shipped.",
-        recipient: "+15550000021",
+        recipient: foundation.patients[0]!.phone!,
         purpose: NotificationPurpose.orderStatus,
         channels: [NotificationChannel.sms],
         status: NotificationStatus.sent,
-      },
-      {
-        userId: foundation.admin.id,
-        title: "Doctor verification pending",
-        message: "Dr. Sarah Khan is waiting for review.",
-        recipient: "admin@example.com",
-        purpose: NotificationPurpose.userStatus,
-        channels: [NotificationChannel.email],
-        status: NotificationStatus.pending,
       },
     ],
   });
 }
 
-async function main() {
-  console.log("Starting Prisma seed...");
-  console.log(`Default seed password: ${DEFAULT_PASSWORD}`);
+async function seedTrafficAndLeads() {
+  console.log("Seeding traffic sources, contact messages, and newsletter...");
 
-  try {
-    await clearDatabase();
+  const traffic = await prisma.trafficSource.create({
+    data: {
+      utmSource: "google",
+      utmMedium: "cpc",
+      utmCampaign: "demo_launch",
+      landingPage: "/",
+      referrer: "https://google.com",
+      ip: "203.0.113.10",
+      userAgent: "Mozilla/5.0 (Demo Seed)",
+    },
+  });
 
-    const foundation = await seedFoundation();
-    const media = await seedMedia(foundation);
-    const branches = await seedBusinessAndBranches(foundation, media);
-    const profiles = await seedProfiles(foundation, media, branches);
-    await seedAvailability(profiles);
-    const appointments = await seedAppointments(foundation, profiles, branches);
-    await seedConversations(
-      foundation,
-      profiles,
-      appointments,
-      media,
-      branches,
-    );
-    const commerce = await seedCommerce(foundation, profiles, media);
-    await seedPayments(foundation, appointments, commerce);
-    await seedNotifications(foundation);
+  await prisma.contactMessage.create({
+    data: {
+      trafficSourceId: traffic.id,
+      firstName: "Jordan",
+      lastName: "Taylor",
+      email: "jordan.taylor@example.com",
+      phone: "+15551112222",
+      subject: "Demo inquiry",
+      message: "We’d like a quick demo and pricing details.",
+    },
+  });
 
-    console.log("Seed completed successfully.");
-    console.log("Seeded logins:");
-    console.log("  admin@example.com / Test@123456");
-    console.log("  dr.smith@example.com / Test@123456");
-    console.log("  dr.jones@example.com / Test@123456");
-    console.log("  dr.pending@example.com / Test@123456");
-    console.log("  patient1@example.com / Test@123456");
-    console.log("  patient2@example.com / Test@123456");
-    console.log("  patient3@example.com / Test@123456");
-  } catch (error) {
-    console.error("Seed failed:", error);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
+  await prisma.newsletterSubscriber.create({
+    data: {
+      trafficSourceId: traffic.id,
+      name: "Demo Subscriber",
+      email: "subscriber@caresync.demo",
+      isActive: true,
+    },
+  });
 }
 
-void main();
+async function main() {
+  console.log("Starting Prisma PROD seed...");
+  console.log(`Default seed password: ${DEFAULT_PASSWORD}`);
+
+  await clearDatabase();
+
+  const foundation = await seedFoundation();
+  const media = await seedMedia(foundation);
+  const branches = await seedBusinessAndBranches(foundation, media);
+  const profiles = await seedProfiles(foundation, branches);
+  await seedAvailability(profiles);
+  const appointments = await seedAppointments(foundation, profiles, branches);
+  await seedConversations(foundation, profiles, appointments, branches);
+  await seedPayments(foundation, appointments);
+  await seedNotifications(foundation);
+  await seedTrafficAndLeads();
+
+  console.log("Seed completed successfully.");
+  console.log("Demo logins:");
+  console.log(`Admin: admin@caresync.demo / ${DEFAULT_PASSWORD}`);
+  console.log(
+    `Patient: patient1@caresync.demo / ${DEFAULT_PASSWORD} (and patient2..patient14)`,
+  );
+  console.log(
+    `Doctor: dr.green@caresync.demo / ${DEFAULT_PASSWORD} (and other dr.*@caresync.demo)`,
+  );
+}
+
+main()
+  .catch((error) => {
+    console.error("Seed failed:", error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

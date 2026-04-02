@@ -28,7 +28,6 @@ import { AvailabilityModule } from "@/modules/availability/availability.module";
 import { AppointmentModule } from "@/modules/appointment/appointment.module";
 import { ChatModule } from "@/modules/chat/chat.module";
 import { PaymentModule } from "@/modules/payment/payment.module";
-import { CommerceModule } from "@/modules/commerce/commerce.module";
 import { CampaignModule } from "@/modules/campaign/campaign.module";
 import { ClientModule } from "./modules/client/client.module";
 import { LeadModule } from "@/modules/lead/lead.module";
@@ -65,7 +64,6 @@ import { DashboardModule } from "@/modules/dashboard/dashboard.module";
     AppointmentModule,
     ChatModule,
     PaymentModule,
-    CommerceModule,
     CampaignModule,
     LeadModule,
     TrafficModule,

@@ -76,11 +76,9 @@ const sections: SectionConfig<PaymentResponse>[] = [
         accessor: "transactionId",
       },
       {
-        label: "Linked Target",
+        label: "Appointment",
         accessor: (data) =>
-          data.appointment?.appointmentNumber ??
-          data.order?.orderNumber ??
-          "No linked appointment or order",
+          data.appointment?.appointmentNumber ?? "No linked appointment",
       },
       {
         label: "Failure Message",
@@ -174,9 +172,7 @@ const renderHeader = (data: PaymentResponse) => (
           {formatCurrency(data.amount)}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {data.appointment?.appointmentNumber ??
-            data.order?.orderNumber ??
-            "Standalone payment record"}
+          {data.appointment?.appointmentNumber ?? "Standalone payment record"}
         </p>
       </div>
     </div>

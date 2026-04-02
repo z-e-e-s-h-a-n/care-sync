@@ -13,7 +13,6 @@ export default defineConfig({
     appointment: "src/appointment/index.ts",
     chat: "src/chat/index.ts",
     payment: "src/payment/index.ts",
-    commerce: "src/commerce/index.ts",
     campaign: "src/campaign/index.ts",
     audit: "src/audit/index.ts",
     traffic: "src/traffic/index.ts",

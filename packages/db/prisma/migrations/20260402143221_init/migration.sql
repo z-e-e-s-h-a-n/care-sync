@@ -91,12 +91,6 @@ CREATE TYPE "CampaignAudience" AS ENUM ('allUsers', 'patients', 'doctors', 'cust
 -- CreateEnum
 CREATE TYPE "DoctorVerificationStatus" AS ENUM ('pending', 'verified', 'rejected');
 
--- CreateEnum
-CREATE TYPE "OrderStatus" AS ENUM ('pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded');
-
--- CreateEnum
-CREATE TYPE "ShipmentStatus" AS ENUM ('pending', 'shipped', 'delivered', 'cancelled');
-
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -400,121 +394,9 @@ CREATE TABLE "MessageAttachment" (
 );
 
 -- CreateTable
-CREATE TABLE "ProductCategory" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "description" TEXT,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "ProductCategory_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Product" (
-    "id" TEXT NOT NULL,
-    "categoryId" TEXT,
-    "imageId" TEXT,
-    "name" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "sku" TEXT NOT NULL,
-    "description" TEXT,
-    "price" DECIMAL(10,2) NOT NULL,
-    "salePrice" DECIMAL(10,2),
-    "stockQuantity" INTEGER NOT NULL DEFAULT 0,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Cart" (
-    "id" TEXT NOT NULL,
-    "patientId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Cart_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "CartItem" (
-    "id" TEXT NOT NULL,
-    "cartId" TEXT NOT NULL,
-    "productId" TEXT NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "unitPrice" DECIMAL(10,2) NOT NULL,
-    "totalPrice" DECIMAL(10,2) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "CartItem_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Order" (
-    "id" TEXT NOT NULL,
-    "orderNumber" TEXT NOT NULL,
-    "patientId" TEXT NOT NULL,
-    "status" "OrderStatus" NOT NULL DEFAULT 'pending',
-    "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'pending',
-    "shippingAddress" JSONB,
-    "billingAddress" JSONB,
-    "notes" TEXT,
-    "subtotalAmount" DECIMAL(10,2) NOT NULL,
-    "shippingAmount" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "totalAmount" DECIMAL(10,2) NOT NULL,
-    "paidAt" TIMESTAMP(3),
-    "cancelledAt" TIMESTAMP(3),
-    "deliveredAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "OrderItem" (
-    "id" TEXT NOT NULL,
-    "orderId" TEXT NOT NULL,
-    "productId" TEXT,
-    "name" TEXT NOT NULL,
-    "sku" TEXT,
-    "quantity" INTEGER NOT NULL,
-    "unitPrice" DECIMAL(10,2) NOT NULL,
-    "totalPrice" DECIMAL(10,2) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Shipment" (
-    "id" TEXT NOT NULL,
-    "orderId" TEXT NOT NULL,
-    "status" "ShipmentStatus" NOT NULL DEFAULT 'pending',
-    "carrier" TEXT,
-    "trackingNumber" TEXT,
-    "trackingUrl" TEXT,
-    "notes" TEXT,
-    "shippedAt" TIMESTAMP(3),
-    "deliveredAt" TIMESTAMP(3),
-    "returnedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Shipment_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Payment" (
     "id" TEXT NOT NULL,
     "appointmentId" TEXT,
-    "orderId" TEXT,
     "provider" "PaymentProvider" NOT NULL,
     "methodType" "PaymentMethodType" NOT NULL,
     "status" "PaymentStatus" NOT NULL DEFAULT 'pending',
@@ -812,46 +694,7 @@ CREATE INDEX "MessageAttachment_mediaId_idx" ON "MessageAttachment"("mediaId");
 CREATE UNIQUE INDEX "MessageAttachment_messageId_mediaId_key" ON "MessageAttachment"("messageId", "mediaId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ProductCategory_slug_key" ON "ProductCategory"("slug");
-
--- CreateIndex
-CREATE INDEX "ProductCategory_isActive_idx" ON "ProductCategory"("isActive");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Product_sku_key" ON "Product"("sku");
-
--- CreateIndex
-CREATE INDEX "Product_categoryId_idx" ON "Product"("categoryId");
-
--- CreateIndex
-CREATE INDEX "Product_isActive_idx" ON "Product"("isActive");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Cart_patientId_key" ON "Cart"("patientId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "CartItem_cartId_productId_key" ON "CartItem"("cartId", "productId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Order_orderNumber_key" ON "Order"("orderNumber");
-
--- CreateIndex
-CREATE INDEX "Order_patientId_status_idx" ON "Order"("patientId", "status");
-
--- CreateIndex
-CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Shipment_orderId_key" ON "Shipment"("orderId");
-
--- CreateIndex
 CREATE INDEX "Payment_appointmentId_createdAt_idx" ON "Payment"("appointmentId", "createdAt");
-
--- CreateIndex
-CREATE INDEX "Payment_orderId_createdAt_idx" ON "Payment"("orderId", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "Payment_status_createdAt_idx" ON "Payment"("status", "createdAt");
@@ -998,37 +841,7 @@ ALTER TABLE "MessageAttachment" ADD CONSTRAINT "MessageAttachment_messageId_fkey
 ALTER TABLE "MessageAttachment" ADD CONSTRAINT "MessageAttachment_mediaId_fkey" FOREIGN KEY ("mediaId") REFERENCES "Media"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ProductCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Product" ADD CONSTRAINT "Product_imageId_fkey" FOREIGN KEY ("imageId") REFERENCES "Media"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Cart" ADD CONSTRAINT "Cart_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Order" ADD CONSTRAINT "Order_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Shipment" ADD CONSTRAINT "Shipment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Payment" ADD CONSTRAINT "Payment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Refund" ADD CONSTRAINT "Refund_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "Payment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
