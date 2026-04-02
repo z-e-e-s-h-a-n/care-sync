@@ -17,7 +17,7 @@ import {
 } from "@workspace/ui/components/sidebar";
 import { cn } from "@workspace/ui/lib/utils";
 import DashboardSkeleton from "./DashboardSkeleton";
-import { adminSidebarMenu } from "@/lib/constants";
+import { adminSidebarMenu } from "@workspace/ui/lib/constants";
 
 const RootLayoutSkeleton = () => {
   const sidebarMenu = adminSidebarMenu;

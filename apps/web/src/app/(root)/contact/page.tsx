@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { CalendarDays, CheckCircle, Clock, MapPin, Phone } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -44,27 +43,26 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = new FormData(form);
+    try {
+      e.preventDefault();
+      const form = e.currentTarget;
+      const data = new FormData(form);
 
-    setLoading(true);
-    const result = await createContactMessage({
-      firstName: data.get("firstName") as string,
-      lastName: (data.get("lastName") as string) || undefined,
-      email: data.get("email") as string,
-      phone: data.get("phone") as string,
-      subject: (data.get("subject") as string) || undefined,
-      message: data.get("message") as string,
-    });
-    setLoading(false);
-
-    if (result.error) {
+      setLoading(true);
+      await createContactMessage({
+        firstName: data.get("firstName") as string,
+        lastName: (data.get("lastName") as string) || undefined,
+        email: data.get("email") as string,
+        phone: data.get("phone") as string,
+        subject: (data.get("subject") as string) || undefined,
+        message: data.get("message") as string,
+      });
+      setLoading(false);
+      setSubmitted(true);
+    } catch {
       toast.error("Something went wrong. Please try again.");
       return;
     }
-
-    setSubmitted(true);
   }
 
   return (
@@ -75,15 +73,20 @@ export default function ContactPage() {
           <div className="relative overflow-hidden rounded-tl-4xl rounded-tr-4xl bg-secondary px-6 py-16 sm:px-10 sm:py-20 lg:px-14">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(var(--primary-rgb),0.07),transparent_55%)]" />
             <div className="relative mx-auto max-w-2xl text-center">
-              <Badge variant="secondary" appearance="solid" className="px-4 py-2 mb-4">
+              <Badge
+                variant="secondary"
+                appearance="solid"
+                className="px-4 py-2 mb-4"
+              >
                 Contact Us
               </Badge>
               <h1 className="text-5xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-                Let's Talk About Your Child
+                Let&apos;s Talk About Your Child
               </h1>
               <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-                Whether you have questions about our services, want to schedule a free
-                consultation, or just need guidance — our team is here to help.
+                Whether you have questions about our services, want to schedule
+                a free consultation, or just need guidance — our team is here to
+                help.
               </p>
             </div>
           </div>
@@ -100,8 +103,9 @@ export default function ContactPage() {
                 Get in Touch
               </h2>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Fill out the form and a member of our team will reach out within one
-                business day to answer your questions and help you get started.
+                Fill out the form and a member of our team will reach out within
+                one business day to answer your questions and help you get
+                started.
               </p>
             </div>
 
@@ -119,7 +123,9 @@ export default function ContactPage() {
                       <p className="mt-0.5 text-base font-semibold text-foreground">
                         {info.value}
                       </p>
-                      <p className="text-xs text-muted-foreground">{info.sub}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {info.sub}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -139,8 +145,8 @@ export default function ContactPage() {
                     Message Sent!
                   </h3>
                   <p className="max-w-sm text-sm leading-7 text-muted-foreground">
-                    Thank you for reaching out. A member of our team will contact you
-                    within one business day.
+                    Thank you for reaching out. A member of our team will
+                    contact you within one business day.
                   </p>
                   <Button
                     variant="outline"
@@ -214,11 +220,7 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loading}
-                  >
+                  <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Sending..." : "Send Message"}
                   </Button>
 

@@ -3,18 +3,32 @@
 import { CreditCard, DollarSign, RefreshCcw } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { Separator } from "@workspace/ui/components/separator";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 import StatCard from "@workspace/ui/shared/StatCard";
 import { cn } from "@workspace/ui/lib/utils";
 import { usePayments } from "@/hooks/healthcare";
 import { formatDate } from "@workspace/shared/utils";
 
-const paymentStatusConfig: Record<string, { label: string; className: string }> = {
-  pending: { label: "Pending", className: "border-amber-200 bg-amber-50 text-amber-700" },
-  succeeded: { label: "Paid", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  failed: { label: "Failed", className: "border-red-200 bg-red-50 text-red-600" },
-  refunded: { label: "Refunded", className: "border-gray-200 bg-gray-50 text-gray-500" },
+const paymentStatusConfig: Record<
+  string,
+  { label: string; className: string }
+> = {
+  pending: {
+    label: "Pending",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+  },
+  succeeded: {
+    label: "Paid",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  },
+  failed: {
+    label: "Failed",
+    className: "border-red-200 bg-red-50 text-red-600",
+  },
+  refunded: {
+    label: "Refunded",
+    className: "border-gray-200 bg-gray-50 text-gray-500",
+  },
 };
 
 function formatAmount(amount: number | string) {
@@ -27,7 +41,7 @@ function formatAmount(amount: number | string) {
 export default function PaymentsPage() {
   const { data, isLoading } = usePayments({});
 
-  const payments = data?.items ?? [];
+  const payments = data?.payments ?? [];
   const paid = payments.filter((p) => p.status === "succeeded");
   const pending = payments.filter((p) => p.status === "pending");
   const totalPaid = paid.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -87,8 +101,7 @@ export default function PaymentsPage() {
 
         {payments.map((payment) => {
           const status =
-            paymentStatusConfig[payment.status] ??
-            paymentStatusConfig.pending;
+            paymentStatusConfig[payment.status] ?? paymentStatusConfig.pending;
 
           return (
             <div key={payment.id} className="rounded-xl border p-4">

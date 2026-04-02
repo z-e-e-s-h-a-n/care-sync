@@ -3,7 +3,6 @@
 import { CalendarDays, Clock, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@workspace/ui/components/button";
-import { Badge } from "@workspace/ui/components/badge";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 import { cn } from "@workspace/ui/lib/utils";
@@ -23,7 +22,7 @@ const statusColors: Record<string, string> = {
 export default function MessagesPage() {
   const { data, isLoading } = useAppointments({});
 
-  const conversations = (data?.items ?? []).filter((a) =>
+  const conversations = (data?.appointments ?? []).filter((a) =>
     activeStatuses.includes(a.status),
   );
 
@@ -54,7 +53,8 @@ export default function MessagesPage() {
             <div>
               <p className="font-medium">No conversations yet</p>
               <p className="text-sm text-muted-foreground">
-                Messages are available once you have a booked or confirmed appointment.
+                Messages are available once you have a booked or confirmed
+                appointment.
               </p>
             </div>
             <Button variant="outline" asChild>

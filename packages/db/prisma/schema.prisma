@@ -7,9 +7,9 @@ datasource db {
     provider = "postgresql"
 }
 
-//
+// ============================================================
 // ENUMS
-//
+// ============================================================
 
 enum ThemeMode {
     light
@@ -19,8 +19,9 @@ enum ThemeMode {
 
 enum UserRole {
     admin
-    patient
+    staff
     doctor
+    patient
 }
 
 enum UserStatus {
@@ -102,10 +103,14 @@ enum NotificationPurpose {
     refundStatus
     paymentStatus
     appointmentStatus
+    appointmentReminder
+
+    sessionNoteAdded
+    treatmentPlanUpdated
+    authorizationAlert
 
     campaign
     newChatMessage
-    appointmentReminder
 
     newsletter
     contactMessage
@@ -169,6 +174,7 @@ enum AppointmentCancellationSource {
     patient
     doctor
     admin
+    staff
 }
 
 enum BookingSource {
@@ -223,6 +229,7 @@ enum CampaignAudience {
     allUsers
     patients
     doctors
+    staff
     custom
 }
 
@@ -231,6 +238,72 @@ enum DoctorVerificationStatus {
     verified
     rejected
 }
+
+// ── E-Commerce ─────────────────────────────────────────────
+
+enum OrderStatus {
+    pending
+    processing
+    shipped
+    delivered
+    cancelled
+    refunded
+}
+
+enum DeliveryType {
+    delivery
+    pickup
+}
+
+// ── ABA Clinical ───────────────────────────────────────────
+
+enum TreatmentPlanStatus {
+    draft
+    active
+    completed
+    discontinued
+}
+
+enum ProgramType {
+    skillAcquisition
+    behaviorReduction
+}
+
+enum ProgramStatus {
+    active
+    mastered
+    onHold
+    discontinued
+}
+
+enum DataRecordingType {
+    discreteTrial
+    intervalRecording
+    frequencyRate
+    duration
+}
+
+enum DataResponse {
+    correct
+    incorrect
+    prompted
+    noResponse
+}
+
+enum ProgressReportStatus {
+    draft
+    published
+}
+
+enum InsuranceAuthorizationStatus {
+    active
+    expired
+    exhausted
+}
+
+// ============================================================
+// CORE MODELS
+// ============================================================
 
 model User {
     id String @id @default(ulid())
@@ -263,25 +336,50 @@ model User {
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
+    // Profiles
     patientProfile PatientProfile?
     doctorProfile  DoctorProfile?
+    staffProfile   StaffProfile?
 
+    // Auth
     otps               Otp[]
     sessions           Session[]
     auditLogs          AuditLog[]
     notifications      Notification[]
     campaignRecipients CampaignRecipient[]
 
-    uploads             Media[]                @relation("UserUploads")
-    sentMessages        Message[]              @relation("MessageSender")
-    createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
-    createdCampaigns    NotificationCampaign[] @relation("CampaignCreatedBy")
+    // Media & messaging
+    uploads      Media[]   @relation("UserUploads")
+    sentMessages Message[] @relation("MessageSender")
 
+    // Appointments
+    createdAppointments Appointment[] @relation("AppointmentCreatedBy")
+
+    // Campaigns
+    createdCampaigns NotificationCampaign[] @relation("CampaignCreatedBy")
+
+    // Doctor admin
     createdDoctorProfiles  DoctorProfile[] @relation("DoctorProfileCreatedBy")
     verifiedDoctorProfiles DoctorProfile[] @relation("DoctorProfileVerifiedBy")
 
+    // Chat
     assignedConversations Conversation[] @relation("ConversationAssignedTo")
-    processedRefunds      Refund[]       @relation("RefundProcessedBy")
+
+    // Payments
+    processedRefunds Refund[] @relation("RefundProcessedBy")
+
+    // E-commerce
+    cartItems CartItem[]
+    orders    Order[]
+
+    // ABA Clinical
+    createdTreatmentPlans  TreatmentPlan[]    @relation("TreatmentPlanCreatedBy")
+    therapistSessionNotes  SessionNote[]      @relation("SessionNoteTherapist")
+    generatedReports       ProgressReport[]   @relation("ProgressReportGeneratedBy")
+    staffAssignments       StaffAssignment[]  @relation("StaffAssignmentStaff")
+    assignedByAssignments  StaffAssignment[]  @relation("StaffAssignmentAssignedBy")
+    caregiverAccesses      CaregiverAccess[]  @relation("CaregiverAccessUser")
+    grantedCaregiverAccesses CaregiverAccess[] @relation("CaregiverAccessGrantedBy")
 
     @@index([role])
     @@index([status])
@@ -450,6 +548,7 @@ model Media {
     deletedAt DateTime?
 
     messageAttachments MessageAttachment[]
+    productImages      ProductImage[]
 
     users                          User[]            @relation("UserAvatar")
     businessLogos                  BusinessProfile[] @relation("BusinessLogo")
@@ -464,6 +563,10 @@ model Media {
     @@index([createdAt])
     @@index([deletedAt])
 }
+
+// ============================================================
+// PROFILES
+// ============================================================
 
 model PatientProfile {
     id String @id @default(ulid())
@@ -494,10 +597,20 @@ model PatientProfile {
     identificationType   IdentificationType?
     identificationNumber String?
 
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Existing relations
     appointments  Appointment[]
     conversations Conversation[] @relation("PatientConversations")
-    createdAt     DateTime       @default(now())
-    updatedAt     DateTime       @updatedAt
+
+    // ABA Clinical relations
+    treatmentPlans          TreatmentPlan[]
+    sessionNotes            SessionNote[]
+    staffAssignments        StaffAssignment[]
+    insuranceAuthorizations InsuranceAuthorization[]
+    progressReports         ProgressReport[]
+    caregiverAccesses       CaregiverAccess[]        @relation("CaregiverAccessPatient")
 }
 
 model DoctorProfile {
@@ -544,11 +657,40 @@ model DoctorProfile {
     availabilityRules DoctorAvailability[]
     blockedSlots      DoctorBlockedTime[]
     appointments      Appointment[]
+    treatmentPlans    TreatmentPlan[]
 
     @@index([branchId])
     @@index([verificationStatus])
     @@index([isAvailable])
 }
+
+model StaffProfile {
+    id String @id @default(ulid())
+
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    branchId String
+    branch   Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+    // e.g. "RBT", "BCBA", "BCaBA", "Program Manager"
+    title       String
+    specialty   String?
+    bio         String?
+    credentials String[] @default([])
+
+    isActive Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([branchId])
+    @@index([isActive])
+}
+
+// ============================================================
+// SCHEDULING
+// ============================================================
 
 model DoctorAvailability {
     id String @id @default(ulid())
@@ -626,6 +768,7 @@ model Appointment {
 
     payments     Payment[]
     conversation Conversation?
+    sessionNote  SessionNote?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -635,6 +778,10 @@ model Appointment {
     @@index([patientId, scheduledStartAt])
     @@index([status, scheduledStartAt])
 }
+
+// ============================================================
+// COMMUNICATION
+// ============================================================
 
 model Conversation {
     id String @id @default(ulid())
@@ -704,11 +851,18 @@ model MessageAttachment {
     @@index([mediaId])
 }
 
+// ============================================================
+// PAYMENTS
+// ============================================================
+
 model Payment {
     id String @id @default(ulid())
 
     appointmentId String?
     appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+    orderId String?
+    order   Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
     provider   PaymentProvider
     methodType PaymentMethodType
@@ -733,6 +887,7 @@ model Payment {
     refunds Refund[]
 
     @@index([appointmentId, createdAt])
+    @@index([orderId, createdAt])
     @@index([status, createdAt])
     @@index([transactionId])
 }
@@ -756,6 +911,10 @@ model Refund {
 
     @@index([paymentId, status])
 }
+
+// ============================================================
+// BUSINESS
+// ============================================================
 
 model ContactMessage {
     id String @id @default(ulid())
@@ -873,10 +1032,11 @@ model Branch {
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
-    branchTimings BranchTiming[]
-    doctors       DoctorProfile[]
-    appointments  Appointment[]
-    conversations Conversation[]
+    branchTimings  BranchTiming[]
+    doctors        DoctorProfile[]
+    staffMembers   StaffProfile[]
+    appointments   Appointment[]
+    conversations  Conversation[]
 
     @@index([isActive])
     @@index([city])
@@ -920,4 +1080,378 @@ model BusinessProfile {
     updatedAt DateTime @updatedAt
 
     branches Branch[]
+}
+
+// ============================================================
+// E-COMMERCE
+// ============================================================
+
+model ProductCategory {
+    id String @id @default(ulid())
+
+    name        String
+    slug        String  @unique
+    description String?
+    isActive    Boolean @default(true)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    products Product[]
+
+    @@index([isActive])
+}
+
+model Product {
+    id String @id @default(ulid())
+
+    categoryId String?
+    category   ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+    name             String
+    slug             String  @unique
+    description      String?
+    price            Decimal @db.Decimal(10, 2)
+    compareAtPrice   Decimal? @db.Decimal(10, 2)
+    stockCount       Int     @default(0)
+    requiresShipping Boolean @default(true)
+    isActive         Boolean @default(true)
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    images     ProductImage[]
+    cartItems  CartItem[]
+    orderItems OrderItem[]
+
+    @@index([categoryId])
+    @@index([isActive])
+    @@index([deletedAt])
+}
+
+model ProductImage {
+    id String @id @default(ulid())
+
+    productId String
+    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    mediaId String
+    media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+    position Int @default(0)
+
+    createdAt DateTime @default(now())
+
+    @@unique([productId, mediaId])
+    @@index([productId, position])
+}
+
+model CartItem {
+    id String @id @default(ulid())
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    productId String
+    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    quantity Int @default(1)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, productId])
+    @@index([userId])
+}
+
+model Order {
+    id          String @id @default(ulid())
+    orderNumber String @unique
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+    status       OrderStatus @default(pending)
+    deliveryType DeliveryType @default(delivery)
+
+    // Shipping address (snapshot at time of order)
+    shippingName       String?
+    shippingPhone      String? @db.VarChar(20)
+    shippingStreet     String?
+    shippingCity       String?
+    shippingState      String?
+    shippingPostalCode String?
+    shippingCountry    String?
+
+    subtotal     Decimal @db.Decimal(10, 2)
+    shippingCost Decimal @db.Decimal(10, 2) @default(0)
+    total        Decimal @db.Decimal(10, 2)
+
+    notes String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    items    OrderItem[]
+    payments Payment[]
+
+    @@index([userId, createdAt])
+    @@index([status, createdAt])
+}
+
+model OrderItem {
+    id String @id @default(ulid())
+
+    orderId String
+    order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+    // Optional link — product may be deleted but order item persists
+    productId String?
+    product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+    // Snapshot of product at time of order
+    productName String
+    unitPrice   Decimal @db.Decimal(10, 2)
+    quantity    Int
+    totalPrice  Decimal @db.Decimal(10, 2)
+
+    createdAt DateTime @default(now())
+
+    @@index([orderId])
+    @@index([productId])
+}
+
+// ============================================================
+// ABA CLINICAL
+// ============================================================
+
+model TreatmentPlan {
+    id String @id @default(ulid())
+
+    patientId String
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+    // The BCBA or doctor who created the plan
+    createdById String
+    createdBy   User   @relation("TreatmentPlanCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+    // Optionally supervised by a doctor profile
+    doctorId String?
+    doctor   DoctorProfile? @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+
+    title       String
+    description String?
+    goals       String?
+
+    status    TreatmentPlanStatus @default(draft)
+    startDate DateTime?
+    endDate   DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    programs                BehaviorProgram[]
+    sessionNotes            SessionNote[]
+    progressReports         ProgressReport[]
+    insuranceAuthorizations InsuranceAuthorization[]
+
+    @@index([patientId, status])
+    @@index([createdById])
+}
+
+model BehaviorProgram {
+    id String @id @default(ulid())
+
+    treatmentPlanId String
+    treatmentPlan   TreatmentPlan @relation(fields: [treatmentPlanId], references: [id], onDelete: Cascade)
+
+    name        String
+    description String?
+
+    type   ProgramType
+    status ProgramStatus @default(active)
+
+    // Written criteria that must be met before the program is considered mastered
+    masteryDefinition String?
+    // Baseline data description before intervention began
+    baselineData      String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    dataPoints DataPoint[]
+
+    @@index([treatmentPlanId, status])
+    @@index([type])
+}
+
+// Session notes are written by therapists after each therapy session.
+// appointmentId is optional — staff can log sessions without a formal booking
+// (e.g. home visits, school sessions, parent training).
+model SessionNote {
+    id String @id @default(ulid())
+
+    patientId String
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+    // The person who conducted the session (staff or doctor)
+    therapistId String
+    therapist   User   @relation("SessionNoteTherapist", fields: [therapistId], references: [id], onDelete: Restrict)
+
+    treatmentPlanId String?
+    treatmentPlan   TreatmentPlan? @relation(fields: [treatmentPlanId], references: [id], onDelete: SetNull)
+
+    // Optional — links to a formal appointment if one was booked
+    appointmentId String?      @unique
+    appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+    sessionDate     DateTime
+    durationMinutes Int?
+
+    summary        String?
+    clientBehavior String?
+    nextSteps      String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    dataPoints DataPoint[]
+
+    @@index([patientId, sessionDate])
+    @@index([therapistId])
+    @@index([treatmentPlanId])
+}
+
+// Trial-by-trial data recorded during or after a session for a specific program.
+model DataPoint {
+    id String @id @default(ulid())
+
+    sessionNoteId String
+    sessionNote   SessionNote @relation(fields: [sessionNoteId], references: [id], onDelete: Cascade)
+
+    programId String
+    program   BehaviorProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+    recordingType DataRecordingType
+    response      DataResponse?
+
+    // Numeric value: percentage correct, frequency count, duration in seconds, etc.
+    value       Decimal? @db.Decimal(10, 4)
+    trialNumber Int?
+    notes       String?
+
+    recordedAt DateTime @default(now())
+
+    @@index([sessionNoteId])
+    @@index([programId])
+}
+
+model ProgressReport {
+    id String @id @default(ulid())
+
+    patientId String
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+    treatmentPlanId String?
+    treatmentPlan   TreatmentPlan? @relation(fields: [treatmentPlanId], references: [id], onDelete: SetNull)
+
+    generatedById String
+    generatedBy   User   @relation("ProgressReportGeneratedBy", fields: [generatedById], references: [id], onDelete: Restrict)
+
+    title       String
+    periodStart DateTime
+    periodEnd   DateTime
+
+    // Structured report data (goals summary, session stats, program progress)
+    content Json
+
+    status ProgressReportStatus @default(draft)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([patientId, periodStart])
+    @@index([treatmentPlanId])
+    @@index([status])
+}
+
+// Tracks approved insurance hours per authorization period.
+// usedHours is decremented manually or via session notes.
+model InsuranceAuthorization {
+    id String @id @default(ulid())
+
+    patientId String
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+    treatmentPlanId String?
+    treatmentPlan   TreatmentPlan? @relation(fields: [treatmentPlanId], references: [id], onDelete: SetNull)
+
+    insurancePlan       String
+    authorizationNumber String
+
+    startDate DateTime
+    endDate   DateTime
+
+    approvedHours Decimal @db.Decimal(8, 2)
+    usedHours     Decimal @db.Decimal(8, 2) @default(0)
+
+    status InsuranceAuthorizationStatus @default(active)
+    notes  String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([patientId, status])
+    @@index([endDate])
+}
+
+// A caregiver (parent, guardian) who is linked to view a patient's clinical data.
+// The caregiver has their own User account (patient role) and is granted read
+// access to a specific patient's treatment plans, session notes, and reports.
+model CaregiverAccess {
+    id String @id @default(ulid())
+
+    caregiverId String
+    caregiver   User   @relation("CaregiverAccessUser", fields: [caregiverId], references: [id], onDelete: Cascade)
+
+    patientId String
+    patient   PatientProfile @relation("CaregiverAccessPatient", fields: [patientId], references: [id], onDelete: Cascade)
+
+    grantedById String
+    grantedBy   User   @relation("CaregiverAccessGrantedBy", fields: [grantedById], references: [id], onDelete: Restrict)
+
+    isActive Boolean @default(true)
+
+    grantedAt  DateTime  @default(now())
+    revokedAt  DateTime?
+
+    @@unique([caregiverId, patientId])
+    @@index([caregiverId, isActive])
+    @@index([patientId])
+}
+
+// Assigns a staff member to a patient for caseload management.
+// Admin or doctor creates the assignment. Staff can only see assigned patients.
+model StaffAssignment {
+    id String @id @default(ulid())
+
+    patientId String
+    patient   PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+    staffId String
+    staff   User   @relation("StaffAssignmentStaff", fields: [staffId], references: [id], onDelete: Cascade)
+
+    assignedById String
+    assignedBy   User   @relation("StaffAssignmentAssignedBy", fields: [assignedById], references: [id], onDelete: Restrict)
+
+    isActive Boolean  @default(true)
+    notes    String?
+
+    assignedAt   DateTime  @default(now())
+    unassignedAt DateTime?
+
+    @@unique([patientId, staffId])
+    @@index([staffId, isActive])
+    @@index([patientId])
 }

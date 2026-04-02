@@ -1,13 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import {
-  CalendarDays,
-  CalendarPlus,
-  CheckCircle,
-  Clock,
-  XCircle,
-} from "lucide-react";
+import { CalendarDays, CalendarPlus, Clock } from "lucide-react";
 import { useDialog } from "@workspace/ui/hooks/use-dialog";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -20,10 +13,7 @@ import AppointmentForm from "@/components/AppointmentForm";
 import Link from "next/link";
 import { formatDate } from "@workspace/shared/utils";
 
-const statusConfig: Record<
-  string,
-  { label: string; className: string }
-> = {
+const statusConfig: Record<string, { label: string; className: string }> = {
   booked: {
     label: "Booked",
     className: "border-blue-200 bg-blue-50 text-blue-700",
@@ -50,7 +40,7 @@ export default function AppointmentsPage() {
   const { openDialog } = useDialog();
   const { data, isLoading } = useAppointments({});
 
-  const appointments = data?.items ?? [];
+  const appointments = data?.appointments ?? [];
   const upcoming = appointments.filter((a) =>
     ["booked", "confirmed"].includes(a.status),
   );

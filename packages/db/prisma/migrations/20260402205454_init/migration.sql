@@ -2,7 +2,7 @@
 CREATE TYPE "ThemeMode" AS ENUM ('light', 'dark', 'system');
 
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('admin', 'patient', 'doctor');
+CREATE TYPE "UserRole" AS ENUM ('admin', 'staff', 'doctor', 'patient');
 
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('pending', 'active', 'suspended');
@@ -32,7 +32,7 @@ CREATE TYPE "NotificationChannel" AS ENUM ('push', 'email', 'sms', 'whatsapp');
 CREATE TYPE "NotificationStatus" AS ENUM ('pending', 'partial', 'sent', 'failed');
 
 -- CreateEnum
-CREATE TYPE "NotificationPurpose" AS ENUM ('signUp', 'signIn', 'verifyMfa', 'updateMfa', 'updatePassword', 'verifyIdentifier', 'updateIdentifier', 'userStatus', 'securityAlert', 'orderStatus', 'refundStatus', 'paymentStatus', 'appointmentStatus', 'campaign', 'newChatMessage', 'appointmentReminder', 'newsletter', 'contactMessage');
+CREATE TYPE "NotificationPurpose" AS ENUM ('signUp', 'signIn', 'verifyMfa', 'updateMfa', 'updatePassword', 'verifyIdentifier', 'updateIdentifier', 'userStatus', 'securityAlert', 'orderStatus', 'refundStatus', 'paymentStatus', 'appointmentStatus', 'appointmentReminder', 'sessionNoteAdded', 'treatmentPlanUpdated', 'authorizationAlert', 'campaign', 'newChatMessage', 'newsletter', 'contactMessage');
 
 -- CreateEnum
 CREATE TYPE "MediaType" AS ENUM ('avatar', 'document', 'prescription', 'product', 'other');
@@ -59,7 +59,7 @@ CREATE TYPE "AppointmentChannel" AS ENUM ('inPerson', 'virtual');
 CREATE TYPE "AppointmentStatus" AS ENUM ('booked', 'confirmed', 'cancelled', 'completed', 'noShow');
 
 -- CreateEnum
-CREATE TYPE "AppointmentCancellationSource" AS ENUM ('patient', 'doctor', 'admin');
+CREATE TYPE "AppointmentCancellationSource" AS ENUM ('patient', 'doctor', 'admin', 'staff');
 
 -- CreateEnum
 CREATE TYPE "BookingSource" AS ENUM ('app', 'admin');
@@ -86,10 +86,37 @@ CREATE TYPE "RefundStatus" AS ENUM ('pending', 'processed', 'rejected');
 CREATE TYPE "CampaignStatus" AS ENUM ('draft', 'scheduled', 'sent', 'failed');
 
 -- CreateEnum
-CREATE TYPE "CampaignAudience" AS ENUM ('allUsers', 'patients', 'doctors', 'custom');
+CREATE TYPE "CampaignAudience" AS ENUM ('allUsers', 'patients', 'doctors', 'staff', 'custom');
 
 -- CreateEnum
 CREATE TYPE "DoctorVerificationStatus" AS ENUM ('pending', 'verified', 'rejected');
+
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded');
+
+-- CreateEnum
+CREATE TYPE "DeliveryType" AS ENUM ('delivery', 'pickup');
+
+-- CreateEnum
+CREATE TYPE "TreatmentPlanStatus" AS ENUM ('draft', 'active', 'completed', 'discontinued');
+
+-- CreateEnum
+CREATE TYPE "ProgramType" AS ENUM ('skillAcquisition', 'behaviorReduction');
+
+-- CreateEnum
+CREATE TYPE "ProgramStatus" AS ENUM ('active', 'mastered', 'onHold', 'discontinued');
+
+-- CreateEnum
+CREATE TYPE "DataRecordingType" AS ENUM ('discreteTrial', 'intervalRecording', 'frequencyRate', 'duration');
+
+-- CreateEnum
+CREATE TYPE "DataResponse" AS ENUM ('correct', 'incorrect', 'prompted', 'noResponse');
+
+-- CreateEnum
+CREATE TYPE "ProgressReportStatus" AS ENUM ('draft', 'published');
+
+-- CreateEnum
+CREATE TYPE "InsuranceAuthorizationStatus" AS ENUM ('active', 'expired', 'exhausted');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -295,6 +322,22 @@ CREATE TABLE "DoctorProfile" (
 );
 
 -- CreateTable
+CREATE TABLE "StaffProfile" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "branchId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "specialty" TEXT,
+    "bio" TEXT,
+    "credentials" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "StaffProfile_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "DoctorAvailability" (
     "id" TEXT NOT NULL,
     "doctorId" TEXT NOT NULL,
@@ -397,6 +440,7 @@ CREATE TABLE "MessageAttachment" (
 CREATE TABLE "Payment" (
     "id" TEXT NOT NULL,
     "appointmentId" TEXT,
+    "orderId" TEXT,
     "provider" "PaymentProvider" NOT NULL,
     "methodType" "PaymentMethodType" NOT NULL,
     "status" "PaymentStatus" NOT NULL DEFAULT 'pending',
@@ -546,6 +590,229 @@ CREATE TABLE "BusinessProfile" (
     CONSTRAINT "BusinessProfile_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "ProductCategory" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "description" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProductCategory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Product" (
+    "id" TEXT NOT NULL,
+    "categoryId" TEXT,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "description" TEXT,
+    "price" DECIMAL(10,2) NOT NULL,
+    "compareAtPrice" DECIMAL(10,2),
+    "stockCount" INTEGER NOT NULL DEFAULT 0,
+    "requiresShipping" BOOLEAN NOT NULL DEFAULT true,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductImage" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "mediaId" TEXT NOT NULL,
+    "position" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProductImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CartItem" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 1,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CartItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Order" (
+    "id" TEXT NOT NULL,
+    "orderNumber" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "status" "OrderStatus" NOT NULL DEFAULT 'pending',
+    "deliveryType" "DeliveryType" NOT NULL DEFAULT 'delivery',
+    "shippingName" TEXT,
+    "shippingPhone" VARCHAR(20),
+    "shippingStreet" TEXT,
+    "shippingCity" TEXT,
+    "shippingState" TEXT,
+    "shippingPostalCode" TEXT,
+    "shippingCountry" TEXT,
+    "subtotal" DECIMAL(10,2) NOT NULL,
+    "shippingCost" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "total" DECIMAL(10,2) NOT NULL,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItem" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "productId" TEXT,
+    "productName" TEXT NOT NULL,
+    "unitPrice" DECIMAL(10,2) NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "totalPrice" DECIMAL(10,2) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TreatmentPlan" (
+    "id" TEXT NOT NULL,
+    "patientId" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "doctorId" TEXT,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "goals" TEXT,
+    "status" "TreatmentPlanStatus" NOT NULL DEFAULT 'draft',
+    "startDate" TIMESTAMP(3),
+    "endDate" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TreatmentPlan_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BehaviorProgram" (
+    "id" TEXT NOT NULL,
+    "treatmentPlanId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "type" "ProgramType" NOT NULL,
+    "status" "ProgramStatus" NOT NULL DEFAULT 'active',
+    "masteryDefinition" TEXT,
+    "baselineData" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BehaviorProgram_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SessionNote" (
+    "id" TEXT NOT NULL,
+    "patientId" TEXT NOT NULL,
+    "therapistId" TEXT NOT NULL,
+    "treatmentPlanId" TEXT,
+    "appointmentId" TEXT,
+    "sessionDate" TIMESTAMP(3) NOT NULL,
+    "durationMinutes" INTEGER,
+    "summary" TEXT,
+    "clientBehavior" TEXT,
+    "nextSteps" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SessionNote_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DataPoint" (
+    "id" TEXT NOT NULL,
+    "sessionNoteId" TEXT NOT NULL,
+    "programId" TEXT NOT NULL,
+    "recordingType" "DataRecordingType" NOT NULL,
+    "response" "DataResponse",
+    "value" DECIMAL(10,4),
+    "trialNumber" INTEGER,
+    "notes" TEXT,
+    "recordedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DataPoint_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProgressReport" (
+    "id" TEXT NOT NULL,
+    "patientId" TEXT NOT NULL,
+    "treatmentPlanId" TEXT,
+    "generatedById" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "periodStart" TIMESTAMP(3) NOT NULL,
+    "periodEnd" TIMESTAMP(3) NOT NULL,
+    "content" JSONB NOT NULL,
+    "status" "ProgressReportStatus" NOT NULL DEFAULT 'draft',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProgressReport_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "InsuranceAuthorization" (
+    "id" TEXT NOT NULL,
+    "patientId" TEXT NOT NULL,
+    "treatmentPlanId" TEXT,
+    "insurancePlan" TEXT NOT NULL,
+    "authorizationNumber" TEXT NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "approvedHours" DECIMAL(8,2) NOT NULL,
+    "usedHours" DECIMAL(8,2) NOT NULL DEFAULT 0,
+    "status" "InsuranceAuthorizationStatus" NOT NULL DEFAULT 'active',
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "InsuranceAuthorization_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CaregiverAccess" (
+    "id" TEXT NOT NULL,
+    "caregiverId" TEXT NOT NULL,
+    "patientId" TEXT NOT NULL,
+    "grantedById" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "grantedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revokedAt" TIMESTAMP(3),
+
+    CONSTRAINT "CaregiverAccess_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StaffAssignment" (
+    "id" TEXT NOT NULL,
+    "patientId" TEXT NOT NULL,
+    "staffId" TEXT NOT NULL,
+    "assignedById" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "notes" TEXT,
+    "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "unassignedAt" TIMESTAMP(3),
+
+    CONSTRAINT "StaffAssignment_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -643,6 +910,15 @@ CREATE INDEX "DoctorProfile_verificationStatus_idx" ON "DoctorProfile"("verifica
 CREATE INDEX "DoctorProfile_isAvailable_idx" ON "DoctorProfile"("isAvailable");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "StaffProfile_userId_key" ON "StaffProfile"("userId");
+
+-- CreateIndex
+CREATE INDEX "StaffProfile_branchId_idx" ON "StaffProfile"("branchId");
+
+-- CreateIndex
+CREATE INDEX "StaffProfile_isActive_idx" ON "StaffProfile"("isActive");
+
+-- CreateIndex
 CREATE INDEX "DoctorAvailability_doctorId_weekday_isActive_idx" ON "DoctorAvailability"("doctorId", "weekday", "isActive");
 
 -- CreateIndex
@@ -695,6 +971,9 @@ CREATE UNIQUE INDEX "MessageAttachment_messageId_mediaId_key" ON "MessageAttachm
 
 -- CreateIndex
 CREATE INDEX "Payment_appointmentId_createdAt_idx" ON "Payment"("appointmentId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "Payment_orderId_createdAt_idx" ON "Payment"("orderId", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "Payment_status_createdAt_idx" ON "Payment"("status", "createdAt");
@@ -750,6 +1029,114 @@ CREATE INDEX "Branch_latitude_longitude_idx" ON "Branch"("latitude", "longitude"
 -- CreateIndex
 CREATE INDEX "Branch_businessProfileId_isActive_idx" ON "Branch"("businessProfileId", "isActive");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductCategory_slug_key" ON "ProductCategory"("slug");
+
+-- CreateIndex
+CREATE INDEX "ProductCategory_isActive_idx" ON "ProductCategory"("isActive");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
+
+-- CreateIndex
+CREATE INDEX "Product_categoryId_idx" ON "Product"("categoryId");
+
+-- CreateIndex
+CREATE INDEX "Product_isActive_idx" ON "Product"("isActive");
+
+-- CreateIndex
+CREATE INDEX "Product_deletedAt_idx" ON "Product"("deletedAt");
+
+-- CreateIndex
+CREATE INDEX "ProductImage_productId_position_idx" ON "ProductImage"("productId", "position");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductImage_productId_mediaId_key" ON "ProductImage"("productId", "mediaId");
+
+-- CreateIndex
+CREATE INDEX "CartItem_userId_idx" ON "CartItem"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CartItem_userId_productId_key" ON "CartItem"("userId", "productId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Order_orderNumber_key" ON "Order"("orderNumber");
+
+-- CreateIndex
+CREATE INDEX "Order_userId_createdAt_idx" ON "Order"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "Order_status_createdAt_idx" ON "Order"("status", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+
+-- CreateIndex
+CREATE INDEX "OrderItem_productId_idx" ON "OrderItem"("productId");
+
+-- CreateIndex
+CREATE INDEX "TreatmentPlan_patientId_status_idx" ON "TreatmentPlan"("patientId", "status");
+
+-- CreateIndex
+CREATE INDEX "TreatmentPlan_createdById_idx" ON "TreatmentPlan"("createdById");
+
+-- CreateIndex
+CREATE INDEX "BehaviorProgram_treatmentPlanId_status_idx" ON "BehaviorProgram"("treatmentPlanId", "status");
+
+-- CreateIndex
+CREATE INDEX "BehaviorProgram_type_idx" ON "BehaviorProgram"("type");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SessionNote_appointmentId_key" ON "SessionNote"("appointmentId");
+
+-- CreateIndex
+CREATE INDEX "SessionNote_patientId_sessionDate_idx" ON "SessionNote"("patientId", "sessionDate");
+
+-- CreateIndex
+CREATE INDEX "SessionNote_therapistId_idx" ON "SessionNote"("therapistId");
+
+-- CreateIndex
+CREATE INDEX "SessionNote_treatmentPlanId_idx" ON "SessionNote"("treatmentPlanId");
+
+-- CreateIndex
+CREATE INDEX "DataPoint_sessionNoteId_idx" ON "DataPoint"("sessionNoteId");
+
+-- CreateIndex
+CREATE INDEX "DataPoint_programId_idx" ON "DataPoint"("programId");
+
+-- CreateIndex
+CREATE INDEX "ProgressReport_patientId_periodStart_idx" ON "ProgressReport"("patientId", "periodStart");
+
+-- CreateIndex
+CREATE INDEX "ProgressReport_treatmentPlanId_idx" ON "ProgressReport"("treatmentPlanId");
+
+-- CreateIndex
+CREATE INDEX "ProgressReport_status_idx" ON "ProgressReport"("status");
+
+-- CreateIndex
+CREATE INDEX "InsuranceAuthorization_patientId_status_idx" ON "InsuranceAuthorization"("patientId", "status");
+
+-- CreateIndex
+CREATE INDEX "InsuranceAuthorization_endDate_idx" ON "InsuranceAuthorization"("endDate");
+
+-- CreateIndex
+CREATE INDEX "CaregiverAccess_caregiverId_isActive_idx" ON "CaregiverAccess"("caregiverId", "isActive");
+
+-- CreateIndex
+CREATE INDEX "CaregiverAccess_patientId_idx" ON "CaregiverAccess"("patientId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CaregiverAccess_caregiverId_patientId_key" ON "CaregiverAccess"("caregiverId", "patientId");
+
+-- CreateIndex
+CREATE INDEX "StaffAssignment_staffId_isActive_idx" ON "StaffAssignment"("staffId", "isActive");
+
+-- CreateIndex
+CREATE INDEX "StaffAssignment_patientId_idx" ON "StaffAssignment"("patientId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "StaffAssignment_patientId_staffId_key" ON "StaffAssignment"("patientId", "staffId");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_avatarId_fkey" FOREIGN KEY ("avatarId") REFERENCES "Media"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -799,6 +1186,12 @@ ALTER TABLE "DoctorProfile" ADD CONSTRAINT "DoctorProfile_verifiedById_fkey" FOR
 ALTER TABLE "DoctorProfile" ADD CONSTRAINT "DoctorProfile_licenseDocumentId_fkey" FOREIGN KEY ("licenseDocumentId") REFERENCES "Media"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "StaffProfile" ADD CONSTRAINT "StaffProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StaffProfile" ADD CONSTRAINT "StaffProfile_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES "Branch"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "DoctorAvailability" ADD CONSTRAINT "DoctorAvailability_doctorId_fkey" FOREIGN KEY ("doctorId") REFERENCES "DoctorProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -844,6 +1237,9 @@ ALTER TABLE "MessageAttachment" ADD CONSTRAINT "MessageAttachment_mediaId_fkey" 
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Refund" ADD CONSTRAINT "Refund_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "Payment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -869,3 +1265,90 @@ ALTER TABLE "BusinessProfile" ADD CONSTRAINT "BusinessProfile_logoId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "BusinessProfile" ADD CONSTRAINT "BusinessProfile_coverId_fkey" FOREIGN KEY ("coverId") REFERENCES "Media"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ProductCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_mediaId_fkey" FOREIGN KEY ("mediaId") REFERENCES "Media"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TreatmentPlan" ADD CONSTRAINT "TreatmentPlan_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TreatmentPlan" ADD CONSTRAINT "TreatmentPlan_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TreatmentPlan" ADD CONSTRAINT "TreatmentPlan_doctorId_fkey" FOREIGN KEY ("doctorId") REFERENCES "DoctorProfile"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BehaviorProgram" ADD CONSTRAINT "BehaviorProgram_treatmentPlanId_fkey" FOREIGN KEY ("treatmentPlanId") REFERENCES "TreatmentPlan"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SessionNote" ADD CONSTRAINT "SessionNote_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SessionNote" ADD CONSTRAINT "SessionNote_therapistId_fkey" FOREIGN KEY ("therapistId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SessionNote" ADD CONSTRAINT "SessionNote_treatmentPlanId_fkey" FOREIGN KEY ("treatmentPlanId") REFERENCES "TreatmentPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SessionNote" ADD CONSTRAINT "SessionNote_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DataPoint" ADD CONSTRAINT "DataPoint_sessionNoteId_fkey" FOREIGN KEY ("sessionNoteId") REFERENCES "SessionNote"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DataPoint" ADD CONSTRAINT "DataPoint_programId_fkey" FOREIGN KEY ("programId") REFERENCES "BehaviorProgram"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProgressReport" ADD CONSTRAINT "ProgressReport_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProgressReport" ADD CONSTRAINT "ProgressReport_treatmentPlanId_fkey" FOREIGN KEY ("treatmentPlanId") REFERENCES "TreatmentPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProgressReport" ADD CONSTRAINT "ProgressReport_generatedById_fkey" FOREIGN KEY ("generatedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InsuranceAuthorization" ADD CONSTRAINT "InsuranceAuthorization_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InsuranceAuthorization" ADD CONSTRAINT "InsuranceAuthorization_treatmentPlanId_fkey" FOREIGN KEY ("treatmentPlanId") REFERENCES "TreatmentPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CaregiverAccess" ADD CONSTRAINT "CaregiverAccess_caregiverId_fkey" FOREIGN KEY ("caregiverId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CaregiverAccess" ADD CONSTRAINT "CaregiverAccess_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CaregiverAccess" ADD CONSTRAINT "CaregiverAccess_grantedById_fkey" FOREIGN KEY ("grantedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StaffAssignment" ADD CONSTRAINT "StaffAssignment_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StaffAssignment" ADD CONSTRAINT "StaffAssignment_staffId_fkey" FOREIGN KEY ("staffId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StaffAssignment" ADD CONSTRAINT "StaffAssignment_assignedById_fkey" FOREIGN KEY ("assignedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

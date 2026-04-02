@@ -24,4 +24,7 @@ export const emailTemplateMap: Record<
   campaign: emailTemplates.Campaign,
   newsletter: emailTemplates.Newsletter,
   contactMessage: emailTemplates.ContactMessage,
+  authorizationAlert: emailTemplates.ContactMessage,
+  sessionNoteAdded: emailTemplates.ContactMessage,
+  treatmentPlanUpdated: emailTemplates.ContactMessage,
 };
