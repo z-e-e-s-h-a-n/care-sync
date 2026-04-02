@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-
-import { IconLogout } from "@tabler/icons-react";
-
-import useUser from "@workspace/ui/hooks/use-user";
+import { Dot, HeartPulse, Menu } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
+import Link from "next/link";
+import { headerMenu, userMenu } from "@/lib/constants";
+import { redirect, usePathname } from "next/navigation";
+import { cn } from "@workspace/ui/lib/utils";
+import useUser from "@workspace/ui/hooks/use-user";
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -13,22 +14,18 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import UserCard from "@workspace/ui/shared/UserCard";
-import Logo from "@workspace/ui/shared/Logo";
-import { headerMenu, userMenu } from "@/lib/constants";
 import DropdownNav from "@workspace/ui/shared/DropdownNav";
+import { IconLogout } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { redirect } from "next/navigation";
-import { Bell } from "lucide-react";
-import { Badge } from "@workspace/ui/components/badge";
-import ThemeSwitch from "@workspace/ui/components/theme-toggle";
-import { useNotifications } from "@workspace/ui/hooks/use-notification";
-import HeaderActionsSkeleton from "./skeletons/HeaderActions";
+import { useDialog } from "@workspace/ui/hooks/use-dialog";
+import AppointmentForm from "./AppointmentForm";
 
 const Header = () => {
+  const pathname = usePathname();
+  const { openDialog } = useDialog();
+
   const { currentUser, isLoading, logoutUser, isLogoutPending, logoutError } =
     useUser();
-
-  const { unreadCount } = useNotifications(!!currentUser);
 
   const logout = async () => {
     await logoutUser();
@@ -40,85 +37,86 @@ const Header = () => {
   };
 
   return (
-    <header className="section-wrapper sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur py-2">
-      <div className="section-container flex items-center justify-between gap-6">
-        <Logo />
+    <header className="sticky top-0 z-50 pt-5">
+      <div className="section">
+        <div className="flex items-center justify-between rounded-full border border-card/70 bg-card/70 px-4 py-3 shadow-card backdrop-blur md:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+              <HeartPulse className="h-5 w-5" />
+            </div>
+            <span className="text-lg font-semibold tracking-tight">MedMe</span>
+          </div>
 
-        <nav className="hidden items-center gap-5 lg:flex">
-          {headerMenu.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+          <nav className="hidden items-center gap-6 lg:flex">
+            {headerMenu.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground",
+                    isActive && "font-medium text-primary",
+                  )}
+                >
+                  {isActive && (
+                    <div className="size-1.5 bg-primary rounded-full" />
+                  )}
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
 
-        <div className="flex items-center gap-3">
-          {currentUser && (
+          <div className="flex items-center gap-3">
             <Button
-              href="/user/notifications"
-              aria-label="Open notifications"
-              variant="ghost"
-              size="icon"
-              className="relative"
+              variant="gradient"
+              className="cta-pluse"
+              onClick={() =>
+                openDialog({
+                  title: "Book Appointment",
+                  content: <AppointmentForm />,
+                })
+              }
             >
-              <Bell className="size-5" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -right-1 -top-1 min-w-5 px-1.5 text-[10px]">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </Badge>
-              )}
+              Book Appointment
             </Button>
-          )}
-          {!isLoading && <ThemeSwitch variant="classic" />}
-          {currentUser ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <UserCard
-                  variant="avatar"
-                  currentUser={currentUser}
-                  isLoading={isLoading}
-                  avatarSize="size-12"
-                />
-              </DropdownMenuTrigger>
-              <DropdownNav
-                groups={userMenu}
-                header={
-                  <DropdownMenuLabel className="p-0 font-normal">
-                    <UserCard currentUser={currentUser} isLoading={isLoading} />
-                  </DropdownMenuLabel>
-                }
-                footer={
-                  <DropdownMenuItem
-                    disabled={isLogoutPending}
-                    onClick={logout}
-                    className="cursor-pointer"
-                  >
-                    <IconLogout />
-                    Log out
-                  </DropdownMenuItem>
-                }
-              />
-            </DropdownMenu>
-          ) : isLoading ? (
-            <HeaderActionsSkeleton />
-          ) : (
-            <>
-              <div className="hidden sm:flex gap-2">
-                <Button href="/auth/sign-in" variant="ghost">
-                  Sign in
-                </Button>
-                <Button href="/auth/sign-up">Create account</Button>
-              </div>
-
-              <Button href="/auth/sign-in" className="sm:hidden">
-                Sign in
-              </Button>
-            </>
-          )}
+            {currentUser && (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <UserCard
+                      variant="avatar"
+                      currentUser={currentUser}
+                      isLoading={isLoading}
+                      avatarSize="size-12"
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownNav
+                    groups={userMenu}
+                    header={
+                      <DropdownMenuLabel className="p-0 font-normal">
+                        <UserCard
+                          currentUser={currentUser}
+                          isLoading={isLoading}
+                        />
+                      </DropdownMenuLabel>
+                    }
+                    footer={
+                      <DropdownMenuItem
+                        disabled={isLogoutPending}
+                        onClick={logout}
+                        className="cursor-pointer"
+                      >
+                        <IconLogout />
+                        Log out
+                      </DropdownMenuItem>
+                    }
+                  />
+                </DropdownMenu>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </header>

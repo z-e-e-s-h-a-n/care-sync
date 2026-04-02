@@ -1,12 +1,12 @@
 import "@workspace/ui/globals.css";
-import { Inter, Poppins } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import ProviderWrapper from "@workspace/ui/provider-wrapper";
 import type { AppLayoutProps } from "@workspace/contracts";
 
-const primaryFont = Poppins({
+const primaryFont = Plus_Jakarta_Sans({
   variable: "--font-primary",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const secondaryFont = Inter({

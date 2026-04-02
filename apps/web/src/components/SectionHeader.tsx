@@ -1,34 +1,47 @@
-import { Button } from "@workspace/ui/components/button";
-import React from "react";
+import { cn } from "@workspace/ui/lib/utils";
 
 interface SectionHeaderProps {
-  subtitle: string;
   title: string;
   description?: string;
-  href?: string;
+  className?: string;
+  align?: "default" | "center";
 }
 
 const SectionHeader = ({
-  subtitle,
   title,
-  href,
   description,
+  className,
+  align = "default",
 }: SectionHeaderProps) => {
+  const isCenter = align === "center";
+
   return (
-    <div className="mb-8 flex items-end justify-between gap-4">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-teal-700">
-          {subtitle}
-        </p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight">{title}</h2>
-        {description && (
-          <p className="text-foreground/50 mt-2">{description}</p>
+    <div
+      className={cn(
+        isCenter
+          ? "flex flex-col items-center text-center gap-4"
+          : "grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-end",
+        className,
+      )}
+    >
+      <h2
+        className={cn(
+          "max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl",
+          isCenter && "mx-auto",
         )}
-      </div>
-      {href && (
-        <Button href={href} variant="ghost">
-          View all
-        </Button>
+      >
+        {title}
+      </h2>
+
+      {description && (
+        <p
+          className={cn(
+            "max-w-xl text-sm leading-7 text-muted-foreground sm:text-base",
+            isCenter && "mx-auto",
+          )}
+        >
+          {description}
+        </p>
       )}
     </div>
   );

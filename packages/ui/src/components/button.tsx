@@ -6,7 +6,7 @@ import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-4xl text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
   {
     variants: {
       variant: {
@@ -17,11 +17,11 @@ const buttonVariants = cva(
         warning: "",
         info: "",
         outline:
-          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-transparent shadow-xs hover:bg-accent/10",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         gradient:
-          "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xs hover:opacity-90 cta-shine",
+          "bg-gradient-to-br from-primary via-primary/50 to-primary/80 text-primary-foreground shadow-xs hover:opacity-90 cta-shine",
       },
       appearance: {
         solid: "",
@@ -29,8 +29,8 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        sm: "h-8 rounded-4xl gap-1.5 px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-4xl px-6 has-[>svg]:px-4",
         icon: "size-9 rounded-full",
       },
     },
@@ -111,52 +111,6 @@ const buttonVariants = cva(
         variant: "info",
         appearance: "soft",
         className: "bg-info/10 text-info hover:bg-info/15",
-      },
-
-      // ignore appearance
-      {
-        variant: "outline",
-        appearance: "solid",
-        className:
-          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
-      },
-      {
-        variant: "outline",
-        appearance: "soft",
-        className:
-          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
-      },
-      {
-        variant: "ghost",
-        appearance: "solid",
-        className: "hover:bg-accent hover:text-accent-foreground",
-      },
-      {
-        variant: "ghost",
-        appearance: "soft",
-        className: "hover:bg-accent hover:text-accent-foreground",
-      },
-      {
-        variant: "link",
-        appearance: "solid",
-        className: "text-primary underline-offset-4 hover:underline",
-      },
-      {
-        variant: "link",
-        appearance: "soft",
-        className: "text-primary underline-offset-4 hover:underline",
-      },
-      {
-        variant: "gradient",
-        appearance: "solid",
-        className:
-          "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xs hover:opacity-90",
-      },
-      {
-        variant: "gradient",
-        appearance: "soft",
-        className:
-          "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xs hover:opacity-90",
       },
     ],
     defaultVariants: {

@@ -10,8 +10,11 @@ import type { NavGroup } from "@workspace/contracts";
 
 export const headerMenu = [
   { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/services", label: "Services" },
   { href: "/doctors", label: "Doctors" },
-  { href: "/store", label: "Store" },
+  { href: "/resources", label: "Resources" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export const userMenu: NavGroup[] = [
