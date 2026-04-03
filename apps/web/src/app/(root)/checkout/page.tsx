@@ -198,12 +198,6 @@ function IdentitySection({
         placeholder="jane@example.com"
         disabled={isLoggedIn}
       />
-      <InputField
-        form={form}
-        name="phone"
-        label="Phone"
-        placeholder="+1 555 000 0000"
-      />
     </FormSection>
   );
 }
@@ -255,7 +249,8 @@ function CheckoutForm() {
       try {
         const result = await placeOrder({
           ...value,
-          phone: (value.phone ?? "").trim(),
+          phone: (value.shippingPhone ?? "").trim(),
+          shippingPhone: (value.shippingPhone ?? "").trim(),
           items: isLoggedIn ? undefined : checkoutItems,
         });
 
@@ -273,7 +268,6 @@ function CheckoutForm() {
     form.setFieldValue("email", currentUser.email ?? "");
     form.setFieldValue("firstName", currentUser.firstName ?? "");
     form.setFieldValue("lastName", currentUser.lastName ?? "");
-    form.setFieldValue("phone", currentUser.phone ?? "");
     form.setFieldValue("shippingName", currentUser.displayName ?? "");
     form.setFieldValue("shippingPhone", currentUser.phone ?? "");
   }, [currentUser, form]);
@@ -313,9 +307,24 @@ function CheckoutForm() {
         {deliveryType === "delivery" && (
           <FormSection
             title="Shipping Address"
-            description="Enter the address where we should deliver your order."
+            description="Enter the address and phone number we should use for this order."
           >
             {addressFields(form)}
+          </FormSection>
+        )}
+
+        {deliveryType === "pickup" && (
+          <FormSection
+            title="Order Contact"
+            description="Add the best phone number to use for pickup updates."
+          >
+            <InputField
+              form={form}
+              name="shippingPhone"
+              label="Phone Number"
+              placeholder="+1 555 000 0000"
+              className="md:col-span-2"
+            />
           </FormSection>
         )}
 

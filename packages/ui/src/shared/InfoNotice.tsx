@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import { cn } from "../lib/utils";
 
 type InfoNoticeProps = {
-  message: string;
-  variant?: "warning" | "info" | "error";
+  message: ReactNode;
+  variant?: "warning" | "info" | "error" | "success" | "default";
   className?: string;
 };
 
