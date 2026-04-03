@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import { useQueries } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import * as product from "@workspace/sdk/product";
 import { Button } from "@workspace/ui/components/button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import SectionCard from "@workspace/ui/shared/SectionCard";
@@ -18,6 +20,9 @@ import {
   useShopProduct,
 } from "@/hooks/healthcare";
 import { useLocalCart } from "@/hooks/use-local-cart";
+import { parseDuration } from "@workspace/shared/utils";
+
+const STALE_TIME = parseDuration("10m");
 
 function formatAmount(amount: number | string) {
   return new Intl.NumberFormat("en-US", {
@@ -288,7 +293,40 @@ export default function CartPage() {
   }
 
   // Guest: show localStorage cart
-  const localSubtotal = 0; // calculated per-row from products
+  const guestSummaryQueries = useQueries({
+    queries: localItems.map((item) => ({
+      queryKey: ["products", item.productId],
+      queryFn: () => product.getProduct(item.productId),
+      select: (res: Awaited<ReturnType<typeof product.getProduct>>) => res.data,
+      staleTime: STALE_TIME,
+      gcTime: STALE_TIME,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: false,
+      enabled: localItems.length > 0,
+    })),
+  });
+
+  const guestSummaryItems = localItems
+    .map((item, index) => {
+      const productData = guestSummaryQueries[index]?.data;
+      if (!productData) return null;
+
+      return {
+        name: productData.name,
+        quantity: item.quantity,
+        price: Number(productData.price) * item.quantity,
+      };
+    })
+    .filter((item): item is { name: string; quantity: number; price: number } =>
+      item !== null,
+    );
+
+  const localSubtotal = guestSummaryItems.reduce(
+    (sum, item) => sum + item.price,
+    0,
+  );
+  const isGuestSummaryLoading = guestSummaryQueries.some((query) => query.isLoading);
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -314,7 +352,15 @@ export default function CartPage() {
               />
             ))}
           </SectionCard>
-          <LocalCartSummaryPanel items={localItems} />
+          {isGuestSummaryLoading ? (
+            <LocalCartSummaryPanel />
+          ) : (
+            <CartSummaryPanel
+              items={guestSummaryItems}
+              subtotal={localSubtotal}
+              checkoutHref="/checkout"
+            />
+          )}
         </div>
       )}
     </div>
@@ -381,11 +427,7 @@ function CartSummaryPanel({
   );
 }
 
-function LocalCartSummaryPanel({
-  items,
-}: {
-  items: { productId: string; quantity: number }[];
-}) {
+function LocalCartSummaryPanel() {
   return (
     <div className="space-y-4">
       <SectionCard title="Order Summary" contentClassName="space-y-3" className="shadow-sm">
