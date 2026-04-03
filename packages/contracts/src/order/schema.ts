@@ -18,11 +18,15 @@ import {
 
 export const addToCartSchema = z.object({
   productId: idSchema,
-  quantity: positiveIntSchema.default(1),
+  quantity: positiveIntSchema,
 });
 
 export const updateCartItemSchema = z.object({
   quantity: positiveIntSchema,
+});
+
+export const syncCartSchema = z.object({
+  items: z.array(addToCartSchema).default([]),
 });
 
 const orderAddressSchema = {

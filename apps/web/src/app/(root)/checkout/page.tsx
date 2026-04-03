@@ -4,14 +4,12 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useStore } from "@tanstack/react-form";
-import { useQueries } from "@tanstack/react-query";
 import { ChevronLeft, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import {
   checkoutSchema,
   type CheckoutType,
 } from "@workspace/contracts/order";
-import * as productSdk from "@workspace/sdk/product";
 import { formatPrice } from "@workspace/shared/utils";
 import { Button } from "@workspace/ui/components/button";
 import { Form, FormSection } from "@workspace/ui/components/form";
@@ -22,8 +20,8 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import useUser from "@workspace/ui/hooks/use-user";
 import { InfoNotice } from "@workspace/ui/shared/InfoNotice";
 import SectionCard from "@workspace/ui/shared/SectionCard";
-import { usePlaceOrder, useServerCart } from "@/hooks/healthcare";
-import { clearLocalCart, useLocalCart } from "@/hooks/use-local-cart";
+import { usePlaceOrder } from "@/hooks/healthcare";
+import { useCart } from "@/hooks/use-cart";
 
 const deliveryTypeOptions = [
   { label: "Delivery — Ship to my address", value: "delivery" },
@@ -90,56 +88,31 @@ function EmptyCartState() {
   );
 }
 
-function GuestCheckoutSummary({
+function OrderSummary({
   items,
+  subtotal,
 }: {
-  items: { productId: string; quantity: number }[];
-}) {
-  const productQueries = useQueries({
-    queries: items.map((item) => ({
-      queryKey: ["products", item.productId],
-      queryFn: () => productSdk.getProduct(item.productId),
-      select: (res: Awaited<ReturnType<typeof productSdk.getProduct>>) =>
-        res.data,
-    })),
-  });
-
-  if (productQueries.some((query) => query.isLoading)) {
-    return <Skeleton className="h-56 rounded-xl" />;
-  }
-
-  const summaryItems = productQueries
-    .map((query, index) =>
-      query.data
-        ? {
-            id: query.data.id,
-            name: query.data.name,
-            quantity: items[index]?.quantity ?? 0,
-            total: query.data.sellPrice * (items[index]?.quantity ?? 0),
-          }
-        : null,
-    )
-    .filter(Boolean) as {
-    id: string;
-    name: string;
+  items: {
+    productId: string;
     quantity: number;
-    total: number;
+    product: { name: string; sellPrice: number };
   }[];
-
-  const subtotal = summaryItems.reduce((sum, item) => sum + item.total, 0);
-
+  subtotal: number;
+}) {
   return (
     <SectionCard
       title="Order Summary"
       contentClassName="space-y-3"
       className="shadow-sm"
     >
-      {summaryItems.map((item) => (
-        <div key={item.id} className="flex justify-between text-sm">
-          <span className="text-muted-foreground line-clamp-1 flex-1 pr-2">
-            {item.name} × {item.quantity}
+      {items.map((item) => (
+        <div key={item.productId} className="flex justify-between text-sm">
+          <span className="flex-1 pr-2 text-muted-foreground line-clamp-1">
+            {item.product.name} × {item.quantity}
           </span>
-          <span className="shrink-0 font-medium">{formatPrice(item.total)}</span>
+          <span className="shrink-0 font-medium">
+            {formatPrice(item.product.sellPrice * item.quantity)}
+          </span>
         </div>
       ))}
       <Separator />
@@ -205,22 +178,16 @@ function IdentitySection({
 function CheckoutForm() {
   const router = useRouter();
   const { currentUser, isLoading: userLoading } = useUser();
-  const isLoggedIn = Boolean(currentUser);
-  const { items: localItems, count } = useLocalCart();
-  const { data: serverCart, isLoading: cartLoading } = useServerCart(isLoggedIn);
+  const {
+    items,
+    displayItems,
+    count,
+    subtotal,
+    isLoggedIn,
+    isLoading,
+    clearCart,
+  } = useCart();
   const { placeOrder, isPending } = usePlaceOrder();
-
-  const serverItems = serverCart?.items ?? [];
-  const checkoutItems = isLoggedIn
-    ? serverItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      }))
-    : localItems;
-  const subtotal = serverItems.reduce(
-    (sum, item) => sum + item.product.sellPrice * item.quantity,
-    0,
-  );
 
   const form = useForm({
     defaultValues: {
@@ -241,7 +208,7 @@ function CheckoutForm() {
     } as CheckoutType,
     validators: { onSubmit: checkoutSchema },
     onSubmit: async ({ value }) => {
-      if (!checkoutItems.length) {
+      if (!items.length) {
         toast.error("Your cart is empty.");
         return;
       }
@@ -251,10 +218,10 @@ function CheckoutForm() {
           ...value,
           phone: (value.shippingPhone ?? "").trim(),
           shippingPhone: (value.shippingPhone ?? "").trim(),
-          items: isLoggedIn ? undefined : checkoutItems,
+          items: isLoggedIn ? undefined : items,
         });
 
-        if (!isLoggedIn) clearLocalCart();
+        await clearCart();
         router.push(`/checkout/success?orderId=${result.data.id}`);
       } catch (error: any) {
         toast.error("Could not place order", { description: error?.message });
@@ -274,7 +241,7 @@ function CheckoutForm() {
 
   const deliveryType = useStore(form.store, (state) => state.values.deliveryType);
 
-  if (userLoading || (isLoggedIn && cartLoading)) {
+  if (userLoading || isLoading) {
     return (
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <Skeleton className="h-80 rounded-xl" />
@@ -283,7 +250,7 @@ function CheckoutForm() {
     );
   }
 
-  if (!count && !serverItems.length) return <EmptyCartState />;
+  if (!count || !displayItems.length) return <EmptyCartState />;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -367,40 +334,7 @@ function CheckoutForm() {
         </div>
       </Form>
 
-      {isLoggedIn ? (
-        <SectionCard
-          title="Order Summary"
-          contentClassName="space-y-3"
-          className="shadow-sm"
-        >
-          {serverItems.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-muted-foreground line-clamp-1 flex-1 pr-2">
-                {item.product.name} × {item.quantity}
-              </span>
-              <span className="shrink-0 font-medium">
-                {formatPrice(item.product.sellPrice * item.quantity)}
-              </span>
-            </div>
-          ))}
-          <Separator />
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-medium">{formatPrice(subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Shipping</span>
-            <span className="text-muted-foreground">TBD</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between font-semibold">
-            <span>Estimated Total</span>
-            <span>{formatPrice(subtotal)}</span>
-          </div>
-        </SectionCard>
-      ) : (
-        <GuestCheckoutSummary items={checkoutItems} />
-      )}
+      <OrderSummary items={displayItems} subtotal={subtotal} />
     </div>
   );
 }
@@ -410,7 +344,7 @@ export default function CheckoutPage() {
     <div className="container mx-auto space-y-6 p-6">
       <Link
         href="/cart"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronLeft className="size-4" />
         Back to Cart
@@ -427,4 +361,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-

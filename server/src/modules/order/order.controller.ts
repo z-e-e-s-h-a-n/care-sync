@@ -15,6 +15,7 @@ import type { Request, Response } from "express";
 import {
   AddToCartDto,
   UpdateCartItemDto,
+  SyncCartDto,
   CheckoutDto,
   UpdateOrderStatusDto,
   CreateShipmentDto,
@@ -57,6 +58,12 @@ export class OrderController {
     @User("id") userId: string,
   ) {
     return this.orderService.updateCartItem(itemId, dto, userId);
+  }
+
+  @Roles("patient")
+  @Post("cart/sync")
+  syncCart(@Body() dto: SyncCartDto, @User("id") userId: string) {
+    return this.orderService.syncCart(dto.items, userId);
   }
 
   @Roles("patient")

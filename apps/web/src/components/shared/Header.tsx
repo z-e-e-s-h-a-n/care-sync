@@ -21,8 +21,7 @@ import { toast } from "sonner";
 import AppointmentForm from "./AppointmentForm";
 import { userSidebarMenu } from "@workspace/ui/lib/constants";
 import Logo from "@workspace/ui/shared/Logo";
-import { useLocalCart } from "@/hooks/use-local-cart";
-import { useServerCart } from "@/hooks/healthcare";
+import { useCart } from "@/hooks/use-cart";
 import FloatingCtas from "./FloatingCtas";
 import {
   Sheet,
@@ -33,12 +32,7 @@ import {
 } from "@workspace/ui/components/sheet";
 
 const CartIcon = () => {
-  const { currentUser } = useUser();
-  const { count: localCount } = useLocalCart();
-  const { data: serverCart } = useServerCart(Boolean(currentUser));
-  const serverCount =
-    serverCart?.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) ?? 0;
-  const count = currentUser ? serverCount : localCount;
+  const { count } = useCart();
 
   return (
     <Link

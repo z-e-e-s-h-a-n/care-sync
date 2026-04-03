@@ -11,16 +11,13 @@ import { Button } from "@workspace/ui/components/button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { formatPricePrecise } from "@workspace/shared/utils";
 import { cn } from "@workspace/ui/lib/utils";
-import useUser from "@workspace/ui/hooks/use-user";
-import { useShopProduct, useAddToCart } from "@/hooks/healthcare";
-import { useLocalCart } from "@/hooks/use-local-cart";
+import { useShopProduct } from "@/hooks/healthcare";
+import { useCart } from "@/hooks/use-cart";
 
 export default function ProductPage({ params }: AppPageProps) {
   const { slug } = React.use(params);
   const { data: product, isLoading } = useShopProduct(slug);
-  const { addToCart, isPending } = useAddToCart();
-  const { addItem } = useLocalCart();
-  const { currentUser } = useUser();
+  const { addItem, isSyncing } = useCart();
 
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -28,16 +25,11 @@ export default function ProductPage({ params }: AppPageProps) {
   const handleAddToCart = async () => {
     if (!product) return;
 
-    if (currentUser) {
-      try {
-        await addToCart({ productId: product.id, quantity: qty });
-        toast.success(`${product.name} added to cart.`);
-      } catch (error: any) {
-        toast.error("Could not add to cart", { description: error?.message });
-      }
-    } else {
-      addItem(product.id, qty);
+    try {
+      await addItem({ productId: product.id, quantity: qty });
       toast.success(`${product.name} added to cart.`);
+    } catch (error: any) {
+      toast.error("Could not add to cart", { description: error?.message });
     }
   };
 
@@ -210,10 +202,10 @@ export default function ProductPage({ params }: AppPageProps) {
                 size="lg"
                 className="w-full sm:w-auto"
                 onClick={handleAddToCart}
-                disabled={isPending}
+                disabled={isSyncing}
               >
                 <ShoppingCart className="size-4" />
-                {isPending ? "Adding..." : "Add to Cart"}
+                {isSyncing ? "Adding..." : "Add to Cart"}
               </Button>
             </div>
           )}

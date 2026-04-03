@@ -85,6 +85,80 @@ export class OrderService {
     };
   }
 
+  async syncCart(items: AddToCartDto[], userId: string) {
+    const nextItems = items.filter((item) => item.quantity > 0);
+
+    const synced = await this.prisma.$transaction(async (tx) => {
+      const existingItems = await tx.cartItem.findMany({
+        where: { userId },
+      });
+
+      const existingMap = new Map(
+        existingItems.map((item) => [item.productId, item.quantity]),
+      );
+      const incomingMap = new Map<string, number>();
+
+      for (const item of nextItems) {
+        incomingMap.set(
+          item.productId,
+          (incomingMap.get(item.productId) ?? 0) + item.quantity,
+        );
+      }
+
+      const productIds = Array.from(
+        new Set([...existingMap.keys(), ...incomingMap.keys()]),
+      );
+
+      const products = productIds.length
+        ? await tx.product.findMany({
+            where: {
+              id: { in: productIds },
+              status: "active",
+            },
+          })
+        : [];
+
+      const productMap = new Map(products.map((product) => [product.id, product]));
+      const mergedItems = productIds
+        .map((productId) => {
+          const product = productMap.get(productId);
+          if (!product) return null;
+
+          const quantity = Math.min(
+            product.stockCount,
+            (existingMap.get(productId) ?? 0) + (incomingMap.get(productId) ?? 0),
+          );
+
+          if (quantity <= 0) return null;
+          return { productId, quantity };
+        })
+        .filter((item): item is { productId: string; quantity: number } => Boolean(item));
+
+      await tx.cartItem.deleteMany({ where: { userId } });
+
+      if (mergedItems.length) {
+        await tx.cartItem.createMany({
+          data: mergedItems.map((item) => ({
+            userId,
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        });
+      }
+
+      return tx.cartItem.findMany({
+        where: { userId },
+        include: this.cartItemInclude,
+        orderBy: { createdAt: "asc" },
+      });
+    });
+
+    return {
+      message: "Cart synced successfully.",
+      data: { items: synced },
+    };
+  }
+
   async removeCartItem(itemId: string, userId: string) {
     const item = await this.prisma.cartItem.findFirst({
       where: { id: itemId, userId },

@@ -18,8 +18,6 @@ import type {
   ProductResponse,
 } from "@workspace/contracts/product";
 import type {
-  AddToCartType,
-  UpdateCartItemType,
   CheckoutType,
   OrderQueryType,
   OrderResponse,
@@ -351,94 +349,6 @@ export function useShopProduct(identifier?: string) {
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     fetchError: query.error as ApiException | null,
-  };
-}
-
-// ── Cart ──────────────────────────────────────────────────
-
-export function useServerCart(enabled: boolean) {
-  const query = useQuery({
-    queryKey: ["cart"],
-    queryFn: order.getCart,
-    select: (res) => res.data,
-    enabled,
-    ...queryDefaults,
-  });
-
-  return {
-    data: query.data,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    fetchError: query.error as ApiException | null,
-  };
-}
-
-export function useSyncLocalCart() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (items: { productId: string; quantity: number }[]) => {
-      for (const item of items) {
-        await order.addToCart({ productId: item.productId, quantity: item.quantity });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
-  });
-
-  return { syncCart: mutation.mutateAsync, isSyncing: mutation.isPending };
-}
-
-export function useAddToCart() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: (data: AddToCartType) => order.addToCart(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
-  });
-
-  return {
-    addToCart: mutation.mutateAsync,
-    isPending: mutation.isPending,
-    error: mutation.error as ApiException | null,
-  };
-}
-
-export function useUpdateCartItem() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: ({ itemId, data }: { itemId: string; data: UpdateCartItemType }) =>
-      order.updateCartItem(itemId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
-  });
-
-  return {
-    updateCartItem: mutation.mutateAsync,
-    isPending: mutation.isPending,
-    error: mutation.error as ApiException | null,
-  };
-}
-
-export function useRemoveCartItem() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: (itemId: string) => order.removeCartItem(itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    },
-  });
-
-  return {
-    removeCartItem: mutation.mutateAsync,
-    isPending: mutation.isPending,
-    error: mutation.error as ApiException | null,
   };
 }
 

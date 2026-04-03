@@ -2,6 +2,7 @@ import apiClient, { executeApi } from "../lib/api-client";
 import type {
   AddToCartType,
   UpdateCartItemType,
+  SyncCartType,
   CheckoutType,
   UpdateOrderStatusType,
   CreateShipmentType,
@@ -26,6 +27,11 @@ export const addToCart = (data: AddToCartType) =>
 export const updateCartItem = (itemId: string, data: UpdateCartItemType) =>
   executeApi<CartItemResponse>(() =>
     apiClient.put(`/orders/cart/${itemId}`, data),
+  );
+
+export const syncCart = (data: SyncCartType) =>
+  executeApi<{ items: CartItemResponse[] }>(() =>
+    apiClient.post("/orders/cart/sync", data),
   );
 
 export const removeCartItem = (itemId: string) =>
