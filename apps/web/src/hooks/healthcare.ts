@@ -20,8 +20,7 @@ import type {
 import type {
   AddToCartType,
   UpdateCartItemType,
-  CreateOrderType,
-  GuestCheckoutType,
+  CheckoutType,
   OrderQueryType,
   OrderResponse,
 } from "@workspace/contracts/order";
@@ -447,33 +446,16 @@ export function usePlaceOrder() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (data: CreateOrderType) => order.createOrder(data),
+    mutationFn: (data: CheckoutType) => order.checkout(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
   });
 
   return {
     placeOrder: mutation.mutateAsync,
-    isPending: mutation.isPending,
-    error: mutation.error as ApiException | null,
-  };
-}
-
-export function useGuestCheckout() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: (data: GuestCheckoutType) => order.guestCheckout(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["user"] });
-    },
-  });
-
-  return {
-    guestCheckout: mutation.mutateAsync,
     isPending: mutation.isPending,
     error: mutation.error as ApiException | null,
   };

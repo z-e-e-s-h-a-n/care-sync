@@ -53,7 +53,7 @@ export class NewsletterService {
   async list(query: NewsletterSubscriberQueryDto) {
     const { page, limit, searchBy, search, sortBy, sortOrder } = query;
 
-    const where: Prisma.NewsletterSubscriberWhereInput = {};
+    const where: Prisma.NewsletterSubscriberWhereInput = { deletedAt: null };
     if (query.isActive !== undefined) where.isActive = query.isActive;
 
     if (search && searchBy) {
@@ -97,16 +97,31 @@ export class NewsletterService {
   }
 
   async getSubscriber(id: string) {
-    const subscriber = await this.prisma.newsletterSubscriber.findUniqueOrThrow(
-      {
-        where: { id },
-      },
-    );
+    const subscriber = await this.prisma.newsletterSubscriber.findFirstOrThrow({
+      where: { id, deletedAt: null },
+    });
 
     return {
       message: "Subscriber fetched successfully.",
       data: subscriber,
     };
+  }
+
+  async deleteSubscriber(id: string) {
+    await this.prisma.newsletterSubscriber.delete({
+      where: { id },
+    });
+
+    return { message: "Subscriber deleted successfully." };
+  }
+
+  async restoreSubscriber(id: string) {
+    await this.prisma.newsletterSubscriber.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    return { message: "Subscriber restored successfully." };
   }
 
   private async notifyUser(newsletterSubscriber: NewsletterSubscriber) {

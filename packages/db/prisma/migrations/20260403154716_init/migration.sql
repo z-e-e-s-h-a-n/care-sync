@@ -258,6 +258,7 @@ CREATE TABLE "CampaignRecipient" (
 CREATE TABLE "Media" (
     "id" TEXT NOT NULL,
     "uploadedById" TEXT NOT NULL,
+    "productId" TEXT,
     "publicId" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "mimeType" TEXT NOT NULL,
@@ -272,7 +273,6 @@ CREATE TABLE "Media" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
-    "productId" TEXT,
 
     CONSTRAINT "Media_pkey" PRIMARY KEY ("id")
 );
@@ -610,6 +610,7 @@ CREATE TABLE "ProductCategory" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "ProductCategory_pkey" PRIMARY KEY ("id")
 );

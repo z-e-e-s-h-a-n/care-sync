@@ -66,4 +66,10 @@ export class BusinessController {
   async deleteBranch(@Param("branchId") branchId: string) {
     return this.businessService.deleteBranch(branchId);
   }
+
+  @Roles("admin")
+  @Post("branch/:branchId/restore")
+  async restoreBranch(@Param("branchId") branchId: string) {
+    return this.businessService.restoreBranch(branchId);
+  }
 }

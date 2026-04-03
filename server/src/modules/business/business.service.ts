@@ -80,6 +80,7 @@ export class BusinessService {
       query;
 
     const where: Prisma.BranchWhereInput = {};
+    where.deletedAt = null;
 
     if (isActive !== undefined) {
       where.isActive = isActive;
@@ -123,8 +124,8 @@ export class BusinessService {
   }
 
   async getBranch(id: string) {
-    const branch = await this.prisma.branch.findUniqueOrThrow({
-      where: { id },
+    const branch = await this.prisma.branch.findFirstOrThrow({
+      where: { id, deletedAt: null },
       include: this.branchInclude,
     });
 

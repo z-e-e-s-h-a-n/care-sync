@@ -15,8 +15,7 @@ import type { Request, Response } from "express";
 import {
   AddToCartDto,
   UpdateCartItemDto,
-  CreateOrderDto,
-  GuestCheckoutDto,
+  CheckoutDto,
   UpdateOrderStatusDto,
   CreateShipmentDto,
   UpdateShipmentDto,
@@ -74,27 +73,15 @@ export class OrderController {
 
   // ── Orders ────────────────────────────────────────────────
 
-  @Roles("patient")
-  @Post()
-  createOrder(@Body() dto: CreateOrderDto, @User("id") userId: string) {
-    return this.orderService.createOrder(dto, userId);
-  }
-
   @Public()
-  @Post("guest-checkout")
-  async guestCheckout(
-    @Body() dto: GuestCheckoutDto,
+  @Post()
+  async checkout(
+    @Body() dto: CheckoutDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.orderService.guestCheckout(dto);
-    const user = result.data.user;
-    await this.tokenService.createAuthSession(req, res, {
-      id: user.id,
-      role: user.role,
-      status: user.status,
-    });
-    return { message: result.message, data: { order: result.data.order } };
+    const currentUser = await this.resolveCheckoutUser(req, res);
+    return this.orderService.checkout(dto, currentUser);
   }
 
   @Roles("admin", "doctor", "staff", "patient")
@@ -136,5 +123,21 @@ export class OrderController {
     @Body() dto: UpdateShipmentDto,
   ) {
     return this.orderService.updateShipment(shipmentId, dto);
+  }
+
+  private async resolveCheckoutUser(req: Request, res: Response) {
+    try {
+      const payload = await this.tokenService.verifyToken(req, "accessToken");
+      this.tokenService.attachAuthContext(req, payload);
+      return req.user;
+    } catch {
+      try {
+        const payload = await this.tokenService.verifyToken(req, "refreshToken");
+        await this.tokenService.refreshTokens(req, res, payload);
+        return req.user;
+      } catch {
+        return undefined;
+      }
+    }
   }
 }

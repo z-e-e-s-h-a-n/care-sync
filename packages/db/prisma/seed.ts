@@ -112,7 +112,6 @@ async function clearDatabase() {
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
   await prisma.cartItem.deleteMany();
-  await prisma.productImage.deleteMany();
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
   await prisma.messageAttachment.deleteMany();
@@ -1049,7 +1048,7 @@ async function seedCommerce(
           name: product.name,
           slug: product.slug,
           description: product.description,
-          price: product.price,
+          sellPrice: product.price,
           compareAtPrice: product.compareAtPrice,
           stockCount: product.stockCount,
           requiresShipping: true,
@@ -1073,14 +1072,7 @@ async function seedCommerce(
             type: MediaType.product,
             visibility: MediaVisibility.public,
             altText: createdProduct.name,
-          },
-        });
-
-        await prisma.productImage.create({
-          data: {
             productId: createdProduct.id,
-            mediaId: media.id,
-            position: 0,
           },
         });
 
@@ -1167,7 +1159,7 @@ async function seedCommerce(
 
   for (const [index, orderSeed] of orderData.entries()) {
     const subtotal = orderSeed.items.reduce(
-      (sum, item) => sum + Number(item.product.price) * item.quantity,
+      (sum, item) => sum + Number(item.product.sellPrice) * item.quantity,
       0,
     );
     const total = subtotal + orderSeed.shippingCost - orderSeed.discountAmount;
@@ -1208,9 +1200,9 @@ async function seedCommerce(
           create: orderSeed.items.map((item) => ({
             productId: item.product.id,
             productName: item.product.name,
-            unitPrice: item.product.price,
+            unitPrice: item.product.sellPrice,
             quantity: item.quantity,
-            totalPrice: Number(item.product.price) * item.quantity,
+            totalPrice: Number(item.product.sellPrice) * item.quantity,
           })),
         },
       },

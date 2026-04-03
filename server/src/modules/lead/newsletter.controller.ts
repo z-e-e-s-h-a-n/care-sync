@@ -1,5 +1,14 @@
 import type { Request } from "express";
-import { Controller, Post, Body, Get, Query, Param, Req } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Query,
+  Param,
+  Req,
+  Delete,
+} from "@nestjs/common";
 import { NewsletterService } from "./newsletter.service";
 import {
   NewsletterSubscriberDto,
@@ -35,5 +44,17 @@ export class NewsletterController {
   @Get(":id")
   async getSubscriber(@Param("id") id: string) {
     return this.service.getSubscriber(id);
+  }
+
+  @Roles("admin")
+  @Delete(":id")
+  async deleteSubscriber(@Param("id") id: string) {
+    return this.service.deleteSubscriber(id);
+  }
+
+  @Roles("admin")
+  @Post(":id/restore")
+  async restoreSubscriber(@Param("id") id: string) {
+    return this.service.restoreSubscriber(id);
   }
 }

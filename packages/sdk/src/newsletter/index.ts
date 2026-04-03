@@ -24,3 +24,9 @@ export const getNewsletterSubscriber = (id: string) =>
   executeApi<NewsletterSubscriberResponse>(() =>
     apiClient.get(`/newsletter/${id}`),
   );
+
+export const deleteNewsletterSubscriber = (id: string) =>
+  executeApi(() => apiClient.delete(`/newsletter/${id}`));
+
+export const restoreNewsletterSubscriber = (id: string) =>
+  executeApi(() => apiClient.post(`/newsletter/${id}/restore`));

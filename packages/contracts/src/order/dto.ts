@@ -2,8 +2,7 @@ import { createZodDto } from "nestjs-zod";
 import {
   addToCartSchema,
   updateCartItemSchema,
-  createOrderSchema,
-  guestCheckoutSchema,
+  checkoutSchema,
   updateOrderStatusSchema,
   createShipmentSchema,
   updateShipmentSchema,
@@ -12,8 +11,7 @@ import {
 
 export class AddToCartDto extends createZodDto(addToCartSchema) {}
 export class UpdateCartItemDto extends createZodDto(updateCartItemSchema) {}
-export class CreateOrderDto extends createZodDto(createOrderSchema) {}
-export class GuestCheckoutDto extends createZodDto(guestCheckoutSchema) {}
+export class CheckoutDto extends createZodDto(checkoutSchema) {}
 export class UpdateOrderStatusDto extends createZodDto(updateOrderStatusSchema) {}
 export class CreateShipmentDto extends createZodDto(createShipmentSchema) {}
 export class UpdateShipmentDto extends createZodDto(updateShipmentSchema) {}

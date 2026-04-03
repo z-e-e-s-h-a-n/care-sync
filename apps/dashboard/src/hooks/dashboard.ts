@@ -5,8 +5,13 @@ import type { ApiSuccess } from "@workspace/sdk";
 import type {
   AdminDashboardOverview,
   DoctorDashboardOverview,
+  StaffDashboardOverview,
 } from "@workspace/contracts/dashboard";
-import { getAdminDashboard, getDoctorDashboard } from "@workspace/sdk/dashboard";
+import {
+  getAdminDashboard,
+  getDoctorDashboard,
+  getStaffDashboard,
+} from "@workspace/sdk/dashboard";
 import { parseDuration } from "@workspace/shared/utils";
 
 const STALE_TIME = parseDuration("5m");
@@ -42,6 +47,21 @@ export function useDoctorDashboard() {
   >({
     queryKey: ["dashboard", "doctor"],
     queryFn: getDoctorDashboard,
+    select: (res) => res.data,
+    ...queryDefaults,
+  });
+
+  return { data, isLoading, isFetching, error };
+}
+
+export function useStaffDashboard() {
+  const { data, isLoading, isFetching, error } = useQuery<
+    ApiSuccess<StaffDashboardOverview>,
+    Error,
+    StaffDashboardOverview
+  >({
+    queryKey: ["dashboard", "staff"],
+    queryFn: getStaffDashboard,
     select: (res) => res.data,
     ...queryDefaults,
   });

@@ -51,8 +51,8 @@ export class ContactService {
   }
 
   async getMessage(id: string) {
-    const message = await this.prisma.contactMessage.findUniqueOrThrow({
-      where: { id },
+    const message = await this.prisma.contactMessage.findFirstOrThrow({
+      where: { id, deletedAt: null },
     });
 
     return {
@@ -64,7 +64,7 @@ export class ContactService {
   async queryMessages(query: ContactMessageQueryDto) {
     const { page, limit, status, search, searchBy, sortBy, sortOrder } = query;
 
-    const where: Prisma.ContactMessageWhereInput = {};
+    const where: Prisma.ContactMessageWhereInput = { deletedAt: null };
     if (status) where.status = status;
 
     if (search && searchBy) {
@@ -111,6 +111,23 @@ export class ContactService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async deleteMessage(id: string) {
+    await this.prisma.contactMessage.delete({
+      where: { id },
+    });
+
+    return { message: "Contact message deleted successfully." };
+  }
+
+  async restoreMessage(id: string) {
+    await this.prisma.contactMessage.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    return { message: "Contact message restored successfully." };
   }
 
   private async notifyUser(contactMessage: ContactMessage) {

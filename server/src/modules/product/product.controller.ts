@@ -55,6 +55,12 @@ export class ProductController {
     return this.productService.deleteCategory(id);
   }
 
+  @Roles("admin")
+  @Post("categories/:id/restore")
+  restoreCategory(@Param("id") id: string) {
+    return this.productService.restoreCategory(id);
+  }
+
   // ── Products ──────────────────────────────────────────────
 
   @Public()
@@ -85,5 +91,11 @@ export class ProductController {
   @Delete(":id")
   deleteProduct(@Param("id") id: string) {
     return this.productService.deleteProduct(id);
+  }
+
+  @Roles("admin")
+  @Post(":id/restore")
+  restoreProduct(@Param("id") id: string) {
+    return this.productService.restoreProduct(id);
   }
 }

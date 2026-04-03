@@ -22,3 +22,9 @@ export const replyContactMessage = (
   id: string,
   data: UpdateContactMessageType,
 ) => executeApi(() => apiClient.put(`/contact/${id}/reply`, data));
+
+export const deleteContactMessage = (id: string) =>
+  executeApi(() => apiClient.delete(`/contact/${id}`));
+
+export const restoreContactMessage = (id: string) =>
+  executeApi(() => apiClient.post(`/contact/${id}/restore`));

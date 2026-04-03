@@ -19,4 +19,16 @@ export class DashboardController {
   getDoctorOverview(@User("id") userId: string) {
     return this.dashboardService.getDoctorOverview(userId);
   }
+
+  @Roles("staff")
+  @Get("staff")
+  getStaffOverview(@User("id") userId: string) {
+    return this.dashboardService.getStaffOverview(userId);
+  }
+
+  @Roles("patient")
+  @Get("patient")
+  getPatientOverview(@User("id") userId: string) {
+    return this.dashboardService.getPatientOverview(userId);
+  }
 }

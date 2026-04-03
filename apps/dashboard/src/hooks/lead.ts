@@ -72,6 +72,33 @@ export function useContactMessage(id?: string) {
   };
 }
 
+export function useContactMessageMutations() {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => contact.deleteContactMessage(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contactMessages"] });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => contact.restoreContactMessage(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contactMessages"] });
+    },
+  });
+
+  return {
+    deleteContactMessage: deleteMutation.mutateAsync,
+    isDeletingContactMessage: deleteMutation.isPending,
+    deleteContactMessageError: deleteMutation.error as ApiException,
+    restoreContactMessage: restoreMutation.mutateAsync,
+    isRestoringContactMessage: restoreMutation.isPending,
+    restoreContactMessageError: restoreMutation.error as ApiException,
+  };
+}
+
 export function useNewsletterSubscribers(
   params: NewsletterSubscriberQueryType,
 ) {
@@ -105,5 +132,32 @@ export function useNewsletterSubscriber(id?: string) {
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     fetchError: query.error as ApiException,
+  };
+}
+
+export function useNewsletterSubscriberMutations() {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => newsletter.deleteNewsletterSubscriber(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["newsletterSubscribers"] });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => newsletter.restoreNewsletterSubscriber(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["newsletterSubscribers"] });
+    },
+  });
+
+  return {
+    deleteNewsletterSubscriber: deleteMutation.mutateAsync,
+    isDeletingNewsletterSubscriber: deleteMutation.isPending,
+    deleteNewsletterSubscriberError: deleteMutation.error as ApiException,
+    restoreNewsletterSubscriber: restoreMutation.mutateAsync,
+    isRestoringNewsletterSubscriber: restoreMutation.isPending,
+    restoreNewsletterSubscriberError: restoreMutation.error as ApiException,
   };
 }

@@ -5,7 +5,6 @@ import type {
   categoryQuerySchema,
   createProductSchema,
   productQuerySchema,
-  addProductImageSchema,
 } from "./schema";
 import type { BaseQueryResponse, Sanitize } from "../lib/types";
 import type { MediaResponse } from "../media/types";
@@ -16,14 +15,17 @@ export type CategoryQueryType = z.input<typeof categoryQuerySchema>;
 export type CreateProductType = z.input<typeof createProductSchema>;
 export type ProductQueryType = z.input<typeof productQuerySchema>;
 
-export type AddProductImageType = z.input<typeof addProductImageSchema>;
-
 export type ProductCategoryResponse = Sanitize<ProductCategory> & {
   parent?: ProductCategoryResponse | null;
   children?: ProductCategoryResponse[];
 };
 
-export type ProductResponse = Sanitize<Product> & {
+export type ProductResponse = Omit<
+  Sanitize<Product>,
+  "sellPrice" | "costPrice" | "images"
+> & {
+  price: number;
+  costPrice?: number;
   category?: ProductCategoryResponse | null;
   images?: MediaResponse[];
 };

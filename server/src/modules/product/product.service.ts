@@ -32,7 +32,7 @@ export class ProductService {
       isActive,
     } = query;
 
-    const where: Prisma.ProductCategoryWhereInput = {};
+    const where: Prisma.ProductCategoryWhereInput = { deletedAt: null };
 
     if (parentId) where.parentId = parentId;
     if (isActive) where.isActive = isActive;
@@ -74,7 +74,10 @@ export class ProductService {
 
   async findCategory(id: string) {
     const category = await this.prisma.productCategory.findFirstOrThrow({
-      where: { OR: [{ id }, { slug: id }] },
+      where: {
+        OR: [{ id }, { slug: id }],
+        deletedAt: null,
+      },
       include: this.categoryInclude,
     });
     return { message: "Category fetched successfully.", data: category };
@@ -95,14 +98,43 @@ export class ProductService {
     return { message: "Category deleted successfully." };
   }
 
+  async restoreCategory(id: string) {
+    await this.prisma.productCategory.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    return { message: "Category restored successfully." };
+  }
+
   // ── Products ──────────────────────────────────────────────
 
   async createProduct(dto: CreateProductDto) {
-    const product = await this.prisma.product.create({
-      data: dto,
-      include: this.productInclude,
+    const { imageIds = [], price, ...productData } = dto as CreateProductDto & {
+      imageIds?: string[];
+      price: number;
+    };
+
+    const product = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.product.create({
+        data: {
+          ...(productData as Prisma.ProductCreateInput),
+          sellPrice: price,
+        },
+      });
+
+      await this.syncProductImages(tx, created.id, imageIds);
+
+      return tx.product.findUniqueOrThrow({
+        where: { id: created.id },
+        include: this.productInclude,
+      });
     });
-    return { message: "Product created successfully.", data: product };
+
+    return {
+      message: "Product created successfully.",
+      data: this.serializeProduct(product),
+    };
   }
 
   async listProducts(query: ProductQueryDto) {
@@ -148,7 +180,7 @@ export class ProductService {
     return {
       message: "Products fetched successfully.",
       data: {
-        products,
+        products: products.map((product) => this.serializeProduct(product)),
         total,
         page,
         limit,
@@ -165,16 +197,39 @@ export class ProductService {
       },
       include: this.productInclude,
     });
-    return { message: "Product fetched successfully.", data: product };
+    return {
+      message: "Product fetched successfully.",
+      data: this.serializeProduct(product),
+    };
   }
 
   async updateProduct(id: string, dto: CreateProductDto) {
-    const product = await this.prisma.product.update({
-      where: { id },
-      data: dto,
-      include: this.productInclude,
+    const { imageIds = [], price, ...productData } = dto as CreateProductDto & {
+      imageIds?: string[];
+      price: number;
+    };
+
+    const product = await this.prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id },
+        data: {
+          ...(productData as Prisma.ProductUpdateInput),
+          sellPrice: price,
+        },
+      });
+
+      await this.syncProductImages(tx, id, imageIds);
+
+      return tx.product.findUniqueOrThrow({
+        where: { id },
+        include: this.productInclude,
+      });
     });
-    return { message: "Product updated successfully.", data: product };
+
+    return {
+      message: "Product updated successfully.",
+      data: this.serializeProduct(product),
+    };
   }
 
   async deleteProduct(id: string) {
@@ -182,6 +237,15 @@ export class ProductService {
       where: { id },
     });
     return { message: "Product deleted successfully." };
+  }
+
+  async restoreProduct(id: string) {
+    await this.prisma.product.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    return { message: "Product restored successfully." };
   }
 
   // ── Shared ────────────────────────────────────────────────
@@ -193,6 +257,54 @@ export class ProductService {
 
   private productInclude = {
     category: true,
-    images: true,
+    images: {
+      where: { deletedAt: null },
+      include: {
+        uploadedBy: {
+          omit: { password: true },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    },
   } satisfies Prisma.ProductInclude;
+
+  private async syncProductImages(
+    tx: Prisma.TransactionClient,
+    productId: string,
+    imageIds: string[],
+  ) {
+    await tx.media.updateMany({
+      where: {
+        productId,
+        ...(imageIds.length ? { id: { notIn: imageIds } } : {}),
+      },
+      data: {
+        productId: null,
+      },
+    });
+
+    if (!imageIds.length) return;
+
+    await tx.media.updateMany({
+      where: {
+        id: { in: imageIds },
+        deletedAt: null,
+      },
+      data: {
+        productId,
+        type: "product",
+      },
+    });
+  }
+
+  private serializeProduct(product: any) {
+    const { sellPrice, costPrice, images, ...rest } = product;
+
+    return {
+      ...rest,
+      price: Number(sellPrice),
+      costPrice: costPrice == null ? undefined : Number(costPrice),
+      images,
+    };
+  }
 }

@@ -2,8 +2,7 @@ import apiClient, { executeApi } from "../lib/api-client";
 import type {
   AddToCartType,
   UpdateCartItemType,
-  CreateOrderType,
-  GuestCheckoutType,
+  CheckoutType,
   UpdateOrderStatusType,
   CreateShipmentType,
   UpdateShipmentType,
@@ -37,13 +36,8 @@ export const clearCart = () =>
 
 // ── Orders ────────────────────────────────────────────────
 
-export const createOrder = (data: CreateOrderType) =>
+export const checkout = (data: CheckoutType) =>
   executeApi<OrderResponse>(() => apiClient.post("/orders", data));
-
-export const guestCheckout = (data: GuestCheckoutType) =>
-  executeApi<OrderResponse>(() =>
-    apiClient.post("/orders/guest-checkout", data),
-  );
 
 export const listOrders = (params?: OrderQueryType) =>
   executeApi<OrderQueryResponse>(() =>

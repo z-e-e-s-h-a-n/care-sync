@@ -75,6 +75,33 @@ export function useSaveCategory(id?: string) {
   };
 }
 
+export function useCategoryMutations() {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => product.deleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => product.restoreCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
+
+  return {
+    deleteCategory: deleteMutation.mutateAsync,
+    isDeletingCategory: deleteMutation.isPending,
+    deleteCategoryError: deleteMutation.error as ApiException | null,
+    restoreCategory: restoreMutation.mutateAsync,
+    isRestoringCategory: restoreMutation.isPending,
+    restoreCategoryError: restoreMutation.error as ApiException | null,
+  };
+}
+
 export function useProductList(params?: ProductQueryType) {
   const query = useQuery({
     queryKey: ["products", params],
@@ -140,6 +167,23 @@ export function useDeleteProduct() {
 
   return {
     deleteProduct: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    error: mutation.error as ApiException | null,
+  };
+}
+
+export function useRestoreProduct() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (id: string) => product.restoreProduct(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+
+  return {
+    restoreProduct: mutation.mutateAsync,
     isPending: mutation.isPending,
     error: mutation.error as ApiException | null,
   };

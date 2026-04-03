@@ -25,6 +25,7 @@ export const {
   useEntity: useBranch,
   useEntities: useBranches,
   useDeleteEntity: useDeleteBranch,
+  useRestoreEntity: useRestoreBranch,
 } = createCrudHooks(
   {
     findOne: business.getBranch,
@@ -32,6 +33,7 @@ export const {
     create: business.createBranch,
     update: business.updateBranch,
     delete: business.deleteBranch,
+    restore: business.restoreBranch,
   },
   {
     single: "branch",

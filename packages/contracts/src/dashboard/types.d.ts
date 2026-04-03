@@ -1,6 +1,9 @@
 import type { AuditLogResponse } from "../audit/types";
+import type { BaseUserResponse } from "../user/types";
 import type { ContactMessageResponse } from "../contact/types";
 import type { NewsletterSubscriberResponse } from "../newsletter/types";
+import type { OrderResponse } from "../order/types";
+import type { NotificationResponse } from "../notification/types";
 
 // Shared primitives
 
@@ -155,5 +158,95 @@ export interface DoctorDashboardOverview {
     completedVisits: number;
     settledPayments: number;
     pendingPaymentValue: number;
+  };
+}
+
+// Staff dashboard
+
+export interface StaffDashboardOverview {
+  profile: {
+    displayName: string;
+    title: string;
+    specialty?: string;
+    branchName?: string;
+    credentials: string[];
+    isActive: boolean;
+  };
+  caseload: {
+    totalAssigned: number;
+    activePatients: number;
+    recentAssignments: DailyCount[];
+  };
+  upcomingVisits: {
+    todayCount: number;
+    active: number;
+    completed: number;
+    window: DailyCount[];
+  };
+  coordination: {
+    openConversations: number;
+    pendingOrders: number;
+    deliveredOrders: number;
+    orderStatusMix: StatusCount[];
+  };
+  upcomingAppointments: DashboardAppointment[];
+  assignedPatients: Array<
+    Pick<BaseUserResponse, "id" | "displayName" | "email" | "phone"> & {
+      patientId: string;
+      assignedAt: string;
+    }
+  >;
+  focus: {
+    branchName?: string;
+    activePatients: number;
+    openConversations: number;
+    pendingOrders: number;
+  };
+}
+
+// Patient dashboard
+
+export interface PatientDashboardOverview {
+  profile: {
+    displayName: string;
+    email?: string;
+    phone?: string;
+    birthDate?: string;
+    gender?: string;
+  };
+  upcomingVisits: {
+    todayCount: number;
+    active: number;
+    completed: number;
+    window: DailyCount[];
+  };
+  orders: {
+    active: number;
+    delivered: number;
+    totalSpent: number;
+    statusMix: StatusCount[];
+  };
+  inbox: {
+    openConversations: number;
+    unreadNotifications: number;
+    totalNotifications: number;
+  };
+  upcomingAppointments: DashboardAppointment[];
+  recentOrders: Array<
+    Pick<OrderResponse, "id" | "orderNumber" | "status" | "total" | "createdAt"> & {
+      itemCount: number;
+    }
+  >;
+  recentNotifications: Array<
+    Pick<
+      NotificationResponse,
+      "id" | "title" | "message" | "purpose" | "readAt" | "createdAt"
+    >
+  >;
+  focus: {
+    nextAppointmentAt?: string;
+    activeOrders: number;
+    unreadNotifications: number;
+    totalSpent: number;
   };
 }

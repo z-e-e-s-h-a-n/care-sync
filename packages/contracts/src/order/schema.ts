@@ -6,7 +6,14 @@ import {
   OrderSearchByEnum,
   OrderSortByEnum,
 } from "../lib/enums";
-import { baseQuerySchema, idSchema, nullableStringSchema } from "../lib/schema";
+import {
+  baseQuerySchema,
+  emailSchema,
+  idSchema,
+  nameSchema,
+  nullableStringSchema,
+  phoneSchema,
+} from "../lib/schema";
 
 export const addToCartSchema = z.object({
   productId: idSchema,
@@ -20,23 +27,21 @@ export const updateCartItemSchema = z.object({
 const orderAddressSchema = {
   deliveryType: DeliveryTypeEnum.default("delivery"),
   notes: nullableStringSchema,
-  shippingName: z.string().min(2).optional().nullable(),
-  shippingPhone: z.string().optional().nullable(),
-  shippingStreet: z.string().optional().nullable(),
-  shippingCity: z.string().optional().nullable(),
-  shippingState: z.string().optional().nullable(),
-  shippingPostalCode: z.string().optional().nullable(),
-  shippingCountry: z.string().optional().nullable(),
+  shippingName: z.string().min(2).optional(),
+  shippingPhone: z.string().optional(),
+  shippingStreet: z.string().optional(),
+  shippingCity: z.string().optional(),
+  shippingState: z.string().optional(),
+  shippingPostalCode: z.string().optional(),
+  shippingCountry: z.string().optional(),
 };
 
-export const createOrderSchema = z.object(orderAddressSchema);
-
-export const guestCheckoutSchema = z.object({
+export const checkoutSchema = z.object({
   ...orderAddressSchema,
-  email: z.string().email(),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  phone: z.string().optional().nullable(),
+  email: emailSchema,
+  firstName: nameSchema,
+  lastName: nameSchema.optional(),
+  phone: phoneSchema,
   items: z
     .array(
       z.object({
@@ -44,7 +49,7 @@ export const guestCheckoutSchema = z.object({
         quantity: z.coerce.number().int().min(1),
       }),
     )
-    .min(1),
+    .optional(),
 });
 
 export const updateOrderStatusSchema = z.object({

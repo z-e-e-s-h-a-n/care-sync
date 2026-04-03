@@ -3,8 +3,7 @@ import type { Order, OrderItem, Shipment, CartItem } from "@workspace/db/browser
 import type {
   addToCartSchema,
   updateCartItemSchema,
-  createOrderSchema,
-  guestCheckoutSchema,
+  checkoutSchema,
   updateOrderStatusSchema,
   createShipmentSchema,
   updateShipmentSchema,
@@ -16,8 +15,7 @@ import type { BaseUserResponse } from "../user/types";
 
 export type AddToCartType = z.input<typeof addToCartSchema>;
 export type UpdateCartItemType = z.input<typeof updateCartItemSchema>;
-export type CreateOrderType = z.input<typeof createOrderSchema>;
-export type GuestCheckoutType = z.input<typeof guestCheckoutSchema>;
+export type CheckoutType = z.input<typeof checkoutSchema>;
 export type UpdateOrderStatusType = z.input<typeof updateOrderStatusSchema>;
 export type CreateShipmentType = z.input<typeof createShipmentSchema>;
 export type UpdateShipmentType = z.input<typeof updateShipmentSchema>;

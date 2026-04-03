@@ -8,9 +8,7 @@ import type {
   ProductQueryType,
   ProductQueryResponse,
   ProductResponse,
-  AddProductImageType,
 } from "@workspace/contracts/product";
-import type { MediaResponse } from "@workspace/contracts/media";
 
 // ── Categories ────────────────────────────────────────────
 
@@ -34,6 +32,12 @@ export const updateCategory = (id: string, data: CreateCategoryType) =>
     apiClient.put(`/products/categories/${id}`, data),
   );
 
+export const deleteCategory = (id: string) =>
+  executeApi<void>(() => apiClient.delete(`/products/categories/${id}`));
+
+export const restoreCategory = (id: string) =>
+  executeApi<void>(() => apiClient.post(`/products/categories/${id}/restore`));
+
 // ── Products ──────────────────────────────────────────────
 
 export const listProducts = (params?: ProductQueryType) =>
@@ -53,12 +57,5 @@ export const updateProduct = (id: string, data: CreateProductType) =>
 export const deleteProduct = (id: string) =>
   executeApi<void>(() => apiClient.delete(`/products/${id}`));
 
-export const addProductImage = (productId: string, data: AddProductImageType) =>
-  executeApi<MediaResponse>(() =>
-    apiClient.post(`/products/${productId}/images`, data),
-  );
-
-export const removeProductImage = (productId: string, mediaId: string) =>
-  executeApi<void>(() =>
-    apiClient.delete(`/products/${productId}/images/${mediaId}`),
-  );
+export const restoreProduct = (id: string) =>
+  executeApi<void>(() => apiClient.post(`/products/${id}/restore`));

@@ -80,10 +80,10 @@ export function useAdminMutations() {
   const removeMutation = useMutation<
     null,
     ApiException,
-    { id: string; force?: boolean }
+    { id: string }
   >({
-    mutationFn: async ({ id, force }) => {
-      const res = await user.deleteUser(id, force);
+    mutationFn: async ({ id }) => {
+      const res = await user.deleteUser(id);
       return res.data;
     },
     onSuccess: invalidateUsers,

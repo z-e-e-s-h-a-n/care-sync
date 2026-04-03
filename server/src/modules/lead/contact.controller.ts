@@ -8,6 +8,7 @@ import {
   Get,
   Query,
   Req,
+  Delete,
 } from "@nestjs/common";
 import { ContactService } from "./contact.service";
 import { Roles } from "@/decorators/roles.decorator";
@@ -50,5 +51,17 @@ export class ContactController {
     @Body() dto: UpdateContactMessageDto,
   ) {
     return this.service.updateMessage(id, dto);
+  }
+
+  @Roles("admin")
+  @Delete(":id")
+  async deleteMessage(@Param("id") id: string) {
+    return this.service.deleteMessage(id);
+  }
+
+  @Roles("admin")
+  @Post(":id/restore")
+  async restoreMessage(@Param("id") id: string) {
+    return this.service.restoreMessage(id);
   }
 }

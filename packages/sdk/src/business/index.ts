@@ -25,6 +25,9 @@ export const updateBranch = (id: string, data: Partial<CUBranchType>) =>
 export const deleteBranch = (id: string) =>
   executeApi(() => apiClient.delete(`/business/branch/${id}`));
 
+export const restoreBranch = (id: string) =>
+  executeApi(() => apiClient.post(`/business/branch/${id}/restore`));
+
 export const getBusinessProfile = () =>
   executeApi<BusinessProfileResponse>(() => apiClient.get("/business"));
 

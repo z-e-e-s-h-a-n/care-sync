@@ -1,15 +1,13 @@
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import type {
   AddToCartDto,
-  GuestCheckoutDto,
   UpdateCartItemDto,
-  CreateOrderDto,
+  CheckoutDto,
   UpdateOrderStatusDto,
   CreateShipmentDto,
   UpdateShipmentDto,
@@ -35,7 +33,10 @@ export class OrderService {
       include: this.cartItemInclude,
       orderBy: { createdAt: "asc" },
     });
-    return { message: "Cart fetched successfully.", data: { items } };
+    return {
+      message: "Cart fetched successfully.",
+      data: { items: items.map((item) => this.serializeCartItem(item)) },
+    };
   }
 
   async addToCart(dto: AddToCartDto, userId: string) {
@@ -58,7 +59,10 @@ export class OrderService {
       include: this.cartItemInclude,
     });
 
-    return { message: "Item added to cart.", data: item };
+    return {
+      message: "Item added to cart.",
+      data: this.serializeCartItem(item),
+    };
   }
 
   async updateCartItem(itemId: string, dto: UpdateCartItemDto, userId: string) {
@@ -74,7 +78,10 @@ export class OrderService {
       include: this.cartItemInclude,
     });
 
-    return { message: "Cart item updated.", data: updated };
+    return {
+      message: "Cart item updated.",
+      data: this.serializeCartItem(updated),
+    };
   }
 
   async removeCartItem(itemId: string, userId: string) {
@@ -95,126 +102,152 @@ export class OrderService {
 
   // ── Orders ────────────────────────────────────────────────
 
-  async guestCheckout(dto: GuestCheckoutDto) {
-    const existing = await this.prisma.user.findFirst({
-      where: { email: dto.email },
-    });
+  async checkout(dto: CheckoutDto, currentUser?: Express.User) {
+    const email = dto.email?.trim();
+    const firstName = dto.firstName?.trim();
+    const lastName = dto.lastName?.trim();
+    const phone = dto.phone?.trim();
 
-    if (existing) {
-      throw new ConflictException(
-        "An account with this email already exists. Please log in to complete your order.",
+    if (!email || !firstName || !lastName || !phone) {
+      throw new BadRequestException(
+        "Email, first name, last name, and phone are required.",
       );
     }
 
-    // Validate products exist and fetch prices
-    const products = await this.prisma.product.findMany({
-      where: {
-        id: { in: dto.items.map((i) => i.productId) },
-        deletedAt: null,
-        status: "active",
-      },
-    });
-
-    if (products.length !== dto.items.length) {
-      throw new BadRequestException("One or more products are unavailable.");
-    }
-
-    const priceMap = new Map(products.map((p) => [p.id, p.price]));
-    const orderSubtotal = dto.items.reduce(
-      (sum, item) => sum + Number(priceMap.get(item.productId)) * item.quantity,
-      0,
-    );
-
-    const orderNumber = `ORD-${Date.now()}`;
-
     const result = await this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email: dto.email,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          displayName: `${dto.firstName} ${dto.lastName}`.trim(),
-          phone: dto.phone,
-          role: "patient",
+      if (currentUser?.id) {
+        const user = await tx.user.findUniqueOrThrow({
+          where: { id: currentUser.id },
+        });
+
+        if (user.phone !== phone) {
+          await tx.user.update({
+            where: { id: currentUser.id },
+            data: { phone },
+          });
+        }
+
+        const cartItems = await tx.cartItem.findMany({
+          where: { userId: currentUser.id },
+          include: { product: true },
+        });
+
+        if (!cartItems.length) {
+          throw new BadRequestException("Cart is empty.");
+        }
+
+        const subtotal = cartItems.reduce(
+          (sum, item) => sum + Number(item.product.sellPrice) * item.quantity,
+          0,
+        );
+
+        const order = await tx.order.create({
+          data: {
+            userId: currentUser.id,
+            orderNumber: this.createOrderNumber(),
+            status: "pending",
+            deliveryType: dto.deliveryType,
+            notes: dto.notes,
+            shippingName:
+              dto.shippingName ?? `${firstName} ${lastName}`.trim(),
+            shippingPhone: dto.shippingPhone ?? phone,
+            shippingStreet: dto.shippingStreet,
+            shippingCity: dto.shippingCity,
+            shippingState: dto.shippingState,
+            shippingPostalCode: dto.shippingPostalCode,
+            shippingCountry: dto.shippingCountry,
+            subtotal,
+            shippingCost: 0,
+            discountAmount: 0,
+            total: subtotal,
+            items: {
+              create: cartItems.map((item) => ({
+                productId: item.productId,
+                productName: item.product.name,
+                unitPrice: item.product.sellPrice,
+                quantity: item.quantity,
+                totalPrice: Number(item.product.sellPrice) * item.quantity,
+              })),
+            },
+          },
+          include: this.orderInclude,
+        });
+
+        await tx.cartItem.deleteMany({ where: { userId: currentUser.id } });
+        return order;
+      }
+
+      const items = dto.items ?? [];
+      if (!items.length) {
+        throw new BadRequestException("Cart is empty.");
+      }
+
+      const products = await tx.product.findMany({
+        where: {
+          id: { in: items.map((item) => item.productId) },
+          deletedAt: null,
+          status: "active",
         },
       });
 
-      await this.otpService.sendOtp({
-        user,
-        identifier: dto.email,
-        type: "secureToken",
-        purpose: "setPassword",
+      if (products.length !== items.length) {
+        throw new BadRequestException("One or more products are unavailable.");
+      }
+
+      const priceMap = new Map(
+        products.map((product) => [product.id, product.sellPrice]),
+      );
+      const subtotal = items.reduce(
+        (sum, item) => sum + Number(priceMap.get(item.productId)) * item.quantity,
+        0,
+      );
+
+      let user = await tx.user.findFirst({
+        where: { email, deletedAt: null },
       });
 
-      const order = await tx.order.create({
+      const isNewUser = !user;
+      if (!user) {
+        user = await tx.user.create({
+          data: {
+            email,
+            firstName,
+            lastName,
+            displayName: `${firstName} ${lastName}`.trim(),
+            phone,
+            role: "patient",
+          },
+        });
+      } else {
+        user = await tx.user.update({
+          where: { id: user.id },
+          data: {
+            firstName,
+            lastName,
+            displayName: `${firstName} ${lastName}`.trim(),
+            phone,
+          },
+        });
+      }
+
+      if (isNewUser) {
+        await this.otpService.sendOtp({
+          user,
+          identifier: email,
+          type: "secureToken",
+          purpose: "setPassword",
+        });
+      }
+
+      return tx.order.create({
         data: {
           userId: user.id,
-          orderNumber,
+          orderNumber: this.createOrderNumber(),
           status: "pending",
           deliveryType: dto.deliveryType,
           notes: dto.notes,
-          shippingName: dto.shippingName,
-          shippingPhone: dto.shippingPhone,
-          shippingStreet: dto.shippingStreet,
-          shippingCity: dto.shippingCity,
-          shippingState: dto.shippingState,
-          shippingPostalCode: dto.shippingPostalCode,
-          shippingCountry: dto.shippingCountry,
-          subtotal: orderSubtotal,
-          shippingCost: 0,
-          discountAmount: 0,
-          total: orderSubtotal,
-          items: {
-            create: dto.items.map((item) => ({
-              productId: item.productId,
-              productName:
-                products.find((p) => p.id === item.productId)?.name ?? "",
-              unitPrice: priceMap.get(item.productId)!,
-              quantity: item.quantity,
-              totalPrice: Number(priceMap.get(item.productId)) * item.quantity,
-            })),
-          },
-        },
-        include: this.orderInclude,
-      });
-
-      return { user, order };
-    });
-
-    return {
-      message: "Order placed successfully.",
-      data: { order: result.order, user: result.user },
-    };
-  }
-
-  async createOrder(dto: CreateOrderDto, userId: string) {
-    const cartItems = await this.prisma.cartItem.findMany({
-      where: { userId },
-      include: { product: true },
-    });
-
-    if (!cartItems.length) {
-      throw new BadRequestException("Cart is empty.");
-    }
-
-    const subtotal = cartItems.reduce(
-      (sum, item) => sum + Number(item.product.price) * item.quantity,
-      0,
-    );
-    const total = subtotal;
-
-    const orderNumber = `ORD-${Date.now()}`;
-
-    const order = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.order.create({
-        data: {
-          userId,
-          orderNumber,
-          status: "pending",
-          deliveryType: dto.deliveryType,
-          notes: dto.notes,
-          shippingName: dto.shippingName,
-          shippingPhone: dto.shippingPhone,
+          shippingName: dto.shippingName ?? `${firstName} ${lastName}`.trim(),
+          shippingPhone: dto.shippingPhone ?? phone,
           shippingStreet: dto.shippingStreet,
           shippingCity: dto.shippingCity,
           shippingState: dto.shippingState,
@@ -223,26 +256,26 @@ export class OrderService {
           subtotal,
           shippingCost: 0,
           discountAmount: 0,
-          total,
+          total: subtotal,
           items: {
-            create: cartItems.map((item) => ({
+            create: items.map((item) => ({
               productId: item.productId,
-              productName: item.product.name,
-              unitPrice: item.product.price,
+              productName:
+                products.find((product) => product.id === item.productId)?.name ?? "",
+              unitPrice: priceMap.get(item.productId)!,
               quantity: item.quantity,
-              totalPrice: Number(item.product.price) * item.quantity,
+              totalPrice: Number(priceMap.get(item.productId)) * item.quantity,
             })),
           },
         },
         include: this.orderInclude,
       });
-
-      await tx.cartItem.deleteMany({ where: { userId } });
-
-      return created;
     });
 
-    return { message: "Order placed successfully.", data: order };
+    return {
+      message: "Order placed successfully.",
+      data: this.serializeOrder(result),
+    };
   }
 
   async listOrders(query: OrderQueryDto, currentUser: Express.User) {
@@ -294,7 +327,7 @@ export class OrderService {
     return {
       message: "Orders fetched successfully.",
       data: {
-        orders,
+        orders: orders.map((order) => this.serializeOrder(order)),
         total,
         page,
         limit,
@@ -313,7 +346,7 @@ export class OrderService {
       throw new ForbiddenException("You can only view your own orders.");
     }
 
-    return { message: "Order fetched successfully.", data: order };
+    return { message: "Order fetched successfully.", data: this.serializeOrder(order) };
   }
 
   async updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
@@ -331,7 +364,7 @@ export class OrderService {
       include: this.orderInclude,
     });
 
-    return { message: "Order status updated.", data: order };
+    return { message: "Order status updated.", data: this.serializeOrder(order) };
   }
 
   // ── Shipments ─────────────────────────────────────────────
@@ -366,7 +399,16 @@ export class OrderService {
 
   private cartItemInclude = {
     product: {
-      include: { images: { take: 1 } },
+      include: {
+        images: {
+          take: 1,
+          include: {
+            uploadedBy: {
+              omit: { password: true },
+            },
+          },
+        },
+      },
     },
   } satisfies Prisma.CartItemInclude;
 
@@ -374,9 +416,51 @@ export class OrderService {
     user: { omit: { password: true } },
     items: {
       include: {
-        product: { include: { images: { take: 1 } } },
+        product: {
+          include: {
+            images: {
+              take: 1,
+              include: {
+                uploadedBy: {
+                  omit: { password: true },
+                },
+              },
+            },
+          },
+        },
       },
     },
     shipments: { orderBy: { createdAt: "desc" } },
   } satisfies Prisma.OrderInclude;
+
+  private createOrderNumber() {
+    return `ORD-${Date.now()}`;
+  }
+
+  private serializeProduct(product: any) {
+    const { sellPrice, compareAtPrice, ...rest } = product;
+    return {
+      ...rest,
+      price: Number(sellPrice),
+      compareAtPrice:
+        compareAtPrice == null ? undefined : Number(compareAtPrice),
+    };
+  }
+
+  private serializeOrder(order: any) {
+    return {
+      ...order,
+      items: order.items.map((item: any) => ({
+        ...item,
+        product: item.product ? this.serializeProduct(item.product) : null,
+      })),
+    };
+  }
+
+  private serializeCartItem(item: any) {
+    return {
+      ...item,
+      product: this.serializeProduct(item.product),
+    };
+  }
 }

@@ -570,6 +570,366 @@ export class DashboardService {
       },
     };
   }
+
+  async getStaffOverview(userId: string) {
+    const staffProfile = await this.prisma.staffProfile.findUnique({
+      where: { userId },
+      include: {
+        user: { select: { displayName: true } },
+        branch: { select: { name: true } },
+      },
+    });
+
+    if (!staffProfile) {
+      throw new NotFoundException("Staff profile not found.");
+    }
+
+    const now = new Date();
+    const today = startOfDay(now);
+    const tomorrow = addDays(today, 1);
+    const sevenDaysAgo = addDays(today, -6);
+    const ninetyDaysAgo = addDays(today, -89);
+
+    const activeAssignments = await this.prisma.staffAssignment.findMany({
+      where: { staffId: userId, isActive: true },
+      select: { patientId: true, assignedAt: true },
+      orderBy: { assignedAt: "desc" },
+    });
+
+    const assignedPatientIds = activeAssignments.map((assignment) => assignment.patientId);
+
+    const [
+      appointmentsToday,
+      activeUpcoming,
+      completedCount,
+      appointmentsLast90Days,
+      assignedPatients,
+      openConversations,
+      orderStatusCounts,
+      upcomingAppointments,
+    ] = await Promise.all([
+      this.prisma.appointment.count({
+        where: {
+          patientId: { in: assignedPatientIds.length ? assignedPatientIds : [""] },
+          scheduledStartAt: { gte: today, lt: tomorrow },
+          status: { notIn: ["cancelled", "completed", "noShow"] },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          patientId: { in: assignedPatientIds.length ? assignedPatientIds : [""] },
+          scheduledStartAt: { gte: today },
+          status: { notIn: ["cancelled", "completed", "noShow"] },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          patientId: { in: assignedPatientIds.length ? assignedPatientIds : [""] },
+          status: "completed",
+        },
+      }),
+      this.prisma.appointment.findMany({
+        where: {
+          patientId: { in: assignedPatientIds.length ? assignedPatientIds : [""] },
+          scheduledStartAt: { gte: ninetyDaysAgo, lt: tomorrow },
+          status: { notIn: ["cancelled", "noShow"] },
+        },
+        select: { scheduledStartAt: true },
+      }),
+      this.prisma.patientProfile.findMany({
+        where: { id: { in: assignedPatientIds.length ? assignedPatientIds : [""] } },
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, displayName: true, email: true, phone: true } },
+        },
+      }),
+      this.prisma.conversation.count({
+        where: {
+          patientId: { in: assignedPatientIds.length ? assignedPatientIds : [""] },
+          status: "open",
+        },
+      }),
+      this.prisma.order.groupBy({
+        by: ["status"],
+        _count: true,
+      }),
+      this.prisma.appointment.findMany({
+        where: {
+          patientId: { in: assignedPatientIds.length ? assignedPatientIds : [""] },
+          scheduledStartAt: { gte: today },
+          status: { notIn: ["cancelled", "completed", "noShow"] },
+        },
+        orderBy: { scheduledStartAt: "asc" },
+        take: 6,
+        include: {
+          patient: {
+            include: { user: { select: { displayName: true } } },
+          },
+          doctor: {
+            include: { user: { select: { displayName: true } } },
+          },
+          branch: { select: { name: true } },
+        },
+      }),
+    ]);
+
+    const last7Days = buildDateRange(sevenDaysAgo, 7);
+    const last90Days = buildDateRange(ninetyDaysAgo, 90);
+
+    const assignmentCounts = activeAssignments.reduce(
+      (acc, assignment) => {
+        const key = toDateKey(assignment.assignedAt);
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const appointmentWindow = fillDailyCounts(
+      last90Days,
+      groupByDay(appointmentsLast90Days.map((row) => row.scheduledStartAt)),
+    );
+
+    const pendingOrders = orderStatusCounts
+      .filter((row) => ["pending", "processing", "shipped"].includes(row.status))
+      .reduce((sum, row) => sum + row._count, 0);
+
+    const deliveredOrders = orderStatusCounts
+      .filter((row) => row.status === "delivered")
+      .reduce((sum, row) => sum + row._count, 0);
+
+    return {
+      data: {
+        profile: {
+          displayName: staffProfile.user?.displayName ?? "Staff",
+          title: staffProfile.title,
+          specialty: staffProfile.specialty ?? undefined,
+          branchName: staffProfile.branch?.name ?? null,
+          credentials: staffProfile.credentials,
+          isActive: staffProfile.isActive,
+        },
+        caseload: {
+          totalAssigned: activeAssignments.length,
+          activePatients: assignedPatientIds.length,
+          recentAssignments: fillDailyCounts(last7Days, assignmentCounts),
+        },
+        upcomingVisits: {
+          todayCount: appointmentsToday,
+          active: activeUpcoming,
+          completed: completedCount,
+          window: appointmentWindow,
+        },
+        coordination: {
+          openConversations,
+          pendingOrders,
+          deliveredOrders,
+          orderStatusMix: orderStatusCounts.map((row) => ({
+            status: row.status,
+            count: row._count,
+          })),
+        },
+        upcomingAppointments: upcomingAppointments.map((a) => ({
+          id: a.id,
+          scheduledStartAt: a.scheduledStartAt.toISOString(),
+          status: a.status,
+          patientName: a.patient.user?.displayName ?? "Patient",
+          doctorName: a.doctor.user?.displayName ?? "Doctor",
+          branchName: a.branch?.name ?? null,
+        })),
+        assignedPatients: assignedPatients.map((patient) => ({
+          id: patient.user?.id ?? patient.userId,
+          patientId: patient.id,
+          displayName: patient.user?.displayName ?? patient.id,
+          email: patient.user?.email ?? null,
+          phone: patient.user?.phone ?? null,
+          assignedAt:
+            activeAssignments.find((assignment) => assignment.patientId === patient.id)?.assignedAt.toISOString() ??
+            patient.createdAt.toISOString(),
+        })),
+        focus: {
+          branchName: staffProfile.branch?.name ?? null,
+          activePatients: assignedPatientIds.length,
+          openConversations,
+          pendingOrders,
+        },
+      },
+    };
+  }
+
+  async getPatientOverview(userId: string) {
+    const patientProfile = await this.prisma.patientProfile.findUnique({
+      where: { userId },
+      include: {
+        user: { select: { displayName: true, email: true, phone: true } },
+      },
+    });
+
+    if (!patientProfile) {
+      throw new NotFoundException("Patient profile not found.");
+    }
+
+    const patientId = patientProfile.id;
+    const now = new Date();
+    const today = startOfDay(now);
+    const tomorrow = addDays(today, 1);
+    const ninetyDaysAgo = addDays(today, -89);
+
+    const [
+      todayCount,
+      activeUpcoming,
+      completedCount,
+      appointmentsLast90Days,
+      upcomingAppointments,
+      orders,
+      notifications,
+      openConversations,
+    ] = await Promise.all([
+      this.prisma.appointment.count({
+        where: {
+          patientId,
+          scheduledStartAt: { gte: today, lt: tomorrow },
+          status: { notIn: ["cancelled", "completed", "noShow"] },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: {
+          patientId,
+          scheduledStartAt: { gte: today },
+          status: { notIn: ["cancelled", "completed", "noShow"] },
+        },
+      }),
+      this.prisma.appointment.count({
+        where: { patientId, status: "completed" },
+      }),
+      this.prisma.appointment.findMany({
+        where: {
+          patientId,
+          scheduledStartAt: { gte: ninetyDaysAgo, lt: tomorrow },
+          status: { notIn: ["cancelled", "noShow"] },
+        },
+        select: { scheduledStartAt: true },
+      }),
+      this.prisma.appointment.findMany({
+        where: {
+          patientId,
+          scheduledStartAt: { gte: today },
+          status: { notIn: ["cancelled", "completed", "noShow"] },
+        },
+        orderBy: { scheduledStartAt: "asc" },
+        take: 6,
+        include: {
+          patient: {
+            include: { user: { select: { displayName: true } } },
+          },
+          doctor: {
+            include: { user: { select: { displayName: true } } },
+          },
+          branch: { select: { name: true } },
+        },
+      }),
+      this.prisma.order.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { items: true },
+      }),
+      this.prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      this.prisma.conversation.count({
+        where: { patientId, status: "open" },
+      }),
+    ]);
+
+    const appointmentWindow = fillDailyCounts(
+      buildDateRange(ninetyDaysAgo, 90),
+      groupByDay(appointmentsLast90Days.map((row) => row.scheduledStartAt)),
+    );
+
+    const activeOrders = orders.filter((order) =>
+      ["pending", "processing", "shipped"].includes(order.status),
+    );
+    const deliveredOrders = orders.filter((order) => order.status === "delivered");
+    const totalSpent = deliveredOrders.reduce(
+      (sum, order) => sum + Number(order.total),
+      0,
+    );
+    const unreadNotifications = notifications.filter((notification) => !notification.readAt).length;
+    const nextAppointmentAt = upcomingAppointments[0]?.scheduledStartAt?.toISOString();
+
+    const statusCounts = orders.reduce(
+      (acc, order) => {
+        acc[order.status] = (acc[order.status] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      data: {
+        profile: {
+          displayName: patientProfile.user?.displayName ?? "Patient",
+          email: patientProfile.user?.email ?? null,
+          phone: patientProfile.user?.phone ?? null,
+          birthDate: patientProfile.birthDate.toISOString(),
+          gender: patientProfile.gender,
+        },
+        upcomingVisits: {
+          todayCount,
+          active: activeUpcoming,
+          completed: completedCount,
+          window: appointmentWindow,
+        },
+        orders: {
+          active: activeOrders.length,
+          delivered: deliveredOrders.length,
+          totalSpent,
+          statusMix: Object.entries(statusCounts).map(([status, count]) => ({
+            status,
+            count,
+          })),
+        },
+        inbox: {
+          openConversations,
+          unreadNotifications,
+          totalNotifications: notifications.length,
+        },
+        upcomingAppointments: upcomingAppointments.map((a) => ({
+          id: a.id,
+          scheduledStartAt: a.scheduledStartAt.toISOString(),
+          status: a.status,
+          patientName: a.patient.user?.displayName ?? "Patient",
+          doctorName: a.doctor.user?.displayName ?? "Doctor",
+          branchName: a.branch?.name ?? null,
+        })),
+        recentOrders: orders.map((order) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          total: Number(order.total),
+          createdAt: order.createdAt.toISOString(),
+          itemCount: order.items.length,
+        })),
+        recentNotifications: notifications.map((notification) => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          purpose: notification.purpose,
+          readAt: notification.readAt?.toISOString(),
+          createdAt: notification.createdAt.toISOString(),
+        })),
+        focus: {
+          nextAppointmentAt,
+          activeOrders: activeOrders.length,
+          unreadNotifications,
+          totalSpent,
+        },
+      },
+    };
+  }
 }
 
 // ─── Date utilities ───────────────────────────────────────────────────────────

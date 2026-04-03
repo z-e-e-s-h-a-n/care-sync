@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { ImagePlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
@@ -10,12 +12,14 @@ import {
   createProductSchema,
   type CreateProductType,
 } from "@workspace/contracts/product";
+import type { MediaResponse } from "@workspace/contracts/media";
 import { Button } from "@workspace/ui/components/button";
 import { ComboboxField } from "@workspace/ui/components/combobox-field";
 import { Form, FormSection } from "@workspace/ui/components/form";
 import { InputField } from "@workspace/ui/components/input-field";
 import { SelectField } from "@workspace/ui/components/select-field";
 import { SwitchField } from "@workspace/ui/components/switch-field";
+import { useMediaLibrary } from "@workspace/ui/hooks/use-media";
 
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import { useProduct, useSaveProduct, useCategoryList } from "@/hooks/product";
@@ -24,6 +28,8 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
   const router = useRouter();
   const { data, isLoading } = useProduct(entityId);
   const { saveProduct, isPending } = useSaveProduct(entityId);
+  const { onMediaSelect } = useMediaLibrary();
+  const [selectedImages, setSelectedImages] = useState<MediaResponse[]>([]);
 
   const form = useForm({
     defaultValues: {
@@ -36,6 +42,7 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
       requiresShipping: true,
       status: "draft",
       categoryId: null,
+      imageIds: [],
     } as CreateProductType,
     validators: {
       onSubmit: createProductSchema,
@@ -57,8 +64,37 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
 
   useEffect(() => {
     if (!data) return;
-    form.reset(data);
+    form.reset({
+      ...data,
+      imageIds: data.images?.map((image) => image.id) ?? [],
+    });
+    setSelectedImages(data.images ?? []);
   }, [data, form]);
+
+  const addImage = () => {
+    onMediaSelect((media) => {
+      setSelectedImages((prev) => {
+        if (prev.some((image) => image.id === media.id)) return prev;
+        const next = [...prev, media];
+        form.setFieldValue(
+          "imageIds",
+          next.map((image) => image.id),
+        );
+        return next;
+      });
+    });
+  };
+
+  const removeImage = (mediaId: string) => {
+    setSelectedImages((prev) => {
+      const next = prev.filter((image) => image.id !== mediaId);
+      form.setFieldValue(
+        "imageIds",
+        next.map((image) => image.id),
+      );
+      return next;
+    });
+  };
 
   if (isLoading) return <CUFormSkeleton />;
 
@@ -176,6 +212,69 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
           desc="Enable if this product needs to be physically shipped."
           className="md:col-span-2"
         />
+      </FormSection>
+
+      <FormSection
+        title="Product Media"
+        description="Select product images from the media library. Uploads still go through the shared media module."
+      >
+        <div className="space-y-4 md:col-span-2">
+          <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/30 p-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Images</p>
+              <p className="text-sm text-muted-foreground">
+                Choose one or more media items to display for this product.
+              </p>
+            </div>
+            <Button type="button" variant="outline" onClick={addImage}>
+              <ImagePlus className="mr-2 size-4" />
+              Add Image
+            </Button>
+          </div>
+
+          {selectedImages.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {selectedImages.map((image) => (
+                <div
+                  key={image.id}
+                  className="overflow-hidden rounded-xl border bg-background"
+                >
+                  <div className="relative aspect-[4/3] bg-muted">
+                    <Image
+                      src={image.url}
+                      alt={image.altText || image.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex items-start justify-between gap-3 p-3">
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate text-sm font-medium">
+                        {image.name}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {image.altText || image.type}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeImage(image.id)}
+                      aria-label={`Remove ${image.name}`}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+              No images selected yet. Use the media library to upload or choose product images.
+            </div>
+          )}
+        </div>
       </FormSection>
 
       <div className="flex items-center justify-between">

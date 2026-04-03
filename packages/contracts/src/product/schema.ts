@@ -40,6 +40,7 @@ export const createProductSchema = z.object({
   stockCount: z.coerce.number().int().min(0).default(0),
   requiresShipping: z.boolean().default(true),
   status: ProductStatusEnum.default("draft"),
+  imageIds: z.array(idSchema).default([]),
 });
 
 export const productQuerySchema = baseQuerySchema(
@@ -49,8 +50,4 @@ export const productQuerySchema = baseQuerySchema(
   categoryId: idSchema.optional(),
   status: ProductStatusEnum.optional(),
   inventoryStatus: InventoryStatusEnum.optional(),
-});
-
-export const addProductImageSchema = z.object({
-  mediaId: idSchema,
 });
