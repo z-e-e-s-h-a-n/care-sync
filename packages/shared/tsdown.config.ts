@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
   entry: {
@@ -8,7 +8,6 @@ export default defineConfig({
   outDir: "dist",
   format: ["esm"],
   target: "es2024",
-  splitting: false,
   sourcemap: true,
   clean: true,
   dts: true,

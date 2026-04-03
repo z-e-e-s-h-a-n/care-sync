@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
   entry: {
@@ -21,13 +21,24 @@ export default defineConfig({
     dashboard: "src/dashboard/index.ts",
     media: "src/media/index.ts",
     notification: "src/notification/index.ts",
+    staff: "src/staff/index.ts",
   },
   outDir: "dist",
   format: ["esm"],
   target: "es2024",
-  splitting: false,
   sourcemap: true,
   clean: true,
   dts: true,
   minify: false,
+  deps: {
+    neverBundle: [
+      "@workspace/shared",
+      "@workspace/db",
+      "zod",
+      "nestjs-zod",
+      "react",
+      "@types/react",
+      "@tabler/icons-react",
+    ],
+  },
 });

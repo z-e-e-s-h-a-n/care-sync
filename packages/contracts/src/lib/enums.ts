@@ -146,3 +146,6 @@ export const TrafficSourceSearchByEnum = z.enum([
   "landingPage",
 ]);
 export const TrafficSourceSortByEnum = z.enum(["createdAt"]);
+
+export const StaffSearchByEnum = z.enum(["displayName", "email", "title"]);
+export const StaffSortByEnum = z.enum(["displayName", "title", "createdAt"]);

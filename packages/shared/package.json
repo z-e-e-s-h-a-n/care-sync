@@ -5,18 +5,18 @@
   "private": true,
   "license": "ISC",
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "lint": "eslint",
     "check-types": "tsc --noEmit"
   },
   "exports": {
     "./utils": {
-      "import": "./dist/utils.js",
-      "types": "./dist/utils.d.ts"
+      "import": "./dist/utils.mjs",
+      "types": "./dist/utils.d.mts"
     },
     "./constants": {
-      "import": "./dist/constants.js",
-      "types": "./dist/constants.d.ts"
+      "import": "./dist/constants.mjs",
+      "types": "./dist/constants.d.mts"
     }
   },
   "dependencies": {
@@ -31,6 +31,6 @@
     "@types/node": "^25.5.0",
     "@workspace/config": "workspace:*",
     "eslint": "^9.39.4",
-    "tsup": "^8.5.1"
+    "tsdown": "0.21.7"
   }
 }

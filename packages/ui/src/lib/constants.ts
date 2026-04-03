@@ -39,6 +39,11 @@ export const adminSidebarMenu: NavGroup[] = [
         icon: IconCalendarTime,
       },
       {
+        label: "Staff",
+        href: "/admin/staff",
+        icon: IconUsersGroup,
+      },
+      {
         label: "Users",
         href: "/admin/users",
         icon: IconUsersGroup,
@@ -183,6 +188,33 @@ export const footerSidebarMenu: NavGroup[] = [
   },
 ];
 
+export const staffSidebarMenu: NavGroup[] = [
+  {
+    items: [
+      {
+        label: "Patients",
+        href: "/staff/patients",
+        icon: IconUsersGroup,
+      },
+      {
+        label: "Appointments",
+        href: "/staff/appointments",
+        icon: IconCalendarTime,
+      },
+      {
+        label: "Messages",
+        href: "/staff/messages",
+        icon: IconMessageCircle,
+      },
+      {
+        label: "Profile",
+        href: "/staff/profile",
+        icon: IconUserCircle,
+      },
+    ],
+  },
+];
+
 export const getSidebarMenu = (role: UserRole): NavGroup[] => {
   switch (role) {
     case "admin":
@@ -190,6 +222,9 @@ export const getSidebarMenu = (role: UserRole): NavGroup[] => {
 
     case "doctor":
       return doctorSidebarMenu;
+
+    case "staff":
+      return staffSidebarMenu;
 
     case "patient":
       return userSidebarMenu;

@@ -6,14 +6,14 @@
   "license": "ISC",
   "scripts": {
     "dev:templates": "email dev --dir src/email",
-    "build": "tsup",
+    "build": "tsdown",
     "lint": "eslint",
     "check-types": "tsc --noEmit"
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     }
   },
   "dependencies": {
@@ -34,6 +34,6 @@
     "eslint": "^9.39.4",
     "react-email": "5.2.8",
     "tailwindcss": "^4.2.2",
-    "tsup": "^8.5.1"
+    "tsdown": "0.21.7"
   }
 }

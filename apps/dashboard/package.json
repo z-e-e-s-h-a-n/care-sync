@@ -13,7 +13,7 @@
   "dependencies": {
     "@tabler/icons-react": "^3.41.1",
     "@tanstack/react-form": "^1.28.6",
-    "@tanstack/react-query": "^5.96.0",
+    "@tanstack/react-query": "^5.96.1",
     "@workspace/db": "workspace:*",
     "@workspace/sdk": "workspace:*",
     "@workspace/shared": "workspace:*",
@@ -38,6 +38,6 @@
     "@workspace/config": "workspace:*",
     "@workspace/contracts": "workspace:*",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.1"
+    "eslint-config-next": "^16.2.2"
   }
 }

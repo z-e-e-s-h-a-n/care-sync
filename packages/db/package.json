@@ -5,7 +5,7 @@
   "private": true,
   "license": "ISC",
   "scripts": {
-    "build": "prisma generate && tsup",
+    "build": "prisma generate && tsdown",
     "lint": "eslint . --max-warnings 0",
     "check-types": "prisma generate && tsc --noEmit",
     "prisma:generate": "prisma generate",
@@ -18,20 +18,20 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     },
     "./client": {
-      "import": "./dist/client.js",
-      "types": "./dist/client.d.ts"
+      "import": "./dist/client.mjs",
+      "types": "./dist/client.d.mts"
     },
     "./browser": {
-      "import": "./dist/browser.js",
-      "types": "./dist/browser.d.ts"
+      "import": "./dist/browser.mjs",
+      "types": "./dist/browser.d.mts"
     },
     "./enums": {
-      "import": "./dist/enums.js",
-      "types": "./dist/enums.d.ts"
+      "import": "./dist/enums.mjs",
+      "types": "./dist/enums.d.mts"
     }
   },
   "dependencies": {
@@ -44,10 +44,10 @@
     "@prisma/adapter-pg": "^7.6.0",
     "@types/node": "^25.5.0",
     "@workspace/config": "workspace:*",
-    "dotenv": "^17.3.1",
+    "dotenv": "^17.4.0",
     "eslint": "^9.39.4",
     "prisma": "^7.6.0",
-    "tsup": "^8.5.1",
+    "tsdown": "0.21.7",
     "tsx": "^4.21.0",
     "typescript": "5.9.3"
   }

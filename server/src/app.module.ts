@@ -33,6 +33,7 @@ import { ClientModule } from "./modules/client/client.module";
 import { LeadModule } from "@/modules/lead/lead.module";
 import { TrafficModule } from "./modules/traffic/traffic.module";
 import { DashboardModule } from "@/modules/dashboard/dashboard.module";
+import { StaffModule } from "@/modules/staff/staff.module";
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { DashboardModule } from "@/modules/dashboard/dashboard.module";
     LeadModule,
     TrafficModule,
     DashboardModule,
+    StaffModule,
   ],
 
   providers: [

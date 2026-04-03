@@ -5,86 +5,90 @@
   "private": true,
   "license": "ISC",
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "check-types": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0"
   },
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     },
     "./auth": {
-      "import": "./dist/auth.js",
-      "types": "./dist/auth.d.ts"
+      "import": "./dist/auth.mjs",
+      "types": "./dist/auth.d.mts"
     },
     "./user": {
-      "import": "./dist/user.js",
-      "types": "./dist/user.d.ts"
+      "import": "./dist/user.mjs",
+      "types": "./dist/user.d.mts"
     },
     "./admin": {
-      "import": "./dist/admin.js",
-      "types": "./dist/admin.d.ts"
+      "import": "./dist/admin.mjs",
+      "types": "./dist/admin.d.mts"
     },
     "./business": {
-      "import": "./dist/business.js",
-      "types": "./dist/business.d.ts"
+      "import": "./dist/business.mjs",
+      "types": "./dist/business.d.mts"
     },
     "./patient": {
-      "import": "./dist/patient.js",
-      "types": "./dist/patient.d.ts"
+      "import": "./dist/patient.mjs",
+      "types": "./dist/patient.d.mts"
     },
     "./doctor": {
-      "import": "./dist/doctor.js",
-      "types": "./dist/doctor.d.ts"
+      "import": "./dist/doctor.mjs",
+      "types": "./dist/doctor.d.mts"
     },
     "./availability": {
-      "import": "./dist/availability.js",
-      "types": "./dist/availability.d.ts"
+      "import": "./dist/availability.mjs",
+      "types": "./dist/availability.d.mts"
     },
     "./appointment": {
-      "import": "./dist/appointment.js",
-      "types": "./dist/appointment.d.ts"
+      "import": "./dist/appointment.mjs",
+      "types": "./dist/appointment.d.mts"
     },
     "./chat": {
-      "import": "./dist/chat.js",
-      "types": "./dist/chat.d.ts"
+      "import": "./dist/chat.mjs",
+      "types": "./dist/chat.d.mts"
     },
     "./payment": {
-      "import": "./dist/payment.js",
-      "types": "./dist/payment.d.ts"
+      "import": "./dist/payment.mjs",
+      "types": "./dist/payment.d.mts"
     },
     "./campaign": {
-      "import": "./dist/campaign.js",
-      "types": "./dist/campaign.d.ts"
+      "import": "./dist/campaign.mjs",
+      "types": "./dist/campaign.d.mts"
     },
     "./audit": {
-      "import": "./dist/audit.js",
-      "types": "./dist/audit.d.ts"
+      "import": "./dist/audit.mjs",
+      "types": "./dist/audit.d.mts"
     },
     "./traffic": {
-      "import": "./dist/traffic.js",
-      "types": "./dist/traffic.d.ts"
+      "import": "./dist/traffic.mjs",
+      "types": "./dist/traffic.d.mts"
     },
     "./contact": {
-      "import": "./dist/contact.js",
-      "types": "./dist/contact.d.ts"
+      "import": "./dist/contact.mjs",
+      "types": "./dist/contact.d.mts"
     },
     "./newsletter": {
-      "import": "./dist/newsletter.js",
-      "types": "./dist/audit.newsletter.ts"
+      "import": "./dist/newsletter.mjs",
+      "types": "./dist/newsletter.d.mts"
     },
     "./dashboard": {
-      "import": "./dist/dashboard.js",
-      "types": "./dist/dashboard.d.ts"
+      "import": "./dist/dashboard.mjs",
+      "types": "./dist/dashboard.d.mts"
     },
     "./media": {
-      "import": "./dist/media.js",
-      "types": "./dist/media.d.ts"
+      "import": "./dist/media.mjs",
+      "types": "./dist/media.d.mts"
     },
     "./notification": {
-      "import": "./dist/notification.js",
-      "types": "./dist/notification.d.ts"
+      "import": "./dist/notification.mjs",
+      "types": "./dist/notification.d.mts"
+    },
+    "./staff": {
+      "import": "./dist/staff.mjs",
+      "types": "./dist/staff.d.mts"
     }
   },
   "dependencies": {
@@ -99,6 +103,6 @@
     "@workspace/config": "workspace:*",
     "eslint": "^9.39.4",
     "react": "^19.2.4",
-    "tsup": "^8.5.1"
+    "tsdown": "0.21.7"
   }
 }
