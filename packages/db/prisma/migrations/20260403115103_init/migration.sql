@@ -272,6 +272,7 @@ CREATE TABLE "Media" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
+    "productId" TEXT,
 
     CONSTRAINT "Media_pkey" PRIMARY KEY ("id")
 );
@@ -620,7 +621,8 @@ CREATE TABLE "Product" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT,
-    "price" DECIMAL(10,2) NOT NULL,
+    "costPrice" DECIMAL(10,2),
+    "sellPrice" DECIMAL(10,2) NOT NULL,
     "compareAtPrice" DECIMAL(10,2),
     "stockCount" INTEGER NOT NULL DEFAULT 0,
     "requiresShipping" BOOLEAN NOT NULL DEFAULT true,
@@ -631,17 +633,6 @@ CREATE TABLE "Product" (
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ProductImage" (
-    "id" TEXT NOT NULL,
-    "productId" TEXT NOT NULL,
-    "mediaId" TEXT NOT NULL,
-    "position" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "ProductImage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1087,12 +1078,6 @@ CREATE INDEX "Product_inventoryStatus_idx" ON "Product"("inventoryStatus");
 CREATE INDEX "Product_deletedAt_idx" ON "Product"("deletedAt");
 
 -- CreateIndex
-CREATE INDEX "ProductImage_productId_position_idx" ON "ProductImage"("productId", "position");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ProductImage_productId_mediaId_key" ON "ProductImage"("productId", "mediaId");
-
--- CreateIndex
 CREATE INDEX "CartItem_userId_idx" ON "CartItem"("userId");
 
 -- CreateIndex
@@ -1210,6 +1195,9 @@ ALTER TABLE "CampaignRecipient" ADD CONSTRAINT "CampaignRecipient_userId_fkey" F
 ALTER TABLE "Media" ADD CONSTRAINT "Media_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Media" ADD CONSTRAINT "Media_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PatientProfile" ADD CONSTRAINT "PatientProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1316,12 +1304,6 @@ ALTER TABLE "ProductCategory" ADD CONSTRAINT "ProductCategory_parentId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ProductCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_mediaId_fkey" FOREIGN KEY ("mediaId") REFERENCES "Media"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

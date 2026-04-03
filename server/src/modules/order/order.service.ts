@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import type {
   AddToCartDto,
+  GuestCheckoutDto,
   UpdateCartItemDto,
   CreateOrderDto,
   UpdateOrderStatusDto,
@@ -16,10 +18,14 @@ import type {
 import type { Prisma } from "@workspace/db/client";
 
 import { PrismaService } from "@/modules/prisma/prisma.service";
+import { OtpService } from "@/modules/auth/otp.service";
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly otpService: OtpService,
+  ) {}
 
   // ── Cart ──────────────────────────────────────────────────
 
@@ -88,6 +94,98 @@ export class OrderService {
   }
 
   // ── Orders ────────────────────────────────────────────────
+
+  async guestCheckout(dto: GuestCheckoutDto) {
+    const existing = await this.prisma.user.findFirst({
+      where: { email: dto.email },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        "An account with this email already exists. Please log in to complete your order.",
+      );
+    }
+
+    // Validate products exist and fetch prices
+    const products = await this.prisma.product.findMany({
+      where: {
+        id: { in: dto.items.map((i) => i.productId) },
+        deletedAt: null,
+        status: "active",
+      },
+    });
+
+    if (products.length !== dto.items.length) {
+      throw new BadRequestException("One or more products are unavailable.");
+    }
+
+    const priceMap = new Map(products.map((p) => [p.id, p.price]));
+    const orderSubtotal = dto.items.reduce(
+      (sum, item) => sum + Number(priceMap.get(item.productId)) * item.quantity,
+      0,
+    );
+
+    const orderNumber = `ORD-${Date.now()}`;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: dto.email,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          displayName: `${dto.firstName} ${dto.lastName}`.trim(),
+          phone: dto.phone,
+          role: "patient",
+        },
+      });
+
+      await this.otpService.sendOtp({
+        user,
+        identifier: dto.email,
+        type: "secureToken",
+        purpose: "setPassword",
+      });
+
+      const order = await tx.order.create({
+        data: {
+          userId: user.id,
+          orderNumber,
+          status: "pending",
+          deliveryType: dto.deliveryType,
+          notes: dto.notes,
+          shippingName: dto.shippingName,
+          shippingPhone: dto.shippingPhone,
+          shippingStreet: dto.shippingStreet,
+          shippingCity: dto.shippingCity,
+          shippingState: dto.shippingState,
+          shippingPostalCode: dto.shippingPostalCode,
+          shippingCountry: dto.shippingCountry,
+          subtotal: orderSubtotal,
+          shippingCost: 0,
+          discountAmount: 0,
+          total: orderSubtotal,
+          items: {
+            create: dto.items.map((item) => ({
+              productId: item.productId,
+              productName:
+                products.find((p) => p.id === item.productId)?.name ?? "",
+              unitPrice: priceMap.get(item.productId)!,
+              quantity: item.quantity,
+              totalPrice: Number(priceMap.get(item.productId)) * item.quantity,
+            })),
+          },
+        },
+        include: this.orderInclude,
+      });
+
+      return { user, order };
+    });
+
+    return {
+      message: "Order placed successfully.",
+      data: { order: result.order, user: result.user },
+    };
+  }
 
   async createOrder(dto: CreateOrderDto, userId: string) {
     const cartItems = await this.prisma.cartItem.findMany({
@@ -268,33 +366,17 @@ export class OrderService {
 
   private cartItemInclude = {
     product: {
-      include: {
-        images: {
-          take: 1,
-          orderBy: { position: "asc" as const },
-          include: { media: true },
-        },
-      },
+      include: { images: { take: 1 } },
     },
   } satisfies Prisma.CartItemInclude;
 
   private orderInclude = {
-    user: {
-      omit: { password: true },
-    },
+    user: { omit: { password: true } },
     items: {
       include: {
-        product: {
-          include: {
-            images: {
-              take: 1,
-              orderBy: { position: "asc" as const },
-              include: { media: true },
-            },
-          },
-        },
+        product: { include: { images: { take: 1 } } },
       },
     },
-    shipments: { orderBy: { createdAt: "desc" as const } },
+    shipments: { orderBy: { createdAt: "desc" } },
   } satisfies Prisma.OrderInclude;
 }

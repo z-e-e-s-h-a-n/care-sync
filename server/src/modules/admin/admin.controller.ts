@@ -12,7 +12,6 @@ import { CUUserDto, UserQueryDto } from "@workspace/contracts/admin";
 
 import { AdminService } from "./admin.service";
 import { Roles } from "@/decorators/roles.decorator";
-import { BooleanQuery } from "@/decorators/boolean-query.decorator";
 import { User } from "@/decorators/user.decorator";
 
 @Controller("users")
@@ -45,11 +44,8 @@ export class AdminController {
 
   @Roles("admin")
   @Delete(":userId")
-  async deleteUser(
-    @Param("userId") userId: string,
-    @BooleanQuery("force") force: boolean,
-  ) {
-    return this.adminService.deleteUser(userId, force);
+  async deleteUser(@Param("userId") userId: string) {
+    return this.adminService.deleteUser(userId);
   }
 
   @Roles("admin")

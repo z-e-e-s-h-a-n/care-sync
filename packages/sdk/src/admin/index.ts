@@ -24,10 +24,8 @@ export const updateUser = (id: string, data: CUUserType) => {
   return executeApi<UserResponse>(() => apiClient.put(`/users/${id}`, data));
 };
 
-export const deleteUser = (id: string, force?: boolean) => {
-  return executeApi<null>(() =>
-    apiClient.delete(`/users/${id}`, { params: { force } }),
-  );
+export const deleteUser = (id: string) => {
+  return executeApi<null>(() => apiClient.delete(`/users/${id}`));
 };
 
 export const restoreUser = (id: string) => {

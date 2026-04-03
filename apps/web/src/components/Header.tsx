@@ -14,12 +14,38 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 import UserCard from "@workspace/ui/shared/UserCard";
 import DropdownNav from "@workspace/ui/shared/DropdownNav";
-import { IconLogout } from "@tabler/icons-react";
+import { IconLogout, IconShoppingCart } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useDialog } from "@workspace/ui/hooks/use-dialog";
 import AppointmentForm from "./AppointmentForm";
 import { userSidebarMenu } from "@workspace/ui/lib/constants";
 import Logo from "@workspace/ui/shared/Logo";
+import { useLocalCart } from "@/hooks/use-local-cart";
+import { useServerCart } from "@/hooks/healthcare";
+
+const CartIcon = () => {
+  const { currentUser } = useUser();
+  const { count: localCount } = useLocalCart();
+  const { data: serverCart } = useServerCart(Boolean(currentUser));
+  const serverCount =
+    serverCart?.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) ?? 0;
+  const count = currentUser ? serverCount : localCount;
+
+  return (
+    <Link
+      href="/cart"
+      className="relative flex items-center justify-center size-10 rounded-full border border-border/60 bg-card/60 hover:bg-card transition"
+      aria-label="Shopping cart"
+    >
+      <IconShoppingCart className="size-5 text-muted-foreground" />
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </Link>
+  );
+};
 
 const Header = () => {
   const pathname = usePathname();
@@ -65,6 +91,8 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-3">
+            <CartIcon />
+
             {!currentUser && (
               <Button href="/auth/sign-in" variant="outline">
                 Sign in

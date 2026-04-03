@@ -125,10 +125,9 @@ export class AdminService {
     return { message: "User Updated Successfully", data: updated };
   }
 
-  async deleteUser(userId: string, force = false) {
+  async deleteUser(userId: string) {
     await this.prisma.user.delete({
       where: { id: userId },
-      ...({ force } as any),
     });
 
     return { message: "User Deleted Successfully." };

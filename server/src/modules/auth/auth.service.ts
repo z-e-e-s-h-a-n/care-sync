@@ -323,7 +323,7 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const { user } = await this.findUserFail404(dto.identifier);
+    const { user, key } = await this.findUserFail404(dto.identifier);
 
     await this.otpService.verifyOtp({
       userId: user.id,
@@ -336,7 +336,12 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword },
+      data: {
+        password: hashedPassword,
+        ...(key === "email"
+          ? { isEmailVerified: true }
+          : { isPhoneVerified: true }),
+      },
     });
 
     await this.notifyService.sendNotification({
@@ -499,11 +504,20 @@ export class AuthService {
       user,
     });
 
-    await this.otpService.sendOtp({
-      user,
-      identifier: dto.identifier,
-      purpose: "verifyIdentifier",
-    });
+    if (!hashedPassword) {
+      await this.otpService.sendOtp({
+        user,
+        identifier: value,
+        type: "secureToken",
+        purpose: "setPassword",
+      });
+    } else {
+      await this.otpService.sendOtp({
+        user,
+        identifier: dto.identifier,
+        purpose: "verifyIdentifier",
+      });
+    }
 
     return { user, key };
   }

@@ -8,11 +8,15 @@ import {
   Post,
   Put,
   Query,
+  Req,
+  Res,
 } from "@nestjs/common";
+import type { Request, Response } from "express";
 import {
   AddToCartDto,
   UpdateCartItemDto,
   CreateOrderDto,
+  GuestCheckoutDto,
   UpdateOrderStatusDto,
   CreateShipmentDto,
   UpdateShipmentDto,
@@ -20,12 +24,17 @@ import {
 } from "@workspace/contracts/order";
 
 import { OrderService } from "./order.service";
+import { TokenService } from "@/modules/token/token.service";
 import { Roles } from "@/decorators/roles.decorator";
+import { Public } from "@/decorators/public.decorator";
 import { User } from "@/decorators/user.decorator";
 
 @Controller("orders")
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly tokenService: TokenService,
+  ) {}
 
   // ── Cart ──────────────────────────────────────────────────
 
@@ -69,6 +78,23 @@ export class OrderController {
   @Post()
   createOrder(@Body() dto: CreateOrderDto, @User("id") userId: string) {
     return this.orderService.createOrder(dto, userId);
+  }
+
+  @Public()
+  @Post("guest-checkout")
+  async guestCheckout(
+    @Body() dto: GuestCheckoutDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.orderService.guestCheckout(dto);
+    const user = result.data.user;
+    await this.tokenService.createAuthSession(req, res, {
+      id: user.id,
+      role: user.role,
+      status: user.status,
+    });
+    return { message: result.message, data: { order: result.data.order } };
   }
 
   @Roles("admin", "doctor", "staff", "patient")

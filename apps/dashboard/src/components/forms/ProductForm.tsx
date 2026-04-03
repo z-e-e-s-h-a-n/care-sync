@@ -133,7 +133,7 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
 
       <FormSection
         title="Pricing & Inventory"
-        description="Set the price, compare-at price, and stock level."
+        description="Set price, compare-at price, and stock level."
       >
         <InputField
           form={form}

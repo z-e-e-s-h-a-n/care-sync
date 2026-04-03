@@ -29,10 +29,8 @@ export const findMedia = (id: string) =>
 export const updateMedia = (id: string, data: MediaUpdateType) =>
   executeApi<MediaResponse>(() => apiClient.put(`/media/${id}`, data));
 
-export const deleteMedia = (id: string, force = false) =>
-  executeApi<MediaResponse>(() =>
-    apiClient.delete(`/media/${id}`, { params: { force } }),
-  );
+export const deleteMedia = (id: string) =>
+  executeApi<MediaResponse>(() => apiClient.delete(`/media/${id}`));
 
 export const restoreMedia = (id: string) =>
   executeApi<MediaResponse>(() => apiClient.post(`/media/${id}/restore`));

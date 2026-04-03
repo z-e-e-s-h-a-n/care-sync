@@ -3,6 +3,7 @@ import {
   addToCartSchema,
   updateCartItemSchema,
   createOrderSchema,
+  guestCheckoutSchema,
   updateOrderStatusSchema,
   createShipmentSchema,
   updateShipmentSchema,
@@ -12,6 +13,7 @@ import {
 export class AddToCartDto extends createZodDto(addToCartSchema) {}
 export class UpdateCartItemDto extends createZodDto(updateCartItemSchema) {}
 export class CreateOrderDto extends createZodDto(createOrderSchema) {}
+export class GuestCheckoutDto extends createZodDto(guestCheckoutSchema) {}
 export class UpdateOrderStatusDto extends createZodDto(updateOrderStatusSchema) {}
 export class CreateShipmentDto extends createZodDto(createShipmentSchema) {}
 export class UpdateShipmentDto extends createZodDto(updateShipmentSchema) {}

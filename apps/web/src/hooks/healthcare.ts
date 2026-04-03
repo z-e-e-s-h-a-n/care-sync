@@ -13,6 +13,18 @@ import type {
   CreatePaymentIntentType,
   PaymentQueryType,
 } from "@workspace/contracts/payment";
+import type {
+  ProductQueryType,
+  ProductResponse,
+} from "@workspace/contracts/product";
+import type {
+  AddToCartType,
+  UpdateCartItemType,
+  CreateOrderType,
+  GuestCheckoutType,
+  OrderQueryType,
+  OrderResponse,
+} from "@workspace/contracts/order";
 import type { ApiException } from "@workspace/sdk";
 import * as appointment from "@workspace/sdk/appointment";
 import * as availability from "@workspace/sdk/availability";
@@ -20,6 +32,8 @@ import * as chat from "@workspace/sdk/chat";
 import * as doctor from "@workspace/sdk/doctor";
 import * as patient from "@workspace/sdk/patient";
 import * as payment from "@workspace/sdk/payment";
+import * as product from "@workspace/sdk/product";
+import * as order from "@workspace/sdk/order";
 import { parseDuration } from "@workspace/shared/utils";
 
 const STALE_TIME = parseDuration("10m");
@@ -302,5 +316,201 @@ export function useSendMessage(conversationId?: string) {
     sendMessage: mutation.mutateAsync,
     isPending: mutation.isPending,
     error: mutation.error as ApiException | null,
+  };
+}
+
+// ── Shop ──────────────────────────────────────────────────
+
+export function useProducts(params?: ProductQueryType) {
+  const query = useQuery({
+    queryKey: ["products", params],
+    queryFn: () => product.listProducts(params),
+    select: (res) => res.data,
+    placeholderData: (prev) => prev,
+    ...queryDefaults,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchError: query.error as ApiException | null,
+  };
+}
+
+export function useShopProduct(identifier?: string) {
+  const query = useQuery({
+    queryKey: ["products", identifier],
+    queryFn: () => product.getProduct(identifier!),
+    select: (res) => res.data as ProductResponse,
+    enabled: Boolean(identifier),
+    ...queryDefaults,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchError: query.error as ApiException | null,
+  };
+}
+
+// ── Cart ──────────────────────────────────────────────────
+
+export function useServerCart(enabled: boolean) {
+  const query = useQuery({
+    queryKey: ["cart"],
+    queryFn: order.getCart,
+    select: (res) => res.data,
+    enabled,
+    ...queryDefaults,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchError: query.error as ApiException | null,
+  };
+}
+
+export function useSyncLocalCart() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (items: { productId: string; quantity: number }[]) => {
+      for (const item of items) {
+        await order.addToCart({ productId: item.productId, quantity: item.quantity });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
+
+  return { syncCart: mutation.mutateAsync, isSyncing: mutation.isPending };
+}
+
+export function useAddToCart() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (data: AddToCartType) => order.addToCart(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
+
+  return {
+    addToCart: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    error: mutation.error as ApiException | null,
+  };
+}
+
+export function useUpdateCartItem() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: ({ itemId, data }: { itemId: string; data: UpdateCartItemType }) =>
+      order.updateCartItem(itemId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
+
+  return {
+    updateCartItem: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    error: mutation.error as ApiException | null,
+  };
+}
+
+export function useRemoveCartItem() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (itemId: string) => order.removeCartItem(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+    },
+  });
+
+  return {
+    removeCartItem: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    error: mutation.error as ApiException | null,
+  };
+}
+
+export function usePlaceOrder() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (data: CreateOrderType) => order.createOrder(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  return {
+    placeOrder: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    error: mutation.error as ApiException | null,
+  };
+}
+
+export function useGuestCheckout() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (data: GuestCheckoutType) => order.guestCheckout(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+    },
+  });
+
+  return {
+    guestCheckout: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    error: mutation.error as ApiException | null,
+  };
+}
+
+// ── Orders ────────────────────────────────────────────────
+
+export function useOrders(params?: OrderQueryType) {
+  const query = useQuery({
+    queryKey: ["orders", params],
+    queryFn: () => order.listOrders(params),
+    select: (res) => res.data,
+    placeholderData: (prev) => prev,
+    ...queryDefaults,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchError: query.error as ApiException | null,
+  };
+}
+
+export function useOrder(orderId?: string) {
+  const query = useQuery({
+    queryKey: ["orders", orderId],
+    queryFn: () => order.getOrder(orderId!),
+    select: (res) => res.data as OrderResponse,
+    enabled: Boolean(orderId),
+    ...queryDefaults,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchError: query.error as ApiException | null,
   };
 }

@@ -552,6 +552,9 @@ model Media {
     uploadedById String
     uploadedBy   User   @relation("UserUploads", fields: [uploadedById], references: [id])
 
+    productId String?
+    product   Product? @relation("ProductImages", fields: [productId], references: [id], onDelete: SetNull)
+
     publicId     String @unique
     url          String @unique
     mimeType     String
@@ -570,7 +573,6 @@ model Media {
     deletedAt DateTime?
 
     messageAttachments MessageAttachment[]
-    productImages      ProductImage[]
 
     users                          User[]            @relation("UserAvatar")
     businessLogos                  BusinessProfile[] @relation("BusinessLogo")
@@ -1120,8 +1122,9 @@ model ProductCategory {
     description String?
     isActive    Boolean @default(true)
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
 
     products Product[]
 
@@ -1136,20 +1139,21 @@ model Product {
     category   ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
     name             String
-    slug             String        @unique
+    slug             String          @unique
     description      String?
-    price            Decimal       @db.Decimal(10, 2)
-    compareAtPrice   Decimal?      @db.Decimal(10, 2)
-    stockCount       Int           @default(0)
-    requiresShipping Boolean       @default(true)
-    status           ProductStatus @default(draft)
+    costPrice        Decimal?        @db.Decimal(10, 2)
+    sellPrice        Decimal         @db.Decimal(10, 2)
+    compareAtPrice   Decimal?        @db.Decimal(10, 2)
+    stockCount       Int             @default(0)
+    requiresShipping Boolean         @default(true)
+    status           ProductStatus   @default(draft)
     inventoryStatus  InventoryStatus @default(inStock)
 
     createdAt DateTime  @default(now())
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
-    images     ProductImage[]
+    images     Media[]     @relation("ProductImages")
     cartItems  CartItem[]
     orderItems OrderItem[]
 
@@ -1157,23 +1161,6 @@ model Product {
     @@index([status])
     @@index([inventoryStatus])
     @@index([deletedAt])
-}
-
-model ProductImage {
-    id String @id @default(ulid())
-
-    productId String
-    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-    mediaId String
-    media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-
-    position Int @default(0)
-
-    createdAt DateTime @default(now())
-
-    @@unique([productId, mediaId])
-    @@index([productId, position])
 }
 
 model CartItem {

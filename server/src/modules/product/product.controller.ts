@@ -13,7 +13,6 @@ import {
   CreateCategoryDto,
   CreateProductDto,
   ProductQueryDto,
-  AddProductImageDto,
 } from "@workspace/contracts/product";
 
 import { ProductService } from "./product.service";
@@ -33,9 +32,9 @@ export class ProductController {
   }
 
   @Public()
-  @Get("categories/:identifier")
-  findCategory(@Param("identifier") identifier: string) {
-    return this.productService.findCategory(identifier);
+  @Get("categories/:id")
+  findCategory(@Param("id") id: string) {
+    return this.productService.findCategory(id);
   }
 
   @Roles("admin")
@@ -50,6 +49,12 @@ export class ProductController {
     return this.productService.updateCategory(id, dto);
   }
 
+  @Roles("admin")
+  @Delete("categories/:id")
+  deleteCategory(@Param("id") id: string) {
+    return this.productService.deleteCategory(id);
+  }
+
   // ── Products ──────────────────────────────────────────────
 
   @Public()
@@ -59,9 +64,9 @@ export class ProductController {
   }
 
   @Public()
-  @Get(":identifier")
-  findProduct(@Param("identifier") identifier: string) {
-    return this.productService.findProduct(identifier);
+  @Get(":id")
+  findProduct(@Param("id") id: string) {
+    return this.productService.findProduct(id);
   }
 
   @Roles("admin", "doctor", "staff")
@@ -80,23 +85,5 @@ export class ProductController {
   @Delete(":id")
   deleteProduct(@Param("id") id: string) {
     return this.productService.deleteProduct(id);
-  }
-
-  @Roles("admin", "doctor", "staff")
-  @Post(":productId/images")
-  addProductImage(
-    @Param("productId") productId: string,
-    @Body() dto: AddProductImageDto,
-  ) {
-    return this.productService.addProductImage(productId, dto);
-  }
-
-  @Roles("admin", "doctor", "staff")
-  @Delete(":productId/images/:imageId")
-  removeProductImage(
-    @Param("productId") productId: string,
-    @Param("imageId") imageId: string,
-  ) {
-    return this.productService.removeProductImage(productId, imageId);
   }
 }

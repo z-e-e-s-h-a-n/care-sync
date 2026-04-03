@@ -21,8 +21,13 @@ import {
 } from "./combobox";
 import React from "react";
 
+interface SelectOptions {
+  label: string;
+  value: string;
+}
+
 interface MultiSelectFieldProps<TFormData> extends BaseFieldProps<TFormData> {
-  options: { label: string; value: string }[];
+  options: SelectOptions[];
 }
 
 export function MultiSelectField<TFormData>({
@@ -78,7 +83,7 @@ export function MultiSelectField<TFormData>({
 }
 
 interface SelectFieldProps<TFormData> extends BaseFieldProps<TFormData> {
-  options: string[];
+  options: string[] | SelectOptions[];
   multiple?: boolean;
 }
 
@@ -88,6 +93,14 @@ export const SelectField = <TFormData,>({
   multiple,
   ...props
 }: SelectFieldProps<TFormData>) => {
+  const normalizedOptions = React.useMemo<SelectOptions[]>(
+    () =>
+      options.map((option) =>
+        typeof option === "string" ? { label: option, value: option } : option,
+      ),
+    [options],
+  );
+
   return (
     <FormField {...props}>
       {({ isInvalid, ...field }) => {
@@ -108,16 +121,20 @@ export const SelectField = <TFormData,>({
 
         const displayValue = multiple
           ? Array.isArray(value) && value.length
-            ? value.filter((v) => Boolean(v)).join(", ")
+            ? normalizedOptions
+                .filter((option) => value.includes(option.value))
+                .map((option) => option.label)
+                .join(", ")
             : undefined
-          : value;
+          : (normalizedOptions.find((option) => option.value === value)
+              ?.label ?? value);
 
         return (
           <Select
             name={field.name}
             value={multiple ? undefined : value}
             onValueChange={handleChange}
-            disabled={disabled}
+            disabled={disabled ?? field.disabled}
           >
             <SelectTrigger
               id={field.name}
@@ -130,25 +147,27 @@ export const SelectField = <TFormData,>({
             </SelectTrigger>
 
             <SelectContent position="popper">
-              {options.map((o) => {
+              {normalizedOptions.map((option) => {
                 const checked =
-                  multiple && Array.isArray(value) && value.includes(o);
+                  multiple &&
+                  Array.isArray(value) &&
+                  value.includes(option.value);
 
                 return (
                   <SelectItem
-                    key={o}
-                    value={o}
+                    key={option.value}
+                    value={option.value}
                     className={cn(
                       multiple &&
                         "flex items-center justify-between capitalize",
                     )}
                     onSelect={() => {
                       if (multiple) {
-                        handleChange(o);
+                        handleChange(option.value);
                       }
                     }}
                   >
-                    <span>{o}</span>
+                    <span>{option.label}</span>
 
                     {multiple && checked && (
                       <Check className="size-4 text-primary" />

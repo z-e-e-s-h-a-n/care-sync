@@ -10,6 +10,7 @@ import type {
   ProductResponse,
   AddProductImageType,
 } from "@workspace/contracts/product";
+import type { MediaResponse } from "@workspace/contracts/media";
 
 // ── Categories ────────────────────────────────────────────
 
@@ -53,11 +54,11 @@ export const deleteProduct = (id: string) =>
   executeApi<void>(() => apiClient.delete(`/products/${id}`));
 
 export const addProductImage = (productId: string, data: AddProductImageType) =>
-  executeApi<void>(() =>
+  executeApi<MediaResponse>(() =>
     apiClient.post(`/products/${productId}/images`, data),
   );
 
-export const removeProductImage = (productId: string, imageId: string) =>
+export const removeProductImage = (productId: string, mediaId: string) =>
   executeApi<void>(() =>
-    apiClient.delete(`/products/${productId}/images/${imageId}`),
+    apiClient.delete(`/products/${productId}/images/${mediaId}`),
   );

@@ -4,6 +4,7 @@ import type {
   addToCartSchema,
   updateCartItemSchema,
   createOrderSchema,
+  guestCheckoutSchema,
   updateOrderStatusSchema,
   createShipmentSchema,
   updateShipmentSchema,
@@ -16,6 +17,7 @@ import type { BaseUserResponse } from "../user/types";
 export type AddToCartType = z.input<typeof addToCartSchema>;
 export type UpdateCartItemType = z.input<typeof updateCartItemSchema>;
 export type CreateOrderType = z.input<typeof createOrderSchema>;
+export type GuestCheckoutType = z.input<typeof guestCheckoutSchema>;
 export type UpdateOrderStatusType = z.input<typeof updateOrderStatusSchema>;
 export type CreateShipmentType = z.input<typeof createShipmentSchema>;
 export type UpdateShipmentType = z.input<typeof updateShipmentSchema>;

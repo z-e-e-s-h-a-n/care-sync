@@ -160,10 +160,9 @@ export class BusinessService {
     };
   }
 
-  async deleteBranch(branchId: string, force = false) {
+  async deleteBranch(branchId: string) {
     await this.prisma.branch.delete({
       where: { id: branchId },
-      ...({ force } as any),
     });
 
     return {

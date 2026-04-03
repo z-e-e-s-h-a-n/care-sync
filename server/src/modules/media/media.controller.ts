@@ -22,7 +22,6 @@ import {
 
 import { MediaService } from "./media.service";
 import { User } from "@/decorators/user.decorator";
-import { BooleanQuery } from "@/lib/decorators/boolean-query.decorator";
 
 @Controller("media")
 export class MediaController {
@@ -97,10 +96,9 @@ export class MediaController {
   @Delete("/:mediaId")
   async deleteMedia(
     @Param("mediaId") mediaId: string,
-    @BooleanQuery("force") force: boolean,
     @User() currentUser: Express.User,
   ) {
-    return this.mediaService.deleteMedia(mediaId, force, currentUser);
+    return this.mediaService.deleteMedia(mediaId, currentUser);
   }
 
   @Post("/:mediaId/restore")

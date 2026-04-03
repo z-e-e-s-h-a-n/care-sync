@@ -1,10 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import type {
   CategoryQueryDto,
   CreateCategoryDto,
   CreateProductDto,
   ProductQueryDto,
-  AddProductImageDto,
 } from "@workspace/contracts/product";
 import type { Prisma } from "@workspace/db/client";
 
@@ -22,15 +21,27 @@ export class ProductService {
   }
 
   async listCategories(query: CategoryQueryDto) {
-    const { page, limit, sortBy, sortOrder, search, searchBy, parentId, isActive } = query;
+    const {
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      search,
+      searchBy,
+      parentId,
+      isActive,
+    } = query;
 
     const where: Prisma.ProductCategoryWhereInput = {};
 
-    if (parentId !== undefined) where.parentId = parentId;
-    if (isActive !== undefined) where.isActive = isActive;
+    if (parentId) where.parentId = parentId;
+    if (isActive) where.isActive = isActive;
 
     if (search && searchBy) {
-      const searchWhereMap: Record<typeof searchBy, Prisma.ProductCategoryWhereInput> = {
+      const searchWhereMap: Record<
+        typeof searchBy,
+        Prisma.ProductCategoryWhereInput
+      > = {
         name: { name: { contains: search, mode: "insensitive" } },
         slug: { slug: { contains: search, mode: "insensitive" } },
       };
@@ -51,13 +62,19 @@ export class ProductService {
 
     return {
       message: "Categories fetched successfully.",
-      data: { categories, total, page, limit, totalPages: Math.ceil(total / limit) },
+      data: {
+        categories,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
-  async findCategory(identifier: string) {
+  async findCategory(id: string) {
     const category = await this.prisma.productCategory.findFirstOrThrow({
-      where: { OR: [{ id: identifier }, { slug: identifier }] },
+      where: { OR: [{ id }, { slug: id }] },
       include: this.categoryInclude,
     });
     return { message: "Category fetched successfully.", data: category };
@@ -69,6 +86,13 @@ export class ProductService {
       data: dto,
     });
     return { message: "Category updated successfully.", data: category };
+  }
+
+  async deleteCategory(id: string) {
+    await this.prisma.productCategory.delete({
+      where: { id },
+    });
+    return { message: "Category deleted successfully." };
   }
 
   // ── Products ──────────────────────────────────────────────
@@ -101,10 +125,11 @@ export class ProductService {
     if (inventoryStatus) where.inventoryStatus = inventoryStatus;
 
     if (search && searchBy) {
-      const searchWhereMap: Record<typeof searchBy, Prisma.ProductWhereInput> = {
-        name: { name: { contains: search, mode: "insensitive" } },
-        slug: { slug: { contains: search, mode: "insensitive" } },
-      };
+      const searchWhereMap: Record<typeof searchBy, Prisma.ProductWhereInput> =
+        {
+          name: { name: { contains: search, mode: "insensitive" } },
+          slug: { slug: { contains: search, mode: "insensitive" } },
+        };
       Object.assign(where, searchWhereMap[searchBy]);
     }
 
@@ -122,14 +147,20 @@ export class ProductService {
 
     return {
       message: "Products fetched successfully.",
-      data: { products, total, page, limit, totalPages: Math.ceil(total / limit) },
+      data: {
+        products,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
-  async findProduct(identifier: string) {
+  async findProduct(id: string) {
     const product = await this.prisma.product.findFirstOrThrow({
       where: {
-        OR: [{ id: identifier }, { slug: identifier }],
+        OR: [{ id }, { slug: id }],
         deletedAt: null,
       },
       include: this.productInclude,
@@ -147,39 +178,10 @@ export class ProductService {
   }
 
   async deleteProduct(id: string) {
-    await this.prisma.product.update({
+    await this.prisma.product.delete({
       where: { id },
-      data: { deletedAt: new Date() },
     });
     return { message: "Product deleted successfully." };
-  }
-
-  async addProductImage(productId: string, dto: AddProductImageDto) {
-    // Ensure product exists
-    await this.prisma.product.findUniqueOrThrow({ where: { id: productId } });
-
-    const image = await this.prisma.productImage.create({
-      data: {
-        productId,
-        mediaId: dto.mediaId,
-        position: dto.position ?? 0,
-      },
-      include: { media: { include: { uploadedBy: true } } },
-    });
-    return { message: "Product image added successfully.", data: image };
-  }
-
-  async removeProductImage(productId: string, imageId: string) {
-    const image = await this.prisma.productImage.findFirst({
-      where: { id: imageId, productId },
-    });
-
-    if (!image) {
-      throw new NotFoundException("Product image not found.");
-    }
-
-    await this.prisma.productImage.delete({ where: { id: imageId } });
-    return { message: "Product image removed successfully." };
   }
 
   // ── Shared ────────────────────────────────────────────────
@@ -191,13 +193,6 @@ export class ProductService {
 
   private productInclude = {
     category: true,
-    images: {
-      orderBy: { position: "asc" as const },
-      include: {
-        media: {
-          include: { uploadedBy: { omit: { password: true } } },
-        },
-      },
-    },
+    images: true,
   } satisfies Prisma.ProductInclude;
 }

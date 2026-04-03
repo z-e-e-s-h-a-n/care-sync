@@ -18,12 +18,6 @@ export type ProductQueryType = z.input<typeof productQuerySchema>;
 
 export type AddProductImageType = z.input<typeof addProductImageSchema>;
 
-export type ProductImageResponse = {
-  id: string;
-  position: number;
-  media: MediaResponse;
-};
-
 export type ProductCategoryResponse = Sanitize<ProductCategory> & {
   parent?: ProductCategoryResponse | null;
   children?: ProductCategoryResponse[];
@@ -31,7 +25,7 @@ export type ProductCategoryResponse = Sanitize<ProductCategory> & {
 
 export type ProductResponse = Sanitize<Product> & {
   category?: ProductCategoryResponse | null;
-  images?: ProductImageResponse[];
+  images?: MediaResponse[];
 };
 
 export interface ProductQueryResponse extends BaseQueryResponse {

@@ -53,5 +53,4 @@ export const productQuerySchema = baseQuerySchema(
 
 export const addProductImageSchema = z.object({
   mediaId: idSchema,
-  position: z.coerce.number().int().min(0).default(0),
 });

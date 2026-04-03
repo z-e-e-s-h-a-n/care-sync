@@ -17,10 +17,9 @@ export const updateCartItemSchema = z.object({
   quantity: z.coerce.number().int().min(1),
 });
 
-export const createOrderSchema = z.object({
+const orderAddressSchema = {
   deliveryType: DeliveryTypeEnum.default("delivery"),
   notes: nullableStringSchema,
-
   shippingName: z.string().min(2).optional().nullable(),
   shippingPhone: z.string().optional().nullable(),
   shippingStreet: z.string().optional().nullable(),
@@ -28,6 +27,24 @@ export const createOrderSchema = z.object({
   shippingState: z.string().optional().nullable(),
   shippingPostalCode: z.string().optional().nullable(),
   shippingCountry: z.string().optional().nullable(),
+};
+
+export const createOrderSchema = z.object(orderAddressSchema);
+
+export const guestCheckoutSchema = z.object({
+  ...orderAddressSchema,
+  email: z.string().email(),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  phone: z.string().optional().nullable(),
+  items: z
+    .array(
+      z.object({
+        productId: idSchema,
+        quantity: z.coerce.number().int().min(1),
+      }),
+    )
+    .min(1),
 });
 
 export const updateOrderStatusSchema = z.object({

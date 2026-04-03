@@ -136,14 +136,10 @@ export class MediaService {
     };
   }
 
-  async deleteMedia(mediaId: string, force = false, currentUser: Express.User) {
-    const media = await this.prisma.media.findUniqueOrThrow({
+  async deleteMedia(mediaId: string, currentUser: Express.User) {
+    await this.prisma.media.findUniqueOrThrow({
       where: { id: mediaId, uploadedById: currentUser.id },
     });
-
-    if (force) {
-      await this.cloudinary.deleteFile(media.publicId, media.resourceType);
-    }
 
     await this.prisma.media.delete({
       where: { id: mediaId },

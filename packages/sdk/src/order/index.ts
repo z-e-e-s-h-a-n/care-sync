@@ -3,6 +3,7 @@ import type {
   AddToCartType,
   UpdateCartItemType,
   CreateOrderType,
+  GuestCheckoutType,
   UpdateOrderStatusType,
   CreateShipmentType,
   UpdateShipmentType,
@@ -38,6 +39,11 @@ export const clearCart = () =>
 
 export const createOrder = (data: CreateOrderType) =>
   executeApi<OrderResponse>(() => apiClient.post("/orders", data));
+
+export const guestCheckout = (data: GuestCheckoutType) =>
+  executeApi<OrderResponse>(() =>
+    apiClient.post("/orders/guest-checkout", data),
+  );
 
 export const listOrders = (params?: OrderQueryType) =>
   executeApi<OrderQueryResponse>(() =>
