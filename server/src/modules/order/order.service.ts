@@ -35,13 +35,13 @@ export class OrderService {
     });
     return {
       message: "Cart fetched successfully.",
-      data: { items: items.map((item) => this.serializeCartItem(item)) },
+      data: { items },
     };
   }
 
   async addToCart(dto: AddToCartDto, userId: string) {
     const product = await this.prisma.product.findFirst({
-      where: { id: dto.productId, deletedAt: null, status: "active" },
+      where: { id: dto.productId, status: "active" },
     });
 
     if (!product) {
@@ -61,7 +61,7 @@ export class OrderService {
 
     return {
       message: "Item added to cart.",
-      data: this.serializeCartItem(item),
+      data: item,
     };
   }
 
@@ -80,7 +80,7 @@ export class OrderService {
 
     return {
       message: "Cart item updated.",
-      data: this.serializeCartItem(updated),
+      data: updated,
     };
   }
 
@@ -185,7 +185,6 @@ export class OrderService {
       const products = await tx.product.findMany({
         where: {
           id: { in: items.map((item) => item.productId) },
-          deletedAt: null,
           status: "active",
         },
       });
@@ -203,7 +202,7 @@ export class OrderService {
       );
 
       let user = await tx.user.findFirst({
-        where: { email, deletedAt: null },
+        where: { email },
       });
 
       const isNewUser = !user;
@@ -274,7 +273,7 @@ export class OrderService {
 
     return {
       message: "Order placed successfully.",
-      data: this.serializeOrder(result),
+      data: result,
     };
   }
 
@@ -327,7 +326,7 @@ export class OrderService {
     return {
       message: "Orders fetched successfully.",
       data: {
-        orders: orders.map((order) => this.serializeOrder(order)),
+        orders,
         total,
         page,
         limit,
@@ -346,7 +345,7 @@ export class OrderService {
       throw new ForbiddenException("You can only view your own orders.");
     }
 
-    return { message: "Order fetched successfully.", data: this.serializeOrder(order) };
+    return { message: "Order fetched successfully.", data: order };
   }
 
   async updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
@@ -364,7 +363,7 @@ export class OrderService {
       include: this.orderInclude,
     });
 
-    return { message: "Order status updated.", data: this.serializeOrder(order) };
+    return { message: "Order status updated.", data: order };
   }
 
   // ── Shipments ─────────────────────────────────────────────
@@ -402,11 +401,6 @@ export class OrderService {
       include: {
         images: {
           take: 1,
-          include: {
-            uploadedBy: {
-              omit: { password: true },
-            },
-          },
         },
       },
     },
@@ -420,11 +414,6 @@ export class OrderService {
           include: {
             images: {
               take: 1,
-              include: {
-                uploadedBy: {
-                  omit: { password: true },
-                },
-              },
             },
           },
         },
@@ -435,32 +424,5 @@ export class OrderService {
 
   private createOrderNumber() {
     return `ORD-${Date.now()}`;
-  }
-
-  private serializeProduct(product: any) {
-    const { sellPrice, compareAtPrice, ...rest } = product;
-    return {
-      ...rest,
-      price: Number(sellPrice),
-      compareAtPrice:
-        compareAtPrice == null ? undefined : Number(compareAtPrice),
-    };
-  }
-
-  private serializeOrder(order: any) {
-    return {
-      ...order,
-      items: order.items.map((item: any) => ({
-        ...item,
-        product: item.product ? this.serializeProduct(item.product) : null,
-      })),
-    };
-  }
-
-  private serializeCartItem(item: any) {
-    return {
-      ...item,
-      product: this.serializeProduct(item.product),
-    };
   }
 }

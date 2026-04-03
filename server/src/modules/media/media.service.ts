@@ -161,7 +161,5 @@ export class MediaService {
     };
   }
 
-  private mediaInclude = {
-    uploadedBy: { omit: { password: true } },
-  };
+  private mediaInclude = {};
 }

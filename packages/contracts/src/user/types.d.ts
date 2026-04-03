@@ -13,6 +13,7 @@ export type BaseUserResponse = Sanitize<
   >
 >;
 
+//* this can be null this use in server
 export type SafeUser = StrictOmit<User, "password"> & {
   avatar?: Media | null;
 };

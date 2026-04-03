@@ -6,12 +6,12 @@ import {
   CampaignStatusEnum,
   NotificationChannelEnum,
 } from "../lib/enums";
-import { baseQuerySchema, isoDateSchema, nullableStringSchema } from "../lib/schema";
+import { baseQuerySchema, isoDateSchema, optionalStringSchema } from "../lib/schema";
 
 export const notificationCampaignSchema = z.object({
   audience: CampaignAudienceEnum,
   title: z.string().min(2),
-  subject: nullableStringSchema,
+  subject: optionalStringSchema,
   message: z.string().min(2),
   channel: NotificationChannelEnum,
   scheduledAt: isoDateSchema.optional(),

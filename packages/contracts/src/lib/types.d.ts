@@ -4,7 +4,6 @@ import { z } from "zod";
 import * as enums from "./enums";
 import { type Icon } from "@tabler/icons-react";
 
-export type Nullable<T> = T | null;
 export type DecimalInstance = InstanceType<typeof Prisma.Decimal>;
 export type StrictOmit<T, K extends keyof T> = Omit<T, K>;
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

@@ -36,13 +36,12 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
       name: "",
       slug: "",
       description: "",
-      price: 0,
-      compareAtPrice: null,
       stockCount: 0,
       requiresShipping: true,
       status: "draft",
-      categoryId: null,
       imageIds: [],
+      costPrice: 0,
+      sellPrice: 0,
     } as CreateProductType,
     validators: {
       onSubmit: createProductSchema,
@@ -169,12 +168,19 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
 
       <FormSection
         title="Pricing & Inventory"
-        description="Set price, compare-at price, and stock level."
+        description="Set sell price, cost price, compare-at price, and stock level."
       >
         <InputField
           form={form}
-          name="price"
+          name="sellPrice"
           label="Price ($)"
+          type="number"
+          placeholder="0.00"
+        />
+        <InputField
+          form={form}
+          name="costPrice"
+          label="Cost Price ($)"
           type="number"
           placeholder="0.00"
         />

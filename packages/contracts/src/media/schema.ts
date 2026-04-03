@@ -8,9 +8,9 @@ import {
 } from "../lib/enums";
 
 export const mediaUpdateSchema = z.object({
-  name: z.string().min(1, "Filename is required"),
-  altText: z.string().optional(),
-  notes: z.string().optional(),
+  name: z.string().trim().min(1, "Filename is required"),
+  altText: z.string().trim().optional(),
+  notes: z.string().trim().optional(),
 });
 
 export const mediaCreateSchema = mediaUpdateSchema.partial().extend({

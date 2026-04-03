@@ -10,15 +10,17 @@ import {
 import {
   baseQuerySchema,
   idSchema,
-  nullableStringSchema,
+  intNumberSchema,
+  optionalStringSchema,
+  positiveNumberSchema,
   slugSchema,
 } from "../lib/schema";
 
 export const createCategorySchema = z.object({
-  parentId: idSchema.optional().nullable(),
+  parentId: idSchema.optional(),
   name: z.string().min(2),
   slug: slugSchema,
-  description: nullableStringSchema,
+  description: optionalStringSchema,
   isActive: z.boolean().default(true),
 });
 
@@ -31,13 +33,14 @@ export const categoryQuerySchema = baseQuerySchema(
 });
 
 export const createProductSchema = z.object({
-  categoryId: idSchema.optional().nullable(),
+  categoryId: idSchema.optional(),
   name: z.string().min(2),
   slug: slugSchema,
-  description: nullableStringSchema,
-  price: z.coerce.number().min(0),
-  compareAtPrice: z.coerce.number().min(0).optional().nullable(),
-  stockCount: z.coerce.number().int().min(0).default(0),
+  description: optionalStringSchema,
+  costPrice: positiveNumberSchema,
+  sellPrice: positiveNumberSchema,
+  compareAtPrice: positiveNumberSchema.optional(),
+  stockCount: intNumberSchema,
   requiresShipping: z.boolean().default(true),
   status: ProductStatusEnum.default("draft"),
   imageIds: z.array(idSchema).default([]),

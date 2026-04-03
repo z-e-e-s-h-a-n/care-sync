@@ -52,7 +52,7 @@ export class ContactService {
 
   async getMessage(id: string) {
     const message = await this.prisma.contactMessage.findFirstOrThrow({
-      where: { id, deletedAt: null },
+      where: { id },
     });
 
     return {
@@ -64,7 +64,7 @@ export class ContactService {
   async queryMessages(query: ContactMessageQueryDto) {
     const { page, limit, status, search, searchBy, sortBy, sortOrder } = query;
 
-    const where: Prisma.ContactMessageWhereInput = { deletedAt: null };
+    const where: Prisma.ContactMessageWhereInput = {};
     if (status) where.status = status;
 
     if (search && searchBy) {

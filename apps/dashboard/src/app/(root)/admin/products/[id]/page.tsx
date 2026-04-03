@@ -76,12 +76,17 @@ const sections: SectionConfig<ProductResponse>[] = [
   },
   {
     title: "Pricing & Inventory",
-    description: () => "Price, compare-at price, and stock information.",
+    description: () => "Sell price, cost price, compare-at price, and stock information.",
     columns: 3,
     fields: [
       {
         label: "Price",
         accessor: (d) => `$${Number(d.price).toFixed(2)}`,
+      },
+      {
+        label: "Cost Price",
+        accessor: (d) =>
+          d.costPrice != null ? `$${Number(d.costPrice).toFixed(2)}` : "Not set",
       },
       {
         label: "Compare-at Price",

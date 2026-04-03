@@ -28,7 +28,7 @@ export type CartItemResponse = Sanitize<CartItem> & {
 export type ShipmentResponse = Sanitize<Shipment>;
 
 export type OrderItemResponse = Sanitize<OrderItem> & {
-  product?: ProductResponse | null;
+  product?: ProductResponse;
 };
 
 export type OrderResponse = Sanitize<Order> & {

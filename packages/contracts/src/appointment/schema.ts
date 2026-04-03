@@ -12,7 +12,7 @@ import {
   baseQuerySchema,
   idSchema,
   isoDateSchema,
-  nullableStringSchema,
+  optionalStringSchema,
   timezoneSchema,
 } from "../lib/schema";
 
@@ -26,7 +26,7 @@ export const createAppointmentSchema = z
     scheduledStartAt: isoDateSchema,
     scheduledEndAt: isoDateSchema,
     timezone: timezoneSchema,
-    patientNotes: nullableStringSchema,
+    patientNotes: optionalStringSchema,
     bookingSource: BookingSourceEnum.default("app"),
   })
   .refine((v) => v.scheduledStartAt <= v.scheduledEndAt, {
@@ -37,9 +37,9 @@ export const updateAppointmentStatusSchema = z.object({
   status: AppointmentStatusEnum,
   paymentStatus: PaymentStatusEnum.optional(),
   cancellationSource: AppointmentCancellationSourceEnum.optional(),
-  cancellationReason: nullableStringSchema,
-  doctorNotes: nullableStringSchema,
-  adminNotes: nullableStringSchema,
+  cancellationReason: optionalStringSchema,
+  doctorNotes: optionalStringSchema,
+  adminNotes: optionalStringSchema,
 });
 
 export const appointmentQuerySchema = baseQuerySchema(

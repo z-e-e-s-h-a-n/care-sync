@@ -16,18 +16,13 @@ export type CreateProductType = z.input<typeof createProductSchema>;
 export type ProductQueryType = z.input<typeof productQuerySchema>;
 
 export type ProductCategoryResponse = Sanitize<ProductCategory> & {
-  parent?: ProductCategoryResponse | null;
+  parent?: ProductCategoryResponse;
   children?: ProductCategoryResponse[];
 };
 
-export type ProductResponse = Omit<
-  Sanitize<Product>,
-  "sellPrice" | "costPrice" | "images"
-> & {
-  price: number;
-  costPrice?: number;
-  category?: ProductCategoryResponse | null;
-  images?: MediaResponse[];
+export type ProductResponse = Sanitize<Product> & {
+  category?: ProductCategoryResponse;
+  images: MediaResponse[];
 };
 
 export interface ProductQueryResponse extends BaseQueryResponse {

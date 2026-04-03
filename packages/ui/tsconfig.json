@@ -2,6 +2,7 @@
   "extends": "@workspace/config/typescript/react",
   "compilerOptions": {
     "rootDir": ".",
+    "types": ["node"],
     "paths": {
       "@workspace/ui/*": ["./src/*"]
     }

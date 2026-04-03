@@ -2,7 +2,7 @@
 
 import React from "react";
 import { toast } from "sonner";
-import type { AppPageProps } from "@workspace/contracts";
+import type { AppPageProps, OrderStatus } from "@workspace/contracts";
 import { Badge } from "@workspace/ui/components/badge";
 import {
   Card,
@@ -17,23 +17,10 @@ import { formatDate } from "@workspace/shared/utils";
 import PageIntro from "@/components/dashboard/PageIntro";
 import { useOrder, useUpdateOrderStatus } from "@/hooks/order";
 
-const statusFlow = [
-  "pending",
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-] as const;
-
-type OrderStatus = (typeof statusFlow)[number];
-
-const nextStatus: Record<string, OrderStatus | null> = {
+const nextStatus: Record<string, OrderStatus> = {
   pending: "processing",
   processing: "shipped",
   shipped: "delivered",
-  delivered: null,
-  cancelled: null,
-  refunded: null,
 };
 
 const Page = ({ params }: AppPageProps) => {
@@ -47,7 +34,7 @@ const Page = ({ params }: AppPageProps) => {
     if (!next) return;
 
     try {
-      await updateStatus({ status: next, notes: null });
+      await updateStatus({ status: next });
       toast.success(`Order status updated to ${next}.`);
     } catch (error: any) {
       toast.error("Failed to update order status", {
@@ -59,7 +46,7 @@ const Page = ({ params }: AppPageProps) => {
   const handleCancel = async () => {
     if (!order) return;
     try {
-      await updateStatus({ status: "cancelled", notes: null });
+      await updateStatus({ status: "cancelled" });
       toast.success("Order cancelled.");
     } catch (error: any) {
       toast.error("Failed to cancel order", { description: error?.message });
@@ -207,7 +194,9 @@ const Page = ({ params }: AppPageProps) => {
                     <div className="flex items-center justify-between">
                       <Badge
                         variant={getStatusVariant(
-                          shipment.status === "delivered" ? "active" : "pending",
+                          shipment.status === "delivered"
+                            ? "active"
+                            : "pending",
                         )}
                         className="capitalize"
                       >

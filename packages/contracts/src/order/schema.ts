@@ -11,22 +11,23 @@ import {
   emailSchema,
   idSchema,
   nameSchema,
-  nullableStringSchema,
+  optionalStringSchema,
+  positiveIntSchema,
   phoneSchema,
 } from "../lib/schema";
 
 export const addToCartSchema = z.object({
   productId: idSchema,
-  quantity: z.coerce.number().int().min(1).default(1),
+  quantity: positiveIntSchema.default(1),
 });
 
 export const updateCartItemSchema = z.object({
-  quantity: z.coerce.number().int().min(1),
+  quantity: positiveIntSchema,
 });
 
 const orderAddressSchema = {
   deliveryType: DeliveryTypeEnum.default("delivery"),
-  notes: nullableStringSchema,
+  notes: optionalStringSchema,
   shippingName: z.string().min(2).optional(),
   shippingPhone: z.string().optional(),
   shippingStreet: z.string().optional(),
@@ -46,7 +47,7 @@ export const checkoutSchema = z.object({
     .array(
       z.object({
         productId: idSchema,
-        quantity: z.coerce.number().int().min(1),
+        quantity: positiveIntSchema,
       }),
     )
     .optional(),
@@ -54,20 +55,20 @@ export const checkoutSchema = z.object({
 
 export const updateOrderStatusSchema = z.object({
   status: OrderStatusEnum,
-  notes: nullableStringSchema,
+  notes: optionalStringSchema,
 });
 
 export const createShipmentSchema = z.object({
-  provider: nullableStringSchema,
-  trackingNumber: nullableStringSchema,
-  trackingUrl: nullableStringSchema,
+  provider: z.string().trim().min(1),
+  trackingNumber: z.string().trim().min(1),
+  trackingUrl: z.url().optional(),
 });
 
 export const updateShipmentSchema = z.object({
   status: ShipmentStatusEnum,
-  provider: nullableStringSchema,
-  trackingNumber: nullableStringSchema,
-  trackingUrl: nullableStringSchema,
+  provider: z.string().trim().min(1).optional(),
+  trackingNumber: z.string().trim().min(1).optional(),
+  trackingUrl: z.url().optional(),
 });
 
 export const orderQuerySchema = baseQuerySchema(

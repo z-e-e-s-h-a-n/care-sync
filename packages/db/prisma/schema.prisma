@@ -1141,7 +1141,7 @@ model Product {
     name             String
     slug             String          @unique
     description      String?
-    costPrice        Decimal?        @db.Decimal(10, 2)
+    costPrice        Decimal         @db.Decimal(10, 2)
     sellPrice        Decimal         @db.Decimal(10, 2)
     compareAtPrice   Decimal?        @db.Decimal(10, 2)
     stockCount       Int             @default(0)
@@ -1251,8 +1251,8 @@ model Shipment {
 
     status ShipmentStatus @default(pending)
 
-    provider       String?
-    trackingNumber String?
+    provider       String
+    trackingNumber String
     trackingUrl    String?
 
     shippedAt   DateTime?

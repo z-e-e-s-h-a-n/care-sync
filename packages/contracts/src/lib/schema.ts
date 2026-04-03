@@ -27,8 +27,11 @@ export const slugSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug");
 
 export const passwordSchema = z.string().min(8);
-export const numberSchema = z.coerce.number<number>().int().min(1);
-export const nullableStringSchema = z.string().trim().optional().nullable();
+export const numberSchema = z.coerce.number<number>().min(0);
+export const positiveNumberSchema = z.coerce.number<number>().min(1);
+export const intNumberSchema = numberSchema.int();
+export const positiveIntSchema = positiveNumberSchema.int();
+export const optionalStringSchema = z.string().trim().optional();
 
 export const isoDateSchema = z.iso
   .datetime({ message: "Invalid date" })
@@ -58,11 +61,11 @@ export const baseQuerySchema = <
   const sortByWithCreatedAt = BaseSortByEnum.or(sortByEnum);
 
   return z.object({
-    page: numberSchema.default(1),
-    limit: numberSchema.default(10),
+    page: positiveIntSchema.default(1),
+    limit: positiveIntSchema.default(10),
     sortBy: sortByWithCreatedAt.default("createdAt"),
     sortOrder: SortOrderEnum.default("desc"),
-    search: z.string().optional(),
+    search: optionalStringSchema,
     searchBy: searchByEnum.optional(),
   });
 };

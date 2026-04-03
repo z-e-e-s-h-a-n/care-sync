@@ -28,7 +28,6 @@ const CategoryForm = ({ entityId, formType }: BaseCUFormProps) => {
       name: "",
       slug: "",
       description: "",
-      parentId: null,
       isActive: true,
     } as CreateCategoryType,
     validators: { onSubmit: createCategorySchema },
@@ -97,9 +96,7 @@ const CategoryForm = ({ entityId, formType }: BaseCUFormProps) => {
             key: cat.id,
             value: cat.id,
             label: cat.name,
-            content: (
-              <span className="font-medium text-sm">{cat.name}</span>
-            ),
+            content: <span className="font-medium text-sm">{cat.name}</span>,
           })}
         />
         <InputField

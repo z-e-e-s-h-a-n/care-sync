@@ -3,7 +3,7 @@ import { StaffSearchByEnum, StaffSortByEnum } from "../lib/enums";
 import {
   baseQuerySchema,
   idSchema,
-  nullableStringSchema,
+  optionalStringSchema,
 } from "../lib/schema";
 
 export const staffProfileSchema = z.object({
@@ -11,8 +11,8 @@ export const staffProfileSchema = z.object({
   branchId: idSchema,
 
   title: z.string().min(2),
-  specialty: nullableStringSchema,
-  bio: nullableStringSchema,
+  specialty: optionalStringSchema,
+  bio: optionalStringSchema,
   credentials: z.array(z.string().min(1)).default([]),
 
   isActive: z.boolean().default(true),

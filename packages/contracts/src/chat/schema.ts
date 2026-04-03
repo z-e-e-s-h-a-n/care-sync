@@ -1,6 +1,6 @@
 import z from "zod";
 import { ConversationStatusEnum, ConversationTypeEnum } from "../lib/enums";
-import { idSchema, nullableStringSchema } from "../lib/schema";
+import { idSchema, optionalStringSchema } from "../lib/schema";
 
 export const createConversationSchema = z.object({
   branchId: idSchema.optional(),
@@ -8,7 +8,7 @@ export const createConversationSchema = z.object({
   appointmentId: idSchema.optional(),
   assignedToId: idSchema.optional(),
   type: ConversationTypeEnum,
-  subject: nullableStringSchema,
+  subject: optionalStringSchema,
 });
 
 export const sendMessageSchema = z.object({
@@ -19,5 +19,5 @@ export const sendMessageSchema = z.object({
 
 export const updateConversationSchema = z.object({
   status: ConversationStatusEnum,
-  subject: nullableStringSchema,
+  subject: optionalStringSchema,
 });

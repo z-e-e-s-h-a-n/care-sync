@@ -9,7 +9,7 @@ import {
   baseQuerySchema,
   idSchema,
   isoDateSchema,
-  nullableStringSchema,
+  optionalStringSchema,
   phoneSchema,
 } from "../lib/schema";
 
@@ -20,22 +20,22 @@ export const patientProfileSchema = z.object({
   birthDate: isoDateSchema,
   gender: GenderEnum,
 
-  address: nullableStringSchema,
-  occupation: nullableStringSchema,
+  address: optionalStringSchema,
+  occupation: optionalStringSchema,
 
-  emergencyContactName: nullableStringSchema,
+  emergencyContactName: optionalStringSchema,
   emergencyContactNumber: phoneSchema.optional(),
 
-  insuranceProvider: nullableStringSchema,
-  insurancePolicyNumber: nullableStringSchema,
+  insuranceProvider: optionalStringSchema,
+  insurancePolicyNumber: optionalStringSchema,
 
-  allergies: nullableStringSchema,
-  currentMedication: nullableStringSchema,
-  familyMedicalHistory: nullableStringSchema,
-  pastMedicalHistory: nullableStringSchema,
+  allergies: optionalStringSchema,
+  currentMedication: optionalStringSchema,
+  familyMedicalHistory: optionalStringSchema,
+  pastMedicalHistory: optionalStringSchema,
 
   identificationType: IdentificationTypeEnum.optional(),
-  identificationNumber: nullableStringSchema,
+  identificationNumber: optionalStringSchema,
 });
 
 export const patientQuerySchema = baseQuerySchema(

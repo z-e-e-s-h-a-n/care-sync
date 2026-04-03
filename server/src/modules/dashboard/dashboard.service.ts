@@ -48,20 +48,19 @@ export class DashboardService {
 
       // Branches with their doctor counts (for roster bars)
       this.prisma.branch.findMany({
-        where: { isActive: true, deletedAt: null },
+        where: { isActive: true },
         select: { _count: { select: { doctors: true } } },
         orderBy: { createdAt: "desc" },
         take: 7,
       }),
 
       // Patient total
-      this.prisma.user.count({ where: { role: "patient", deletedAt: null } }),
+      this.prisma.user.count({ where: { role: "patient" } }),
 
       // New patients this month
       this.prisma.user.count({
         where: {
           role: "patient",
-          deletedAt: null,
           createdAt: { gte: startOfMonth },
         },
       }),
@@ -70,7 +69,6 @@ export class DashboardService {
       this.prisma.user.findMany({
         where: {
           role: "patient",
-          deletedAt: null,
           createdAt: { gte: sevenDaysAgo },
         },
         select: { createdAt: true },
@@ -121,7 +119,7 @@ export class DashboardService {
 
       // Inactive branches
       this.prisma.branch.count({
-        where: { isActive: false, deletedAt: null },
+        where: { isActive: false },
       }),
 
       // Pending payment value sum
@@ -200,7 +198,6 @@ export class DashboardService {
 
       // Recent contact messages
       this.prisma.contactMessage.findMany({
-        where: { deletedAt: null },
         take: 6,
         orderBy: { createdAt: "desc" },
         select: {
@@ -217,7 +214,6 @@ export class DashboardService {
 
       // Recent newsletter subscribers
       this.prisma.newsletterSubscriber.findMany({
-        where: { deletedAt: null },
         take: 6,
         orderBy: { createdAt: "desc" },
         select: {
@@ -236,7 +232,7 @@ export class DashboardService {
     );
     const doctorTotal = Object.values(verifMap).reduce((s, n) => s + n, 0);
     const branchTotal = await this.prisma.branch.count({
-      where: { isActive: true, deletedAt: null },
+      where: { isActive: true },
     });
     const rosterBars = branchesWithDoctors.map((b) => b._count.doctors);
 

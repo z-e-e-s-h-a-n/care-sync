@@ -53,7 +53,7 @@ export class NewsletterService {
   async list(query: NewsletterSubscriberQueryDto) {
     const { page, limit, searchBy, search, sortBy, sortOrder } = query;
 
-    const where: Prisma.NewsletterSubscriberWhereInput = { deletedAt: null };
+    const where: Prisma.NewsletterSubscriberWhereInput = {};
     if (query.isActive !== undefined) where.isActive = query.isActive;
 
     if (search && searchBy) {
@@ -98,7 +98,7 @@ export class NewsletterService {
 
   async getSubscriber(id: string) {
     const subscriber = await this.prisma.newsletterSubscriber.findFirstOrThrow({
-      where: { id, deletedAt: null },
+      where: { id },
     });
 
     return {

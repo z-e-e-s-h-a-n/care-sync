@@ -1,8 +1,9 @@
 import z from "zod";
 import { WeekdayEnum } from "../lib/enums";
 import {
+  intNumberSchema,
   isoDateSchema,
-  nullableStringSchema,
+  optionalStringSchema,
   timeStringSchema,
 } from "../lib/schema";
 
@@ -10,14 +11,14 @@ export const availabilityRuleSchema = z.object({
   weekday: WeekdayEnum,
   startTime: timeStringSchema,
   endTime: timeStringSchema,
-  slotDurationMinute: z.coerce.number().int().min(5).default(30),
+  slotDurationMinute: intNumberSchema.min(5).default(30),
   isActive: z.boolean().default(true),
 });
 
 export const blockedTimeSchema = z.object({
   startAt: isoDateSchema,
   endAt: isoDateSchema,
-  reason: nullableStringSchema,
+  reason: optionalStringSchema,
 });
 
 export const availabilityScheduleSchema = z.object({

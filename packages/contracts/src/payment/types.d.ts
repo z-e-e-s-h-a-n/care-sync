@@ -19,7 +19,7 @@ export type UpdateRefundStatusType = z.input<typeof updateRefundStatusSchema>;
 export type PaymentQueryType = z.input<typeof paymentQuerySchema>;
 
 export type PaymentResponse = Sanitize<Payment> & {
-  appointment?: AppointmentResponse | null;
+  appointment?: AppointmentResponse;
   refunds?: Array<{
     id: string;
     amount: number;

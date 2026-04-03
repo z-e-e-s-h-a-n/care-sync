@@ -32,7 +32,7 @@ export class ProductService {
       isActive,
     } = query;
 
-    const where: Prisma.ProductCategoryWhereInput = { deletedAt: null };
+    const where: Prisma.ProductCategoryWhereInput = {};
 
     if (parentId) where.parentId = parentId;
     if (isActive) where.isActive = isActive;
@@ -76,7 +76,6 @@ export class ProductService {
     const category = await this.prisma.productCategory.findFirstOrThrow({
       where: {
         OR: [{ id }, { slug: id }],
-        deletedAt: null,
       },
       include: this.categoryInclude,
     });
@@ -109,17 +108,12 @@ export class ProductService {
 
   // ── Products ──────────────────────────────────────────────
 
-  async createProduct(dto: CreateProductDto) {
-    const { imageIds = [], price, ...productData } = dto as CreateProductDto & {
-      imageIds?: string[];
-      price: number;
-    };
-
+  async createProduct({ imageIds, ...dto }: CreateProductDto) {
     const product = await this.prisma.$transaction(async (tx) => {
       const created = await tx.product.create({
         data: {
-          ...(productData as Prisma.ProductCreateInput),
-          sellPrice: price,
+          ...dto,
+          inventoryStatus: this.getInventoryStatus(dto.stockCount),
         },
       });
 
@@ -133,7 +127,7 @@ export class ProductService {
 
     return {
       message: "Product created successfully.",
-      data: this.serializeProduct(product),
+      data: product,
     };
   }
 
@@ -150,7 +144,7 @@ export class ProductService {
       inventoryStatus,
     } = query;
 
-    const where: Prisma.ProductWhereInput = { deletedAt: null };
+    const where: Prisma.ProductWhereInput = {};
 
     if (categoryId) where.categoryId = categoryId;
     if (status) where.status = status;
@@ -180,7 +174,7 @@ export class ProductService {
     return {
       message: "Products fetched successfully.",
       data: {
-        products: products.map((product) => this.serializeProduct(product)),
+        products,
         total,
         page,
         limit,
@@ -193,28 +187,22 @@ export class ProductService {
     const product = await this.prisma.product.findFirstOrThrow({
       where: {
         OR: [{ id }, { slug: id }],
-        deletedAt: null,
       },
       include: this.productInclude,
     });
     return {
       message: "Product fetched successfully.",
-      data: this.serializeProduct(product),
+      data: product,
     };
   }
 
-  async updateProduct(id: string, dto: CreateProductDto) {
-    const { imageIds = [], price, ...productData } = dto as CreateProductDto & {
-      imageIds?: string[];
-      price: number;
-    };
-
+  async updateProduct(id: string, { imageIds, ...dto }: CreateProductDto) {
     const product = await this.prisma.$transaction(async (tx) => {
       await tx.product.update({
         where: { id },
         data: {
-          ...(productData as Prisma.ProductUpdateInput),
-          sellPrice: price,
+          ...dto,
+          inventoryStatus: this.getInventoryStatus(dto.stockCount),
         },
       });
 
@@ -228,7 +216,7 @@ export class ProductService {
 
     return {
       message: "Product updated successfully.",
-      data: this.serializeProduct(product),
+      data: product,
     };
   }
 
@@ -257,15 +245,7 @@ export class ProductService {
 
   private productInclude = {
     category: true,
-    images: {
-      where: { deletedAt: null },
-      include: {
-        uploadedBy: {
-          omit: { password: true },
-        },
-      },
-      orderBy: { createdAt: "asc" },
-    },
+    images: true,
   } satisfies Prisma.ProductInclude;
 
   private async syncProductImages(
@@ -297,14 +277,11 @@ export class ProductService {
     });
   }
 
-  private serializeProduct(product: any) {
-    const { sellPrice, costPrice, images, ...rest } = product;
-
-    return {
-      ...rest,
-      price: Number(sellPrice),
-      costPrice: costPrice == null ? undefined : Number(costPrice),
-      images,
-    };
+  private getInventoryStatus(
+    stockCount: number,
+  ): "inStock" | "lowStock" | "outOfStock" {
+    if (stockCount <= 0) return "outOfStock";
+    if (stockCount <= 5) return "lowStock";
+    return "inStock";
   }
 }

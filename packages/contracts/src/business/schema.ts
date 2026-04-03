@@ -8,7 +8,7 @@ import {
   baseQuerySchema,
   emailSchema,
   idSchema,
-  nullableStringSchema,
+  optionalStringSchema,
   numberSchema,
   phoneSchema,
   slugSchema,
@@ -37,7 +37,7 @@ export const CUBranchSchema = z.object({
   latitude: numberSchema.optional(),
   longitude: numberSchema.optional(),
 
-  timezone: nullableStringSchema,
+  timezone: optionalStringSchema,
   isActive: z.boolean().default(true),
 
   branchTimings: z.array(branchTimingSchema).min(5),

@@ -617,7 +617,7 @@ export class AuthService {
   userView = {
     omit: { password: true },
     include: {
-      avatar: { include: { uploadedBy: { omit: { password: true } } } },
+      avatar: true,
     },
   };
 }

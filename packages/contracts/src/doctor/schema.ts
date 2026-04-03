@@ -8,7 +8,8 @@ import {
   baseQuerySchema,
   idSchema,
   numberSchema,
-  nullableStringSchema,
+  optionalStringSchema,
+  positiveNumberSchema,
   slugSchema,
 } from "../lib/schema";
 
@@ -21,22 +22,22 @@ export const doctorProfileSchema = z.object({
   slug: slugSchema,
   title: z.string().min(2),
   specialty: z.string().min(2),
-  bio: nullableStringSchema,
+  bio: optionalStringSchema,
 
   licenseNumber: z.string().min(2),
-  yearsExperience: numberSchema.optional(),
-  education: nullableStringSchema,
-  qualifications: nullableStringSchema,
+  yearsExperience: z.coerce.number().int().min(0).optional(),
+  education: optionalStringSchema,
+  qualifications: optionalStringSchema,
   languages: z.array(z.string().min(2)).default([]),
 
-  consultationFee: numberSchema,
-  commissionPercent: numberSchema.optional(),
+  consultationFee: positiveNumberSchema,
+  commissionPercent: numberSchema.min(0).max(100).optional(),
   isAvailable: z.boolean().default(true),
 });
 
 export const reviewDoctorSchema = z.object({
   verificationStatus: DoctorVerificationStatusEnum,
-  rejectionReason: nullableStringSchema,
+  rejectionReason: optionalStringSchema,
 });
 
 export const doctorQuerySchema = baseQuerySchema(
