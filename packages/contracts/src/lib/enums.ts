@@ -149,3 +149,18 @@ export const TrafficSourceSortByEnum = z.enum(["createdAt"]);
 
 export const StaffSearchByEnum = z.enum(["displayName", "email", "title"]);
 export const StaffSortByEnum = z.enum(["displayName", "title", "createdAt"]);
+
+export const ProductStatusEnum = z.enum($Enums.ProductStatus);
+export const InventoryStatusEnum = z.enum($Enums.InventoryStatus);
+export const ShipmentStatusEnum = z.enum($Enums.ShipmentStatus);
+export const OrderStatusEnum = z.enum($Enums.OrderStatus);
+export const DeliveryTypeEnum = z.enum($Enums.DeliveryType);
+
+export const CategorySearchByEnum = z.enum(["name", "slug"]);
+export const CategorySortByEnum = z.enum(["name", "createdAt"]);
+
+export const ProductSearchByEnum = z.enum(["name", "slug"]);
+export const ProductSortByEnum = z.enum(["name", "price", "stockCount", "createdAt"]);
+
+export const OrderSearchByEnum = z.enum(["orderNumber", "status", "userId"]);
+export const OrderSortByEnum = z.enum(["createdAt", "total", "status"]);

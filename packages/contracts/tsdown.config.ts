@@ -22,6 +22,8 @@ export default defineConfig({
     media: "src/media/index.ts",
     notification: "src/notification/index.ts",
     staff: "src/staff/index.ts",
+    product: "src/product/index.ts",
+    order: "src/order/index.ts",
   },
   outDir: "dist",
   format: ["esm"],

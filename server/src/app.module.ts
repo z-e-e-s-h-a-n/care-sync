@@ -34,6 +34,8 @@ import { LeadModule } from "@/modules/lead/lead.module";
 import { TrafficModule } from "./modules/traffic/traffic.module";
 import { DashboardModule } from "@/modules/dashboard/dashboard.module";
 import { StaffModule } from "@/modules/staff/staff.module";
+import { ProductModule } from "@/modules/product/product.module";
+import { OrderModule } from "@/modules/order/order.module";
 
 @Module({
   imports: [
@@ -70,6 +72,8 @@ import { StaffModule } from "@/modules/staff/staff.module";
     TrafficModule,
     DashboardModule,
     StaffModule,
+    ProductModule,
+    OrderModule,
   ],
 
   providers: [

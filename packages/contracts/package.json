@@ -89,6 +89,14 @@
     "./staff": {
       "import": "./dist/staff.mjs",
       "types": "./dist/staff.d.mts"
+    },
+    "./product": {
+      "import": "./dist/product.mjs",
+      "types": "./dist/product.d.mts"
+    },
+    "./order": {
+      "import": "./dist/order.mjs",
+      "types": "./dist/order.d.mts"
     }
   },
   "dependencies": {

@@ -9,7 +9,7 @@ export default defineConfig((options) => ({
   clean: true,
   dts: false,
   minify: false,
-  onSuccess: options.watch ? "node dist/main.js" : undefined,
+  onSuccess: options.watch ? "node dist/main.mjs" : undefined,
   deps: {
     neverBundle: [
       "@workspace/shared",

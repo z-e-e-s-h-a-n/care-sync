@@ -40,7 +40,7 @@ export class StaffController {
     @Body() dto: StaffProfileDto,
     @User() user: Express.User,
   ) {
-    if (user.rol === "staff") {
+    if (user.role === "staff") {
       await this.staffService.assertStaffAccess(user, staffId);
     }
     return this.staffService.update(staffId, dto);

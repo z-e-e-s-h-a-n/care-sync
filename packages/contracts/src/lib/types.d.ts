@@ -146,3 +146,9 @@ export type CampaignAudience = z.infer<typeof enums.CampaignAudienceEnum>;
 export type DoctorVerificationStatus = z.infer<
   typeof enums.DoctorVerificationStatusEnum
 >;
+
+export type ProductStatus = z.infer<typeof enums.ProductStatusEnum>;
+export type InventoryStatus = z.infer<typeof enums.InventoryStatusEnum>;
+export type ShipmentStatus = z.infer<typeof enums.ShipmentStatusEnum>;
+export type OrderStatus = z.infer<typeof enums.OrderStatusEnum>;
+export type DeliveryType = z.infer<typeof enums.DeliveryTypeEnum>;

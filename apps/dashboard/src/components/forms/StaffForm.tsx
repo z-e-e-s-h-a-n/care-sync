@@ -37,7 +37,7 @@ const credentialOptions = [
 
 const StaffForm = ({ entityId, formType }: BaseCUFormProps) => {
   const router = useRouter();
-  const { currentUser, isLoading: isUserLoading } = useUser();
+  const { isLoading: isUserLoading } = useUser();
   const { data, isLoading } = useStaffMember(entityId);
   const { saveStaff, isPending } = useSaveStaff(entityId);
 

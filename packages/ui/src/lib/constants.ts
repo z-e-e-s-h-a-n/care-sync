@@ -16,6 +16,8 @@ import {
   IconAddressBook,
   IconCalendarEvent,
   IconNotification,
+  IconShoppingBag,
+  IconPackage,
 } from "@tabler/icons-react";
 import type { NavGroup, UserRole } from "@workspace/contracts";
 
@@ -52,6 +54,21 @@ export const adminSidebarMenu: NavGroup[] = [
         label: "Media",
         href: "/media",
         icon: IconPhoto,
+      },
+    ],
+  },
+  {
+    groupLabel: "SHOP",
+    items: [
+      {
+        label: "Products",
+        href: "/admin/products",
+        icon: IconShoppingBag,
+      },
+      {
+        label: "Orders",
+        href: "/admin/orders",
+        icon: IconPackage,
       },
     ],
   },
@@ -206,6 +223,25 @@ export const staffSidebarMenu: NavGroup[] = [
         href: "/staff/messages",
         icon: IconMessageCircle,
       },
+    ],
+  },
+  {
+    groupLabel: "SHOP",
+    items: [
+      {
+        label: "Products",
+        href: "/staff/products",
+        icon: IconShoppingBag,
+      },
+      {
+        label: "Orders",
+        href: "/staff/orders",
+        icon: IconPackage,
+      },
+    ],
+  },
+  {
+    items: [
       {
         label: "Profile",
         href: "/staff/profile",
