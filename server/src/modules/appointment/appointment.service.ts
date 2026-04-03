@@ -3,13 +3,13 @@ import {
   ForbiddenException,
   Injectable,
 } from "@nestjs/common";
-import { ulid } from "ulid";
 import type {
   AppointmentQueryDto,
   CreateAppointmentDto,
   UpdateAppointmentStatusDto,
 } from "@workspace/contracts/appointment";
 import type { AppointmentStatus, Prisma } from "@workspace/db/client";
+import { createReference } from "@workspace/shared/utils";
 
 import { AvailabilityService } from "@/modules/availability/availability.service";
 import { DoctorService } from "@/modules/doctor/doctor.service";
@@ -35,7 +35,7 @@ export class AppointmentService {
     const appointment = await this.prisma.appointment.create({
       data: {
         ...dto,
-        appointmentNumber: `APT-${ulid().slice(-10).toUpperCase()}`,
+        appointmentNumber: createReference("appointment"),
         createdById: dto.createdById ?? currentUser.id,
       },
       include: this.appointmentInclude,

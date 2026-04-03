@@ -34,6 +34,7 @@ import {
   UserStatus,
   Weekday,
 } from "../prisma/generated/client";
+import { createReference } from "@workspace/shared/utils";
 
 const connectionString = process.env.DB_URI;
 
@@ -723,7 +724,7 @@ async function seedAppointments(
     appointments.push(
       prisma.appointment.create({
         data: {
-          appointmentNumber: `APT-US-${(1001 + index).toString()}`,
+          appointmentNumber: createReference("appointment"),
           branchId: branch.id,
           patientId: patient.id,
           doctorId: doctor.id,
@@ -886,7 +887,7 @@ async function seedPayments(
         methodType: PaymentMethodType.wallet,
         status: PaymentStatus.succeeded,
         amount: 160,
-        transactionId: `PAY-APT-${confirmedAppointment.appointmentNumber}`,
+        transactionId: createReference("payment"),
         createdAt: createdAt(5, 14),
         paidAt: createdAt(5, 14),
         commissionAmount: 20,
@@ -919,7 +920,7 @@ async function seedPayments(
         methodType: PaymentMethodType.card,
         status: PaymentStatus.refunded,
         amount: 150,
-        transactionId: `PAY-APT-${completedAppointment.appointmentNumber}`,
+        transactionId: createReference("payment"),
         createdAt: createdAt(3, 16),
         paidAt: createdAt(3, 16),
         refundedAt: createdAt(2, 12),
@@ -1176,7 +1177,7 @@ async function seedCommerce(
 
     const order = await prisma.order.create({
       data: {
-        orderNumber: `ORD-US-${2001 + index}`,
+        orderNumber: createReference("order"),
         userId: orderSeed.patient.id,
         status: orderSeed.status,
         deliveryType: orderSeed.deliveryType,
@@ -1236,7 +1237,7 @@ async function seedCommerce(
               ? PaymentStatus.succeeded
               : PaymentStatus.pending,
           amount: total,
-          transactionId: `PAY-ORD-${order.orderNumber}`,
+          transactionId: createReference("payment"),
           paidAt:
             order.status === OrderStatus.delivered
               ? daysFromNow(-2, 10, 30)
@@ -1250,6 +1251,8 @@ async function seedCommerce(
       order.status === OrderStatus.processing ||
       order.status === OrderStatus.delivered
     ) {
+      const trackingNumber = createReference("shipment");
+
       await prisma.shipment.create({
         data: {
           orderId: order.id,
@@ -1258,8 +1261,8 @@ async function seedCommerce(
               ? ShipmentStatus.delivered
               : ShipmentStatus.inTransit,
           provider: "UPS",
-          trackingNumber: `1ZDEMO${2001 + index}`,
-          trackingUrl: `https://www.ups.com/track?tracknum=1ZDEMO${2001 + index}`,
+          trackingNumber,
+          trackingUrl: `https://www.ups.com/track?tracknum=${trackingNumber}`,
           shippedAt: daysFromNow(-1, 12, 0),
           deliveredAt:
             order.status === OrderStatus.delivered

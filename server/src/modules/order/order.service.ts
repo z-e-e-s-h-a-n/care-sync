@@ -14,6 +14,7 @@ import type {
   OrderQueryDto,
 } from "@workspace/contracts/order";
 import type { Prisma } from "@workspace/db/client";
+import { createReference } from "@workspace/shared/utils";
 
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { OtpService } from "@/modules/auth/otp.service";
@@ -423,6 +424,6 @@ export class OrderService {
   } satisfies Prisma.OrderInclude;
 
   private createOrderNumber() {
-    return `ORD-${Date.now()}`;
+    return createReference("order");
   }
 }
