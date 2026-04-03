@@ -53,7 +53,7 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
         toast.success(
           `Product ${formType === "add" ? "created" : "updated"} successfully.`,
         );
-        router.push("/admin/products");
+        router.push("/products");
       } catch (error: any) {
         toast.error("Failed to save product", {
           description: error?.message,
@@ -239,7 +239,7 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
                   key={image.id}
                   className="overflow-hidden rounded-xl border bg-background"
                 >
-                  <div className="relative aspect-[4/3] bg-muted">
+                  <div className="relative aspect-4/3 bg-muted">
                     <Image
                       src={image.url}
                       alt={image.altText || image.name}
@@ -271,7 +271,8 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
             </div>
           ) : (
             <div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-              No images selected yet. Use the media library to upload or choose product images.
+              No images selected yet. Use the media library to upload or choose
+              product images.
             </div>
           )}
         </div>
@@ -281,7 +282,7 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/admin/products")}
+          onClick={() => router.push("/products")}
           disabled={isPending}
         >
           Cancel

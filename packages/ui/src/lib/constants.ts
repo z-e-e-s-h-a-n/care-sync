@@ -63,17 +63,17 @@ export const adminSidebarMenu: NavGroup[] = [
     items: [
       {
         label: "Products",
-        href: "/admin/products",
+        href: "/products",
         icon: IconShoppingBag,
       },
       {
         label: "Categories",
-        href: "/admin/categories",
+        href: "/categories",
         icon: IconCategory,
       },
       {
         label: "Orders",
-        href: "/admin/orders",
+        href: "/orders",
         icon: IconPackage,
       },
     ],
@@ -151,21 +151,40 @@ export const doctorSidebarMenu: NavGroup[] = [
         href: "/doctor/messages",
         icon: IconMessageCircle,
       },
+    ],
+  },
+  {
+    groupLabel: "SHOP",
+    items: [
       {
-        label: "Profile",
-        href: "/doctor/profile",
-        icon: IconUserCircle,
+        label: "Products",
+        href: "/products",
+        icon: IconShoppingBag,
       },
+      {
+        label: "Categories",
+        href: "/categories",
+        icon: IconCategory,
+      },
+      {
+        label: "Orders",
+        href: "/orders",
+        icon: IconPackage,
+      },
+    ],
+  },
+  {
+    items: [
       {
         label: "Availability",
         href: "/doctor/availability",
         icon: IconClockHour4,
       },
-    ],
-  },
-  {
-    groupLabel: "System",
-    items: [
+      {
+        label: "Profile",
+        href: "/doctor/profile",
+        icon: IconUserCircle,
+      },
       {
         label: "Media",
         href: "/media",
@@ -237,17 +256,17 @@ export const staffSidebarMenu: NavGroup[] = [
     items: [
       {
         label: "Products",
-        href: "/staff/products",
+        href: "/products",
         icon: IconShoppingBag,
       },
       {
         label: "Categories",
-        href: "/staff/categories",
+        href: "/categories",
         icon: IconCategory,
       },
       {
         label: "Orders",
-        href: "/staff/orders",
+        href: "/orders",
         icon: IconPackage,
       },
     ],
@@ -255,9 +274,9 @@ export const staffSidebarMenu: NavGroup[] = [
   {
     items: [
       {
-        label: "Profile",
-        href: "/staff/profile",
-        icon: IconUserCircle,
+        label: "Media",
+        href: "/media",
+        icon: IconPhoto,
       },
     ],
   },

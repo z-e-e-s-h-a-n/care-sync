@@ -1042,42 +1042,45 @@ async function seedCommerce(
 
   const products = await Promise.all(
     productSeeds.map((product, index) =>
-      prisma.product.create({
-        data: {
-          categoryId: product.categoryId,
-          name: product.name,
-          slug: product.slug,
-          description: product.description,
-          sellPrice: product.price,
-          compareAtPrice: product.compareAtPrice,
-          stockCount: product.stockCount,
-          requiresShipping: true,
-          status: ProductStatus.active,
-          inventoryStatus:
-            product.stockCount <= 10
-              ? InventoryStatus.lowStock
-              : InventoryStatus.inStock,
-        },
-      }).then(async (createdProduct) => {
-        const media = await prisma.media.create({
+      prisma.product
+        .create({
           data: {
-            uploadedById: foundation.admin.id,
-            publicId: `prod-seed/product-${index + 1}`,
-            url: `${PRODUCT_IMAGE_URLS[index % PRODUCT_IMAGE_URLS.length]}&v=product-${index + 1}`,
-            mimeType: "image/jpeg",
-            resourceType: "image",
-            size: 210000,
-            hash: `prod-seed-product-${index + 1}-hash`,
-            name: `${createdProduct.slug}.jpg`,
-            type: MediaType.product,
-            visibility: MediaVisibility.public,
-            altText: createdProduct.name,
-            productId: createdProduct.id,
+            categoryId: product.categoryId,
+            name: product.name,
+            slug: product.slug,
+            description: product.description,
+            sellPrice: product.price,
+            compareAtPrice: product.compareAtPrice,
+            stockCount: product.stockCount,
+            requiresShipping: true,
+            status: ProductStatus.active,
+            inventoryStatus:
+              product.stockCount <= 10
+                ? InventoryStatus.lowStock
+                : InventoryStatus.inStock,
           },
-        });
+        })
+        .then(async (createdProduct) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const media = await prisma.media.create({
+            data: {
+              uploadedById: foundation.admin.id,
+              publicId: `prod-seed/product-${index + 1}`,
+              url: `${PRODUCT_IMAGE_URLS[index % PRODUCT_IMAGE_URLS.length]}&v=product-${index + 1}`,
+              mimeType: "image/jpeg",
+              resourceType: "image",
+              size: 210000,
+              hash: `prod-seed-product-${index + 1}-hash`,
+              name: `${createdProduct.slug}.jpg`,
+              type: MediaType.product,
+              visibility: MediaVisibility.public,
+              altText: createdProduct.name,
+              productId: createdProduct.id,
+            },
+          });
 
-        return createdProduct;
-      }),
+          return createdProduct;
+        }),
     ),
   );
 
@@ -1186,7 +1189,9 @@ async function seedCommerce(
             ? "Customer will collect from branch reception."
             : "Handle with care - demo seed order.",
         confirmedAt:
-          orderSeed.status !== OrderStatus.pending ? daysFromNow(-2, 10, 30) : null,
+          orderSeed.status !== OrderStatus.pending
+            ? daysFromNow(-2, 10, 30)
+            : null,
         shippedAt:
           orderSeed.status === OrderStatus.processing ||
           orderSeed.status === OrderStatus.delivered
@@ -1234,7 +1239,10 @@ async function seedCommerce(
       });
     }
 
-    if (order.status === OrderStatus.processing || order.status === OrderStatus.delivered) {
+    if (
+      order.status === OrderStatus.processing ||
+      order.status === OrderStatus.delivered
+    ) {
       await prisma.shipment.create({
         data: {
           orderId: order.id,
@@ -1257,7 +1265,11 @@ async function seedCommerce(
     orders.push(order);
   }
 
-  return { products, orders, categories: { therapyTools, parentResources, sensoryCategory } };
+  return {
+    products,
+    orders,
+    categories: { therapyTools, parentResources, sensoryCategory },
+  };
 }
 
 async function seedNotifications(

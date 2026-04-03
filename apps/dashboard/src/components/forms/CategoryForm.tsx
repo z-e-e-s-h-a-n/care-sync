@@ -38,7 +38,7 @@ const CategoryForm = ({ entityId, formType }: BaseCUFormProps) => {
         toast.success(
           `Category ${formType === "add" ? "created" : "updated"} successfully.`,
         );
-        router.push("/admin/categories");
+        router.push("/categories");
       } catch (error: any) {
         toast.error("Failed to save category", { description: error?.message });
       }
@@ -124,7 +124,7 @@ const CategoryForm = ({ entityId, formType }: BaseCUFormProps) => {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/admin/categories")}
+          onClick={() => router.push("/categories")}
           disabled={isPending}
         >
           Cancel
