@@ -7,6 +7,7 @@ import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
 import StepsSection from "@/components/sections/StepsSection";
 import { abaServices } from "@/components/sections/ServicesSection";
+import PageHeader from "@/components/PageHeader";
 
 const serviceDetails: Record<
   string,
@@ -71,35 +72,21 @@ const serviceDetails: Record<
 export default function ServicesPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="pt-6 sm:pt-8">
-        <div className="section">
-          <div className="relative overflow-hidden rounded-tl-4xl rounded-tr-4xl bg-secondary px-6 py-16 sm:px-10 sm:py-20 lg:px-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(var(--primary-rgb),0.08),transparent_60%)]" />
-            <div className="relative max-w-2xl">
-              <Badge variant="secondary" appearance="solid" className="px-4 py-2 mb-4">
-                Our Services
-              </Badge>
-              <h1 className="text-5xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-                Comprehensive ABA Therapy Programs
-              </h1>
-              <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-                From early intervention to school-based support, we offer a full range
-                of evidence-based services designed to meet your child where they are
-                and take them further.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Button asChild>
-                  <Link href="/contact">Get Started</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/doctors">Meet Our Team</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Our Services"
+        title="Comprehensive ABA Therapy Programs"
+        description="From early intervention to school-based support, we offer a full range of evidence-based services designed to meet your child where they are and take them further."
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/contact">Get Started</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/doctors">Meet Our Team</Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* Services detail */}
       <section className="py-20 section space-y-12">

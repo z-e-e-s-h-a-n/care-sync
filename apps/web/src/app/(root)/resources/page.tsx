@@ -5,6 +5,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
+import PageHeader from "@/components/PageHeader";
 
 const articles = [
   {
@@ -92,27 +93,11 @@ const faqs = [
 export default function ResourcesPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="pt-6 sm:pt-8">
-        <div className="section">
-          <div className="relative overflow-hidden rounded-tl-4xl rounded-tr-4xl bg-secondary px-6 py-16 sm:px-10 sm:py-20 lg:px-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_60%,rgba(var(--primary-rgb),0.07),transparent_50%)]" />
-            <div className="relative max-w-2xl">
-              <Badge variant="secondary" appearance="solid" className="px-4 py-2 mb-4">
-                Resources
-              </Badge>
-              <h1 className="text-5xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-                ABA Resources for Families
-              </h1>
-              <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-                Whether you're new to ABA or looking to deepen your understanding,
-                our resource library has guides, articles, and answers to help you
-                support your child's growth.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Resources"
+        title="ABA Resources for Families"
+        description="Whether you're new to ABA or looking to deepen your understanding, our resource library has guides, articles, and answers to help you support your child's growth."
+      />
 
       {/* Articles */}
       <section id="blog" className="py-20 section space-y-10">

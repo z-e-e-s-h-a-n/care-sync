@@ -10,6 +10,7 @@ import { Textarea } from "@workspace/ui/components/textarea";
 import { Label } from "@workspace/ui/components/label";
 import { toast } from "sonner";
 import { createContactMessage } from "@workspace/sdk/contact";
+import PageHeader from "@/components/PageHeader";
 
 const contactInfo = [
   {
@@ -67,31 +68,12 @@ export default function ContactPage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="pt-6 sm:pt-8">
-        <div className="section">
-          <div className="relative overflow-hidden rounded-tl-4xl rounded-tr-4xl bg-secondary px-6 py-16 sm:px-10 sm:py-20 lg:px-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_40%,rgba(var(--primary-rgb),0.07),transparent_55%)]" />
-            <div className="relative mx-auto max-w-2xl text-center">
-              <Badge
-                variant="secondary"
-                appearance="solid"
-                className="px-4 py-2 mb-4"
-              >
-                Contact Us
-              </Badge>
-              <h1 className="text-5xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-                Let&apos;s Talk About Your Child
-              </h1>
-              <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-                Whether you have questions about our services, want to schedule
-                a free consultation, or just need guidance — our team is here to
-                help.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Contact Us"
+        title="Let&apos;s Talk About Your Child"
+        description="Whether you have questions about our services, want to schedule a free consultation, or just need guidance — our team is here to help."
+        align="center"
+      />
 
       {/* Content */}
       <section className="py-20 section">

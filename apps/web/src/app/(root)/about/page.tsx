@@ -14,6 +14,7 @@ import Image from "next/image";
 import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
 import { featuredTeam } from "@/components/sections/DoctorsSection";
+import PageHeader from "@/components/PageHeader";
 
 const values = [
   {
@@ -57,34 +58,22 @@ const values = [
 export default function AboutPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="pt-6 sm:pt-8">
-        <div className="section">
-          <div className="relative overflow-hidden rounded-tl-4xl rounded-tr-4xl bg-secondary px-6 py-16 sm:px-10 sm:py-20 lg:px-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(var(--primary-rgb),0.08),transparent_60%)]" />
-            <div className="relative mx-auto max-w-3xl text-center">
-              <Badge variant="secondary" appearance="solid" className="px-4 py-2 mb-4">
-                About Us
-              </Badge>
-              <h1 className="text-5xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-                We Help Children Thrive Through ABA
-              </h1>
-              <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg max-w-2xl mx-auto">
-                Ready Set and Go ABA was founded with one mission: to deliver the highest
-                quality Applied Behavior Analysis therapy to children and families who need it most.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-4">
-                <Button asChild>
-                  <Link href="/contact">Book a Consultation</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/services">Our Services</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="About Us"
+        title="We Help Children Thrive Through ABA"
+        description="Ready Set and Go ABA was founded with one mission: to deliver the highest quality Applied Behavior Analysis therapy to children and families who need it most."
+        align="center"
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/contact">Book a Consultation</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/services">Our Services</Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* Mission */}
       <section id="mission" className="py-20 section">

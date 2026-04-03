@@ -12,6 +12,7 @@ import { Card, CardContent } from "@workspace/ui/components/card";
 import SectionHeader from "@/components/SectionHeader";
 import CTASection from "@/components/sections/CTASection";
 import { useProducts } from "@/hooks/healthcare";
+import PageHeader from "@/components/PageHeader";
 
 function formatPrice(price: number | string) {
   return new Intl.NumberFormat("en-US", {
@@ -37,26 +38,12 @@ export default function ShopPage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="pt-6 sm:pt-8">
-        <div className="section">
-          <div className="relative overflow-hidden rounded-tl-4xl rounded-tr-4xl bg-secondary px-6 py-16 sm:px-10 sm:py-20 lg:px-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary-rgb),0.07),transparent_60%)]" />
-            <div className="relative mx-auto max-w-2xl text-center">
-              <Badge variant="secondary" appearance="solid" className="px-4 py-2 mb-4">
-                Shop
-              </Badge>
-              <h1 className="text-5xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-                Therapy Tools & Resources
-              </h1>
-              <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-                Supplements, learning materials, and therapy tools recommended by
-                our clinical team — delivered to your door.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Shop"
+        title="Therapy Tools & Resources"
+        description="Supplements, learning materials, and therapy tools recommended by our clinical team — delivered to your door."
+        align="center"
+      />
 
       {/* Products */}
       <section className="py-20 section space-y-10">

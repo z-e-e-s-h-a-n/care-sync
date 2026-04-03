@@ -6,6 +6,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import Image from "next/image";
 import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
+import PageHeader from "@/components/PageHeader";
 
 const team = [
   {
@@ -67,26 +68,12 @@ const team = [
 export default function DoctorsPage() {
   return (
     <>
-      {/* Hero */}
-      <section className="pt-6 sm:pt-8">
-        <div className="section">
-          <div className="relative overflow-hidden rounded-tl-4xl rounded-tr-4xl bg-secondary px-6 py-16 sm:px-10 sm:py-20 lg:px-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary-rgb),0.07),transparent_60%)]" />
-            <div className="relative mx-auto max-w-2xl text-center">
-              <Badge variant="secondary" appearance="solid" className="px-4 py-2 mb-4">
-                Our Team
-              </Badge>
-              <h1 className="text-5xl font-semibold leading-tight tracking-tight text-foreground sm:text-6xl">
-                Certified Specialists Who Care
-              </h1>
-              <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-                Every member of our clinical team is board-certified, highly trained,
-                and deeply committed to making a real difference in children's lives.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Our Team"
+        title="Certified Specialists Who Care"
+        description="Every member of our clinical team is board-certified, highly trained, and deeply committed to making a real difference in children's lives."
+        align="center"
+      />
 
       {/* Team grid */}
       <section className="py-20 section space-y-10">

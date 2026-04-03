@@ -268,7 +268,7 @@ export function AuthForm({
     <div className={cn("flex flex-col gap-6", className)}>
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <Form form={form} className="p-6 md:p-8">
+          <Form form={form} className="py-6 px-4 md:p-8">
             <div className="flex flex-col items-center gap-2 text-center">
               {isSignIn && (
                 <Link
@@ -288,7 +288,7 @@ export function AuthForm({
             </div>
 
             {showSignupFields && (
-              <div className="flex items-center gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <InputField form={form} name="firstName" label="First Name" />
                 <InputField form={form} name="lastName" label="Last Name" />
               </div>
@@ -304,8 +304,8 @@ export function AuthForm({
 
             <div
               className={cn(
-                "flex gap-4",
-                showSignupFields ? "items-center" : "flex-col",
+                "grid gap-4",
+                showSignupFields ? "grid-cols-2" : "",
               )}
             >
               {(!isPasswordFlow || !!otpMeta?.valid) && (
@@ -402,11 +402,23 @@ export function AuthForm({
 
           <div className="bg-muted relative hidden md:block">
             <Image
-              src="/placeholder.svg"
-              alt="Image"
+              src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=1200&q=80"
+              alt="Child in a warm, supportive learning environment"
               fill
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              className="absolute inset-0 h-full w-full object-cover"
             />
+            <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 space-y-2 p-6 text-white">
+              <p className="text-sm font-medium uppercase tracking-[0.22em] text-white/75">
+                {appName.default}
+              </p>
+              <h2 className="max-w-xs text-2xl font-semibold leading-tight">
+                Thoughtful care for every child and family.
+              </h2>
+              <p className="max-w-sm text-sm leading-6 text-white/80">
+                Secure access to appointments, updates, and support from one place.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

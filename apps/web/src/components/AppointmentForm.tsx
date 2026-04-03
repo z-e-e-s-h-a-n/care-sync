@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useStore } from "@tanstack/react-form";
 
@@ -103,17 +104,25 @@ const AppointmentForm = ({ doctorId, onSuccess }: AppointmentFormProps) => {
   return (
     <Form form={form}>
       <FormSection title="New Appointment" className="md:grid-cols-1">
-        {!currentUser ||
-          (!patientProfile && (
+        {!currentUser ? (
+          <InfoNotice
+            variant="info"
+            message={
+              <span>
+                Sign in and complete your profile before booking an appointment.
+                <Link href="/auth/sign-in" className="ml-1 font-semibold underline underline-offset-4">
+                  Sign in
+                </Link>
+                .
+              </span>
+            }
+          />
+        ) : !patientProfile ? (
             <InfoNotice
               variant="warning"
-              message={
-                !currentUser
-                  ? "Please sign in first to continue."
-                  : "Complete your profile to continue booking an appointment."
-              }
+              message="Complete your profile to continue booking an appointment."
             />
-          ))}
+          ) : null}
 
         <ComboboxField
           form={form}

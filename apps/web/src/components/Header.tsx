@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { CalendarDays } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import { headerMenu } from "@/lib/constants";
@@ -16,12 +18,19 @@ import UserCard from "@workspace/ui/shared/UserCard";
 import DropdownNav from "@workspace/ui/shared/DropdownNav";
 import { IconLogout, IconShoppingCart } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useDialog } from "@workspace/ui/hooks/use-dialog";
 import AppointmentForm from "./AppointmentForm";
 import { userSidebarMenu } from "@workspace/ui/lib/constants";
 import Logo from "@workspace/ui/shared/Logo";
 import { useLocalCart } from "@/hooks/use-local-cart";
 import { useServerCart } from "@/hooks/healthcare";
+import FloatingCtas from "./FloatingCtas";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@workspace/ui/components/sheet";
 
 const CartIcon = () => {
   const { currentUser } = useUser();
@@ -49,7 +58,7 @@ const CartIcon = () => {
 
 const Header = () => {
   const pathname = usePathname();
-  const { openDialog } = useDialog();
+  const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
 
   const { currentUser, isLoading, logoutUser, isLogoutPending, logoutError } =
     useUser();
@@ -64,9 +73,10 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 pt-5">
-      <div className="section">
-        <div className="flex items-center justify-between rounded-full border border-card/70 bg-card/70 px-4 py-3 shadow-card backdrop-blur md:px-6">
+    <>
+      <header className="sticky top-0 z-50 pt-5">
+        <div className="section">
+          <div className="flex items-center justify-between rounded-full border border-card/70 bg-card/70 px-3 py-3 shadow-card backdrop-blur md:px-6">
           <Logo />
 
           <nav className="hidden items-center gap-6 lg:flex">
@@ -90,7 +100,7 @@ const Header = () => {
             })}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <CartIcon />
 
             {!currentUser && (
@@ -100,15 +110,10 @@ const Header = () => {
             )}
             <Button
               variant="gradient"
-              className="cta-pluse"
-              onClick={() =>
-                openDialog({
-                  title: "Book Appointment",
-                  content: <AppointmentForm />,
-                })
-              }
+              className="cta-pluse hidden px-3 sm:px-4 md:inline-flex"
+              onClick={() => setIsAppointmentOpen(true)}
             >
-              Book Appointment
+              <span>Book Appointment</span>
             </Button>
             {currentUser && (
               <>
@@ -147,8 +152,35 @@ const Header = () => {
             )}
           </div>
         </div>
-      </div>
-    </header>
+        </div>
+      </header>
+
+      <FloatingCtas>
+        <Button
+          variant="gradient"
+          size="lg"
+          className="cta-pluse h-12 rounded-full px-5 shadow-lg"
+          onClick={() => setIsAppointmentOpen(true)}
+        >
+          <CalendarDays className="size-4.5" />
+          Book Appointment
+        </Button>
+      </FloatingCtas>
+
+      <Sheet open={isAppointmentOpen} onOpenChange={setIsAppointmentOpen}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+          <SheetHeader className="border-b border-border/60 pb-5">
+            <SheetTitle className="text-xl">Book Appointment</SheetTitle>
+            <SheetDescription>
+              Share a few details and our team will help you schedule the right visit.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="p-4 sm:p-6">
+            <AppointmentForm />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
 
