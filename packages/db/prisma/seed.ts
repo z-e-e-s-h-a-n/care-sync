@@ -983,6 +983,7 @@ async function seedCommerce(
       slug: "visual-schedule-board",
       description:
         "Portable daily routine board with reusable icons for ABA sessions and home routines.",
+      costPrice: 12.5,
       price: 24.99,
       compareAtPrice: 29.99,
       stockCount: 42,
@@ -993,6 +994,7 @@ async function seedCommerce(
       slug: "token-economy-starter-kit",
       description:
         "Reinforcement board, tokens, and reward cards for skill acquisition sessions.",
+      costPrice: 8.25,
       price: 18.5,
       compareAtPrice: null,
       stockCount: 67,
@@ -1003,6 +1005,7 @@ async function seedCommerce(
       slug: "calm-corner-sensory-bundle",
       description:
         "Weighted lap pad, fidget tools, and calming visuals for self-regulation support.",
+      costPrice: 28.0,
       price: 54.0,
       compareAtPrice: 62.0,
       stockCount: 14,
@@ -1013,6 +1016,7 @@ async function seedCommerce(
       slug: "parent-coaching-workbook",
       description:
         "Guided home practice workbook with routines, behavior tips, and progress pages.",
+      costPrice: 6.5,
       price: 16.75,
       compareAtPrice: null,
       stockCount: 85,
@@ -1023,6 +1027,7 @@ async function seedCommerce(
       slug: "aac-communication-cards",
       description:
         "Durable laminated communication cards for requests, emotions, and transitions.",
+      costPrice: 9.75,
       price: 21.25,
       compareAtPrice: 25.0,
       stockCount: 26,
@@ -1033,6 +1038,7 @@ async function seedCommerce(
       slug: "fine-motor-activity-box",
       description:
         "Structured fine-motor tasks for table time, matching, and independent work practice.",
+      costPrice: 19.5,
       price: 39.99,
       compareAtPrice: null,
       stockCount: 9,
@@ -1049,6 +1055,7 @@ async function seedCommerce(
             name: product.name,
             slug: product.slug,
             description: product.description,
+            costPrice: product.costPrice,
             sellPrice: product.price,
             compareAtPrice: product.compareAtPrice,
             stockCount: product.stockCount,
