@@ -9,6 +9,7 @@ import type {
 } from "@workspace/contracts/product";
 import { Badge } from "@workspace/ui/components/badge";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
+import { formatPrice } from "@workspace/shared/utils";
 
 const columns: ColumnConfig<ProductResponse, ProductQueryType>[] = [
   {
@@ -27,8 +28,7 @@ const columns: ColumnConfig<ProductResponse, ProductQueryType>[] = [
   },
   {
     header: "Price",
-    accessor: (p) => `$${Number(p.price).toFixed(2)}`,
-    sortKey: "price",
+    accessor: (p) => formatPrice(p.sellPrice),
   },
   {
     header: "Stock",

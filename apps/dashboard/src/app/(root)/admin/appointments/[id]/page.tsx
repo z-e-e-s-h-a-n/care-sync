@@ -184,7 +184,7 @@ const relatedEntities: RelatedEntityConfig<AppointmentResponse>[] = [
     columns: [
       {
         header: "Amount",
-        accessor: (item) => currencyFormatter.format(Number(item.amount)),
+        accessor: (item) => currencyFormatter.format(item.amount),
       },
       {
         header: "Provider",
@@ -288,3 +288,4 @@ const Page = ({ params }: AppPageProps) => {
 };
 
 export default Page;
+

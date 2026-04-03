@@ -4,19 +4,18 @@ import React from "react";
 import type { AppPageProps } from "@workspace/contracts";
 import type { ProductResponse } from "@workspace/contracts/product";
 import { Badge } from "@workspace/ui/components/badge";
-import { formatPrice } from "@workspace/shared/utils";
+import { formatDate, formatPrice } from "@workspace/shared/utils";
 import {
   type SectionConfig,
   GenericDetailsPage,
 } from "@workspace/ui/shared/GenericDetailsPage";
-import { formatDate } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 import { useProduct } from "@/hooks/product";
 
 const formatDateTime = (value?: string) =>
   formatDate(value, { mode: "datetime", fallback: "Not recorded" });
 
-const renderStatusBadge = (value?: string | null) => (
+const renderStatusBadge = (value?: string) => (
   <Badge variant={getStatusVariant(value ?? "")} className="capitalize">
     {value ?? "Not set"}
   </Badge>
@@ -48,9 +47,7 @@ const renderHeader = (data: ProductResponse) => (
       <p className="text-xs uppercase tracking-wide text-muted-foreground">
         Price
       </p>
-      <p className="text-2xl font-semibold">
-        {formatPrice(data.price) || `$${Number(data.price).toFixed(2)}`}
-      </p>
+      <p className="text-2xl font-semibold">{formatPrice(data.sellPrice)}</p>
       <p className="text-sm text-muted-foreground">
         Stock: {data.stockCount ?? 0}
       </p>
@@ -81,17 +78,15 @@ const sections: SectionConfig<ProductResponse>[] = [
     fields: [
       {
         label: "Price",
-        accessor: (d) => `$${Number(d.price).toFixed(2)}`,
+        accessor: (d) => formatPrice(d.sellPrice),
       },
       {
         label: "Cost Price",
-        accessor: (d) =>
-          d.costPrice != null ? `$${Number(d.costPrice).toFixed(2)}` : "Not set",
+        accessor: (d) => (d.costPrice != null ? formatPrice(d.costPrice) : "Not set"),
       },
       {
         label: "Compare-at Price",
-        accessor: (d) =>
-          d.compareAtPrice ? `$${Number(d.compareAtPrice).toFixed(2)}` : "Not set",
+        accessor: (d) => (d.compareAtPrice ? formatPrice(d.compareAtPrice) : "Not set"),
       },
       { label: "Stock Count", accessor: "stockCount" },
       {
@@ -136,9 +131,7 @@ const Page = ({ params }: AppPageProps) => {
     <GenericDetailsPage
       entityId={id}
       entityName="Product"
-      description={(data) =>
-        `View and manage details for ${data.name}.`
-      }
+      description={(data) => `View and manage details for ${data.name}.`}
       useQuery={useProduct}
       sections={sections}
       renderHeader={renderHeader}

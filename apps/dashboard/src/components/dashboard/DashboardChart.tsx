@@ -93,8 +93,7 @@ function weekdayShort(value: string) {
 }
 
 function safeNumber(value: unknown) {
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : 0;
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 function buildWeekdayForecast(options: {

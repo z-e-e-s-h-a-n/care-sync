@@ -6,7 +6,7 @@ import { useOrderList } from "@/hooks/order";
 import type { OrderResponse, OrderQueryType } from "@workspace/contracts/order";
 import { Badge } from "@workspace/ui/components/badge";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
-import { formatDate } from "@workspace/shared/utils";
+import { formatDate, formatPrice } from "@workspace/shared/utils";
 
 const columns: ColumnConfig<OrderResponse, OrderQueryType>[] = [
   {
@@ -27,7 +27,7 @@ const columns: ColumnConfig<OrderResponse, OrderQueryType>[] = [
   },
   {
     header: "Total",
-    accessor: (o) => `$${Number(o.total).toFixed(2)}`,
+    accessor: (o) => `${formatPrice(o.total)}`,
     sortKey: "total",
   },
   {
@@ -92,3 +92,4 @@ const OrdersPage = () => {
 };
 
 export default OrdersPage;
+

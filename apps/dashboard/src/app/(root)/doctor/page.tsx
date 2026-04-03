@@ -148,7 +148,7 @@ export default function DoctorOverviewPage() {
       value: doctor?.isAvailable ? "Open" : "Paused",
       helper: "Controls whether new patients can book from your profile.",
       badge: doctor?.consultationFee
-        ? formatPrice(Number(doctor.consultationFee))
+        ? formatPrice(doctor.consultationFee)
         : "Fee missing",
       trendLabel: `${overview?.bookingAccess.todayCount ?? 0} appointments start today`,
       bars: appointmentHistoryData.slice(-7).map((item) => item.appointments),
@@ -293,3 +293,4 @@ export default function DoctorOverviewPage() {
     </div>
   );
 }
+

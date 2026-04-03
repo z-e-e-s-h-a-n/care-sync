@@ -13,7 +13,7 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
-import { formatDate } from "@workspace/shared/utils";
+import { formatDate, formatPrice } from "@workspace/shared/utils";
 import PageIntro from "@/components/dashboard/PageIntro";
 import { useOrder, useUpdateOrderStatus } from "@/hooks/order";
 
@@ -123,32 +123,32 @@ const Page = ({ params }: AppPageProps) => {
               <div>
                 <p className="font-medium">{item.productName}</p>
                 <p className="text-sm text-muted-foreground">
-                  Qty: {item.quantity} × ${Number(item.unitPrice).toFixed(2)}
+                  Qty: {item.quantity} × {formatPrice(item.unitPrice)}
                 </p>
               </div>
               <p className="font-semibold">
-                ${Number(item.totalPrice).toFixed(2)}
+                {formatPrice(item.totalPrice)}
               </p>
             </div>
           ))}
           <div className="border-t border-border/60 pt-3 space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
-              <span>${Number(order.subtotal).toFixed(2)}</span>
+              <span>{formatPrice(order.subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span>${Number(order.shippingCost).toFixed(2)}</span>
+              <span>{formatPrice(order.shippingCost)}</span>
             </div>
-            {Number(order.discountAmount) > 0 && (
+            {order.discountAmount > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>Discount</span>
-                <span>-${Number(order.discountAmount).toFixed(2)}</span>
+                <span>-{formatPrice(order.discountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between font-semibold text-base pt-1">
               <span>Total</span>
-              <span>${Number(order.total).toFixed(2)}</span>
+              <span>{formatPrice(order.total)}</span>
             </div>
           </div>
         </SectionCard>
@@ -237,3 +237,4 @@ const Page = ({ params }: AppPageProps) => {
 };
 
 export default Page;
+
