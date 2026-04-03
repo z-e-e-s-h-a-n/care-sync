@@ -24,14 +24,13 @@ import { parseDuration } from "@workspace/shared/utils";
 
 const STALE_TIME = parseDuration("10m");
 
-function formatAmount(amount: number | string) {
+function formatAmount(amount: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(Number(amount));
+  }).format(amount);
 }
 
-// Row for a localStorage cart item — fetches product on the fly
 function LocalCartRow({
   productId,
   quantity,
@@ -59,7 +58,7 @@ function LocalCartRow({
   if (!product) return null;
 
   const image = product.images?.[0]?.url;
-  const price = Number(product.price) * quantity;
+  const lineTotal = product.sellPrice * quantity;
 
   return (
     <div className="flex gap-4 rounded-xl border p-4">
@@ -101,16 +100,14 @@ function LocalCartRow({
               {quantity}
             </span>
             <button
-              onClick={() =>
-                onSetQty(Math.min(product.stockCount, quantity + 1))
-              }
+              onClick={() => onSetQty(Math.min(product.stockCount, quantity + 1))}
               disabled={quantity >= product.stockCount}
               className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground transition disabled:opacity-40"
             >
               <Plus className="size-3" />
             </button>
           </div>
-          <p className="font-semibold text-primary">{formatAmount(price)}</p>
+          <p className="font-semibold text-primary">{formatAmount(lineTotal)}</p>
         </div>
       </div>
     </div>
@@ -121,13 +118,11 @@ export default function CartPage() {
   const { currentUser } = useUser();
   const isLoggedIn = Boolean(currentUser);
 
-  // Server cart (only when logged in)
   const { data: serverCartData, isLoading: serverLoading } =
     useServerCart(isLoggedIn);
   const { updateCartItem, isPending: isUpdating } = useUpdateCartItem();
   const { removeCartItem, isPending: isRemoving } = useRemoveCartItem();
 
-  // Local cart
   const {
     items: localItems,
     setItem,
@@ -136,7 +131,6 @@ export default function CartPage() {
     count: localCount,
   } = useLocalCart();
 
-  // Sync local cart to server on login
   const { syncCart } = useSyncLocalCart();
   useEffect(() => {
     if (isLoggedIn && localCount > 0) {
@@ -161,12 +155,10 @@ export default function CartPage() {
     }
   };
 
-  // Logged in: show server cart
   if (isLoggedIn) {
     const items = serverCartData?.items ?? [];
     const subtotal = items.reduce(
-      (sum, item) =>
-        sum + Number(item.product.price) * item.quantity,
+      (sum, item) => sum + item.product.sellPrice * item.quantity,
       0,
     );
 
@@ -195,15 +187,15 @@ export default function CartPage() {
           </div>
         )}
 
-        {!serverLoading && !items.length && (
-          <EmptyCart />
-        )}
+        {!serverLoading && !items.length && <EmptyCart />}
 
         {!serverLoading && items.length > 0 && (
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <SectionCard title="Items" contentClassName="space-y-3" className="shadow-sm">
               {items.map((item) => {
                 const image = item.product.images?.[0]?.url;
+                const lineTotal = item.product.sellPrice * item.quantity;
+
                 return (
                   <div key={item.id} className="flex gap-4 rounded-xl border p-4">
                     <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-secondary">
@@ -229,9 +221,7 @@ export default function CartPage() {
                           {item.product.name}
                         </Link>
                         <button
-                          onClick={() =>
-                            handleServerRemove(item.id, item.product.name)
-                          }
+                          onClick={() => handleServerRemove(item.id, item.product.name)}
                           disabled={isRemoving}
                           className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
                           aria-label="Remove item"
@@ -242,9 +232,7 @@ export default function CartPage() {
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center rounded-lg border">
                           <button
-                            onClick={() =>
-                              handleServerQtyChange(item.id, item.quantity - 1)
-                            }
+                            onClick={() => handleServerQtyChange(item.id, item.quantity - 1)}
                             disabled={item.quantity <= 1 || isUpdating}
                             className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground transition disabled:opacity-40"
                           >
@@ -254,22 +242,15 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() =>
-                              handleServerQtyChange(item.id, item.quantity + 1)
-                            }
-                            disabled={
-                              item.quantity >= item.product.stockCount ||
-                              isUpdating
-                            }
+                            onClick={() => handleServerQtyChange(item.id, item.quantity + 1)}
+                            disabled={item.quantity >= item.product.stockCount || isUpdating}
                             className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground transition disabled:opacity-40"
                           >
                             <Plus className="size-3" />
                           </button>
                         </div>
                         <p className="font-semibold text-primary">
-                          {formatAmount(
-                            Number(item.product.price) * item.quantity,
-                          )}
+                          {formatAmount(lineTotal)}
                         </p>
                       </div>
                     </div>
@@ -281,7 +262,7 @@ export default function CartPage() {
               items={items.map((i) => ({
                 name: i.product.name,
                 quantity: i.quantity,
-                price: Number(i.product.price) * i.quantity,
+                total: i.product.sellPrice * i.quantity,
               }))}
               subtotal={subtotal}
               checkoutHref="/checkout"
@@ -292,7 +273,6 @@ export default function CartPage() {
     );
   }
 
-  // Guest: show localStorage cart
   const guestSummaryQueries = useQueries({
     queries: localItems.map((item) => ({
       queryKey: ["products", item.productId],
@@ -315,15 +295,15 @@ export default function CartPage() {
       return {
         name: productData.name,
         quantity: item.quantity,
-        price: Number(productData.price) * item.quantity,
+        total: productData.sellPrice * item.quantity,
       };
     })
-    .filter((item): item is { name: string; quantity: number; price: number } =>
+    .filter((item): item is { name: string; quantity: number; total: number } =>
       item !== null,
     );
 
   const localSubtotal = guestSummaryItems.reduce(
-    (sum, item) => sum + item.price,
+    (sum, item) => sum + item.total,
     0,
   );
   const isGuestSummaryLoading = guestSummaryQueries.some((query) => query.isLoading);
@@ -391,7 +371,7 @@ function CartSummaryPanel({
   subtotal,
   checkoutHref,
 }: {
-  items: { name: string; quantity: number; price: number }[];
+  items: { name: string; quantity: number; total: number }[];
   subtotal: number;
   checkoutHref: string;
 }) {
@@ -404,7 +384,7 @@ function CartSummaryPanel({
               {item.name} × {item.quantity}
             </span>
             <span className="shrink-0 font-medium">
-              {formatAmount(item.price)}
+              {formatAmount(item.total)}
             </span>
           </div>
         ))}

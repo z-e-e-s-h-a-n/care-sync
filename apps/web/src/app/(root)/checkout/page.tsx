@@ -115,7 +115,7 @@ function GuestCheckoutSummary({
             id: query.data.id,
             name: query.data.name,
             quantity: items[index]?.quantity ?? 0,
-            total: Number(query.data.price) * (items[index]?.quantity ?? 0),
+            total: query.data.sellPrice * (items[index]?.quantity ?? 0),
           }
         : null,
     )
@@ -218,7 +218,7 @@ function CheckoutForm() {
       }))
     : localItems;
   const subtotal = serverItems.reduce(
-    (sum, item) => sum + Number(item.product.price) * item.quantity,
+    (sum, item) => sum + item.product.sellPrice * item.quantity,
     0,
   );
 
@@ -379,7 +379,7 @@ function CheckoutForm() {
                 {item.product.name} × {item.quantity}
               </span>
               <span className="shrink-0 font-medium">
-                {formatPrice(item.product.price * item.quantity)}
+                {formatPrice(item.product.sellPrice * item.quantity)}
               </span>
             </div>
           ))}
@@ -427,3 +427,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

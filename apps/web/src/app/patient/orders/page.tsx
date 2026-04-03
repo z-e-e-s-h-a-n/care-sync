@@ -39,11 +39,11 @@ const orderStatusConfig: Record<string, { label: string; className: string }> =
     },
   };
 
-function formatAmount(amount: number | string) {
+function formatAmount(amount: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(Number(amount));
+  }).format(amount);
 }
 
 export default function OrdersPage() {
@@ -54,7 +54,7 @@ export default function OrdersPage() {
     ["pending", "processing", "shipped"].includes(o.status),
   );
   const delivered = orders.filter((o) => o.status === "delivered");
-  const totalSpent = delivered.reduce((sum, o) => sum + Number(o.total), 0);
+  const totalSpent = delivered.reduce((sum, o) => sum + o.total, 0);
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -163,3 +163,4 @@ export default function OrdersPage() {
     </div>
   );
 }
+

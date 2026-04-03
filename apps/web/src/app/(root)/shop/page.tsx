@@ -14,11 +14,11 @@ import CTASection from "@/components/sections/CTASection";
 import { useProducts } from "@/hooks/healthcare";
 import PageHeader from "@/components/PageHeader";
 
-function formatPrice(price: number | string) {
+function formatPrice(price: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(Number(price));
+  }).format(price);
 }
 
 export default function ShopPage() {
@@ -45,7 +45,6 @@ export default function ShopPage() {
         align="center"
       />
 
-      {/* Products */}
       <section className="py-20 section space-y-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <SectionHeader
@@ -63,7 +62,6 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* Skeleton */}
         {isLoading && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -79,7 +77,6 @@ export default function ShopPage() {
           </div>
         )}
 
-        {/* Empty */}
         {!isLoading && !products.length && (
           <div className="flex min-h-64 flex-col items-center justify-center gap-4 rounded-xl border border-dashed text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -101,11 +98,14 @@ export default function ShopPage() {
           </div>
         )}
 
-        {/* Grid */}
         {!isLoading && products.length > 0 && (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((p) => {
               const image = p.images?.[0]?.url;
+              const isOnSale = Boolean(
+                p.compareAtPrice && p.compareAtPrice > p.sellPrice,
+              );
+
               return (
                 <Link key={p.id} href={`/shop/${p.slug}`} className="group">
                   <Card className="overflow-hidden transition-shadow hover:shadow-lg">
@@ -122,12 +122,11 @@ export default function ShopPage() {
                           <ShoppingBag className="size-12" />
                         </div>
                       )}
-                      {p.compareAtPrice &&
-                        Number(p.compareAtPrice) > Number(p.price) && (
-                          <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground">
-                            Sale
-                          </Badge>
-                        )}
+                      {isOnSale && (
+                        <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground">
+                          Sale
+                        </Badge>
+                      )}
                     </div>
                     <CardContent className="space-y-3 pt-4">
                       <div>
@@ -142,14 +141,13 @@ export default function ShopPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold text-primary">
-                          {formatPrice(p.price)}
+                          {formatPrice(p.sellPrice)}
                         </span>
-                        {p.compareAtPrice &&
-                          Number(p.compareAtPrice) > Number(p.price) && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              {formatPrice(p.compareAtPrice)}
-                            </span>
-                          )}
+                        {isOnSale && (
+                          <span className="text-sm text-muted-foreground line-through">
+                            {formatPrice(p.compareAtPrice!)}
+                          </span>
+                        )}
                       </div>
                       <Badge
                         variant="outline"

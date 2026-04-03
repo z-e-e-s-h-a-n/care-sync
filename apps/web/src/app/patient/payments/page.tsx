@@ -31,11 +31,11 @@ const paymentStatusConfig: Record<
   },
 };
 
-function formatAmount(amount: number | string) {
+function formatAmount(amount: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(Number(amount));
+  }).format(amount);
 }
 
 export default function PaymentsPage() {
@@ -44,7 +44,7 @@ export default function PaymentsPage() {
   const payments = data?.payments ?? [];
   const paid = payments.filter((p) => p.status === "succeeded");
   const pending = payments.filter((p) => p.status === "pending");
-  const totalPaid = paid.reduce((sum, p) => sum + Number(p.amount), 0);
+  const totalPaid = paid.reduce((sum, p) => sum + p.amount, 0);
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -150,3 +150,4 @@ export default function PaymentsPage() {
     </div>
   );
 }
+

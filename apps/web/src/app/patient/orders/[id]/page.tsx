@@ -46,11 +46,11 @@ const orderStatusConfig: Record<string, { label: string; className: string }> =
     },
   };
 
-function formatAmount(amount: number | string) {
+function formatAmount(amount: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(Number(amount));
+  }).format(amount);
 }
 
 export default function OrderDetailPage({ params }: AppPageProps) {
@@ -153,7 +153,7 @@ export default function OrderDetailPage({ params }: AppPageProps) {
               <span className="text-muted-foreground">Shipping</span>
               <span>{formatAmount(ord.shippingCost)}</span>
             </div>
-            {Number(ord.discountAmount) > 0 && (
+            {ord.discountAmount > 0 && (
               <div className="flex justify-between text-emerald-600">
                 <span>Discount</span>
                 <span>-{formatAmount(ord.discountAmount)}</span>
@@ -250,3 +250,4 @@ export default function OrderDetailPage({ params }: AppPageProps) {
     </div>
   );
 }
+

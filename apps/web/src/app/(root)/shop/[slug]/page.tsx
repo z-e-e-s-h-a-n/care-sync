@@ -14,11 +14,11 @@ import useUser from "@workspace/ui/hooks/use-user";
 import { useShopProduct, useAddToCart } from "@/hooks/healthcare";
 import { useLocalCart } from "@/hooks/use-local-cart";
 
-function formatPrice(price: number | string) {
+function formatPrice(price: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(Number(price));
+  }).format(price);
 }
 
 export default function ProductPage({ params }: AppPageProps) {
@@ -80,6 +80,9 @@ export default function ProductPage({ params }: AppPageProps) {
   const images = product.images ?? [];
   const currentImage = images[selectedImage]?.url;
   const outOfStock = product.inventoryStatus === "outOfStock";
+  const isOnSale = Boolean(
+    product.compareAtPrice && product.compareAtPrice > product.sellPrice,
+  );
 
   return (
     <div className="section py-8 space-y-10">
@@ -92,7 +95,6 @@ export default function ProductPage({ params }: AppPageProps) {
       </Link>
 
       <div className="grid gap-10 lg:grid-cols-2">
-        {/* Images */}
         <div className="space-y-4">
           <div className="relative aspect-square overflow-hidden rounded-2xl bg-secondary">
             {currentImage ? (
@@ -134,7 +136,6 @@ export default function ProductPage({ params }: AppPageProps) {
           )}
         </div>
 
-        {/* Details */}
         <div className="space-y-6">
           <div className="space-y-2">
             {product.category && (
@@ -147,19 +148,18 @@ export default function ProductPage({ params }: AppPageProps) {
             </h1>
             <div className="flex items-center gap-3 pt-1">
               <span className="text-2xl font-semibold text-primary">
-                {formatPrice(product.price)}
+                {formatPrice(product.sellPrice)}
               </span>
-              {product.compareAtPrice &&
-                Number(product.compareAtPrice) > Number(product.price) && (
-                  <>
-                    <span className="text-base text-muted-foreground line-through">
-                      {formatPrice(product.compareAtPrice)}
-                    </span>
-                    <Badge className="bg-destructive text-destructive-foreground text-xs">
-                      Sale
-                    </Badge>
-                  </>
-                )}
+              {isOnSale && (
+                <>
+                  <span className="text-base text-muted-foreground line-through">
+                    {formatPrice(product.compareAtPrice!)}
+                  </span>
+                  <Badge className="bg-destructive text-destructive-foreground text-xs">
+                    Sale
+                  </Badge>
+                </>
+              )}
             </div>
           </div>
 
