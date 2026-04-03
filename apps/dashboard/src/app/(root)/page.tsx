@@ -3,16 +3,13 @@
 import { redirect } from "next/navigation";
 
 import useUser from "@workspace/ui/hooks/use-user";
+import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 
 const DashboardEntryPage = () => {
   const { currentUser, isLoading } = useUser();
 
   if (isLoading) {
-    return (
-      <div className="p-6 text-sm text-muted-foreground">
-        Loading workspace...
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (currentUser?.role === "doctor") {

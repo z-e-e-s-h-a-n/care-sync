@@ -18,18 +18,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Skeleton } from "@workspace/ui/components/skeleton";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 import StatCard from "@workspace/ui/shared/StatCard";
 import { formatDate, formatPrice } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
 import { usePatientDashboard } from "@/hooks/dashboard";
+import PatientOverviewSkeleton from "@/components/skeletons/PatientOverviewSkeleton";
 
 const titleCase = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
 
 export default function PatientOverviewPage() {
   const { data: overview, isLoading } = usePatientDashboard();
+
+  if (isLoading) {
+    return <PatientOverviewSkeleton />;
+  }
 
   const quickLinks = [
     {
@@ -67,7 +71,8 @@ export default function PatientOverviewPage() {
             : "Patient Overview"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Keep track of appointments, orders, notifications, and messages from one place.
+          Keep track of appointments, orders, notifications, and messages from
+          one place.
         </p>
       </div>
 
@@ -105,15 +110,7 @@ export default function PatientOverviewPage() {
           }
           contentClassName="space-y-3"
         >
-          {isLoading &&
-            Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="space-y-2 rounded-xl border p-4">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            ))}
-
-          {!isLoading && !overview?.upcomingAppointments?.length && (
+          {!overview?.upcomingAppointments?.length && (
             <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
               No upcoming appointments right now.
             </div>
@@ -252,7 +249,9 @@ export default function PatientOverviewPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <Bell className="size-4 text-primary" />
-                      <Badge variant={notification.readAt ? "secondary" : "default"}>
+                      <Badge
+                        variant={notification.readAt ? "secondary" : "default"}
+                      >
                         {notification.readAt ? "Read" : "Unread"}
                       </Badge>
                     </div>

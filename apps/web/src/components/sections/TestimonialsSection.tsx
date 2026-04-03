@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Card, CardContent } from "@workspace/ui/components/card";
 
 export const testimonials = [

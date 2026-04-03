@@ -1,4 +1,4 @@
-import PatientProfileForm from "@/components/PatientProfileForm";
+import PatientProfileForm from "@/components/shared/PatientProfileForm";
 
 const ProfilePage = () => {
   return (

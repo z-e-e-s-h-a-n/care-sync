@@ -10,7 +10,7 @@ import { Textarea } from "@workspace/ui/components/textarea";
 import { Label } from "@workspace/ui/components/label";
 import { toast } from "sonner";
 import { createContactMessage } from "@workspace/sdk/contact";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/shared/PageHeader";
 
 const contactInfo = [
   {
@@ -70,7 +70,7 @@ export default function ContactPage() {
     <>
       <PageHeader
         eyebrow="Contact Us"
-        title="Let&apos;s Talk About Your Child"
+        title="Let's Talk About Your Child"
         description="Whether you have questions about our services, want to schedule a free consultation, or just need guidance — our team is here to help."
         align="center"
       />

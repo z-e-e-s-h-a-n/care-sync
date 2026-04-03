@@ -1,5 +1,11 @@
-import { ArrowRight, CalendarDays, ClipboardList, HeartPulse, Shield } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
+import {
+  ArrowRight,
+  CalendarDays,
+  ClipboardList,
+  HeartPulse,
+  Shield,
+} from "lucide-react";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 

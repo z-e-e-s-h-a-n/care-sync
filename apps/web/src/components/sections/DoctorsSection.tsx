@@ -1,4 +1,4 @@
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Button } from "@workspace/ui/components/button";
 import Image from "next/image";
 import Link from "next/link";

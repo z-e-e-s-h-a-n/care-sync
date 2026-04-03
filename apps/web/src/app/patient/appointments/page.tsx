@@ -9,7 +9,7 @@ import SectionCard from "@workspace/ui/shared/SectionCard";
 import StatCard from "@workspace/ui/shared/StatCard";
 import { cn } from "@workspace/ui/lib/utils";
 import { useAppointments } from "@/hooks/healthcare";
-import AppointmentForm from "@/components/AppointmentForm";
+import AppointmentForm from "@/components/shared/AppointmentForm";
 import Link from "next/link";
 import { formatDate } from "@workspace/shared/utils";
 

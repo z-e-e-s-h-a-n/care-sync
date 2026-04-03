@@ -1,5 +1,5 @@
 import { ArrowRight, CheckCircle } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -7,12 +7,9 @@ import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
 import StepsSection from "@/components/sections/StepsSection";
 import { abaServices } from "@/components/sections/ServicesSection";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/shared/PageHeader";
 
-const serviceDetails: Record<
-  string,
-  { highlights: string[]; who: string }
-> = {
+const serviceDetails: Record<string, { highlights: string[]; who: string }> = {
   "001": {
     highlights: [
       "One-on-one sessions with a certified BCBA or RBT",
@@ -125,7 +122,8 @@ export default function ServicesPage() {
                       asChild
                     >
                       <Link href="/contact">
-                        Inquire About This Service <ArrowRight className="size-4" />
+                        Inquire About This Service{" "}
+                        <ArrowRight className="size-4" />
                       </Link>
                     </Button>
                   </div>
@@ -152,7 +150,9 @@ export default function ServicesPage() {
                         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                           Best For
                         </p>
-                        <p className="text-sm text-muted-foreground">{detail.who}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {detail.who}
+                        </p>
                       </div>
                     </div>
                   )}

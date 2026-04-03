@@ -5,6 +5,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@workspace/ui/components/sidebar";
+import DashboardLayoutSkeleton from "@workspace/ui/skeleton/DashboardLayoutSkeleton";
 
 import { useAuth } from "@workspace/ui/hooks/use-auth";
 import AppSidebar from "@workspace/ui/shared/AppSidebar";
@@ -13,14 +14,16 @@ import { footerSidebarMenu, getSidebarMenu } from "../lib/constants";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  skelton?: React.ReactNode;
+  skeleton: React.ReactNode;
   appType: "web" | "dashboard";
 }
 
-const DashboardLayout = ({ children, skelton }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children, skeleton }: DashboardLayoutProps) => {
   const { data, isLoading, isSuccess, error } = useAuth();
 
-  if (isLoading) return skelton;
+  if (isLoading) {
+    return <DashboardLayoutSkeleton contentSkeleton={skeleton} />;
+  }
 
   if (!isSuccess || !data) {
     redirect(`/auth/sign-in?error=${error.errorCode}&message=${error.message}`);

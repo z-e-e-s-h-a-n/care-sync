@@ -10,10 +10,10 @@ import { Input } from "@workspace/ui/components/input";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { formatPricePrecise } from "@workspace/shared/utils";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/shared/SectionHeader";
 import CTASection from "@/components/sections/CTASection";
 import { useProducts } from "@/hooks/healthcare";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/shared/PageHeader";
 
 export default function ShopPage() {
   const [search, setSearch] = useState("");

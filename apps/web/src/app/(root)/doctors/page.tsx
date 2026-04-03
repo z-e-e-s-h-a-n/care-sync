@@ -1,12 +1,12 @@
 import { Award, BookOpen, Mail } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import Image from "next/image";
 import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/shared/PageHeader";
 
 const team = [
   {
@@ -114,7 +114,12 @@ export default function DoctorsPage() {
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {member.credentials.map((c) => (
-                        <Badge key={c} variant="secondary" appearance="soft" className="text-xs">
+                        <Badge
+                          key={c}
+                          variant="secondary"
+                          appearance="soft"
+                          className="text-xs"
+                        >
                           {c}
                         </Badge>
                       ))}
@@ -136,7 +141,8 @@ export default function DoctorsPage() {
 
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/contact">
-                    <Mail className="size-4" /> Book with {member.name.split(" ")[0]}
+                    <Mail className="size-4" /> Book with{" "}
+                    {member.name.split(" ")[0]}
                   </Link>
                 </Button>
               </CardContent>

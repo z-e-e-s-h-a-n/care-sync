@@ -53,9 +53,7 @@ export function useLocalCart() {
     const current = readCart();
     const exists = current.some((i) => i.productId === productId);
     const updated = exists
-      ? current.map((i) =>
-          i.productId === productId ? { ...i, quantity } : i,
-        )
+      ? current.map((i) => (i.productId === productId ? { ...i, quantity } : i))
       : [...current, { productId, quantity }];
     writeCart(updated);
     setItems(updated);

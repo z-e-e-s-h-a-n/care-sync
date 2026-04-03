@@ -6,7 +6,7 @@ import {
   School,
   Users,
 } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 

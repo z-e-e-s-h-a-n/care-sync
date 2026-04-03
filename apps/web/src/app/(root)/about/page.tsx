@@ -6,7 +6,7 @@ import {
   Lightbulb,
   Shield,
 } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -14,7 +14,7 @@ import Image from "next/image";
 import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
 import { featuredTeam } from "@/components/sections/DoctorsSection";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/shared/PageHeader";
 
 const values = [
   {
@@ -86,15 +86,17 @@ export default function AboutPage() {
               Empowering Every Child to Reach Their Potential
             </h2>
             <p className="mt-5 text-sm leading-8 text-muted-foreground sm:text-base">
-              Applied Behavior Analysis is one of the most effective, research-backed
-              approaches for children with autism and developmental differences. At
-              Ready Set and Go ABA, we combine clinical expertise with genuine care
-              to create lasting change in children's lives.
+              Applied Behavior Analysis is one of the most effective,
+              research-backed approaches for children with autism and
+              developmental differences. At Ready Set and Go ABA, we combine
+              clinical expertise with genuine care to create lasting change in
+              children's lives.
             </p>
             <p className="mt-4 text-sm leading-8 text-muted-foreground sm:text-base">
-              We work closely with each family to understand their child's unique needs,
-              craft an individualized treatment plan, and measure progress every step of
-              the way — because data-driven therapy means better outcomes.
+              We work closely with each family to understand their child's
+              unique needs, craft an individualized treatment plan, and measure
+              progress every step of the way — because data-driven therapy means
+              better outcomes.
             </p>
             <ul className="mt-6 space-y-3">
               {[
@@ -103,7 +105,10 @@ export default function AboutPage() {
                 "Insurance accepted — we handle the paperwork",
                 "Regular family training and progress updates",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-muted-foreground">
+                <li
+                  key={item}
+                  className="flex items-start gap-3 text-sm text-muted-foreground"
+                >
                   <CheckCircle className="mt-0.5 size-4 shrink-0 text-primary" />
                   {item}
                 </li>
@@ -173,7 +178,9 @@ export default function AboutPage() {
                 <h3 className="text-base font-semibold tracking-tight text-foreground">
                   {member.name}
                 </h3>
-                <p className="mt-1 text-xs text-muted-foreground">{member.role}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {member.role}
+                </p>
               </div>
             </div>
           ))}

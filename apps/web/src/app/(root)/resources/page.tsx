@@ -1,11 +1,17 @@
-import { ArrowRight, BookOpen, ChevronDown, HelpCircle, Newspaper } from "lucide-react";
-import SectionHeader from "@/components/SectionHeader";
+import {
+  ArrowRight,
+  BookOpen,
+  ChevronDown,
+  HelpCircle,
+  Newspaper,
+} from "lucide-react";
+import SectionHeader from "@/components/shared/SectionHeader";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import CTASection from "@/components/sections/CTASection";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/shared/PageHeader";
 
 const articles = [
   {
@@ -111,7 +117,11 @@ export default function ResourcesPage() {
             <Card key={article.title} className="group cursor-pointer">
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary" appearance="soft" className="text-xs">
+                  <Badge
+                    variant="secondary"
+                    appearance="soft"
+                    className="text-xs"
+                  >
                     {article.category}
                   </Badge>
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
