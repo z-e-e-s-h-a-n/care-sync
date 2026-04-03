@@ -147,7 +147,7 @@ export class ProductService {
 
     const where: Prisma.ProductWhereInput = {};
 
-    if (productIds?.length) where.id = { in: productIds };
+    if (productIds) where.id = { in: productIds };
     if (categoryId) where.categoryId = categoryId;
     if (status) where.status = status;
     if (inventoryStatus) where.inventoryStatus = inventoryStatus;

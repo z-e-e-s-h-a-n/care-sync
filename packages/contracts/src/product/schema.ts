@@ -50,7 +50,10 @@ export const productQuerySchema = baseQuerySchema(
   ProductSortByEnum,
   ProductSearchByEnum,
 ).extend({
-  productIds: z.array(idSchema).optional(),
+  productIds: z
+    .union([idSchema, z.array(idSchema)])
+    .transform((v) => (Array.isArray(v) ? v : [v]))
+    .optional(),
   categoryId: idSchema.optional(),
   status: ProductStatusEnum.optional(),
   inventoryStatus: InventoryStatusEnum.optional(),

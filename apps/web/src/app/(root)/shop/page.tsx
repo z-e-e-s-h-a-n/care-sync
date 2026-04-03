@@ -24,7 +24,7 @@ export default function ShopPage() {
     page: 1,
     sortBy: "createdAt",
     sortOrder: "desc",
-    search: search || undefined,
+    search: search,
     searchBy: "name",
   });
 
