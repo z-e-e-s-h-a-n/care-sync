@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import type { AddToCartType } from "@workspace/contracts/order";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  AddToCartType,
+  CartItemResponse,
+} from "@workspace/contracts/order";
 import * as order from "@workspace/sdk/order";
 import * as product from "@workspace/sdk/product";
 import { parseDuration } from "@workspace/shared/utils";
@@ -114,33 +112,42 @@ export function useCart() {
     userLoading,
   ]);
 
-  const productQueries = useQueries({
-    queries: normalizedItems.map((item) => ({
-      queryKey: ["products", item.productId],
-      queryFn: () => product.getProduct(item.productId),
-      select: (res: Awaited<ReturnType<typeof product.getProduct>>) => res.data,
-      staleTime: STALE_TIME,
-      gcTime: STALE_TIME,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      retry: false,
-      enabled: !isLoggedIn && normalizedItems.length > 0,
-    })),
+  const guestProductsQuery = useQuery({
+    queryKey: [
+      "products",
+      "cart",
+      normalizedItems.map((item) => item.productId).join(","),
+    ],
+    queryFn: () =>
+      product.listProducts({
+        productIds: normalizedItems.map((item) => item.productId),
+        limit: normalizedItems.length || 1,
+        page: 1,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      }),
+    select: (res: Awaited<ReturnType<typeof product.listProducts>>) =>
+      res.data.products,
+    enabled: !isLoggedIn && normalizedItems.length > 0,
+    staleTime: STALE_TIME,
+    gcTime: STALE_TIME,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
   });
 
   const displayItems = useMemo(() => {
     if (isLoggedIn) {
-      return (cartQuery.data?.items ?? []).map((item) => ({
-        id: item.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        product: item.product,
-      }));
+      return cartQuery.data?.items ?? [];
     }
 
+    const productMap = new Map(
+      (guestProductsQuery.data ?? []).map((item) => [item.id, item]),
+    );
+
     return normalizedItems
-      .map((item, index) => {
-        const productData = productQueries[index]?.data;
+      .map((item) => {
+        const productData = productMap.get(item.productId);
         if (!productData) return null;
 
         return {
@@ -150,25 +157,20 @@ export function useCart() {
           product: productData,
         };
       })
-      .filter(
-        (
-          item,
-        ): item is {
-          id: string;
-          productId: string;
-          quantity: number;
-          product: NonNullable<(typeof productQueries)[number]["data"]>;
-        } => Boolean(item),
-      );
-  }, [cartQuery.data?.items, isLoggedIn, normalizedItems, productQueries]);
+      .filter((item) => Boolean(item));
+  }, [
+    cartQuery.data?.items,
+    guestProductsQuery.data,
+    isLoggedIn,
+    normalizedItems,
+  ]) as CartItemResponse[];
 
   const count = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = displayItems.reduce(
     (sum, item) => sum + item.product.sellPrice * item.quantity,
     0,
   );
-  const isResolvingProducts =
-    !isLoggedIn && productQueries.some((query) => query.isLoading);
+  const isResolvingProducts = !isLoggedIn && guestProductsQuery.isLoading;
   const isLoading =
     userLoading ||
     (isLoggedIn && (cartQuery.isLoading || syncMutation.isPending)) ||
@@ -235,6 +237,7 @@ export function useCart() {
     isLoading,
     isSyncing: syncMutation.isPending || clearMutation.isPending,
     error: (cartQuery.error ??
+      guestProductsQuery.error ??
       syncMutation.error ??
       clearMutation.error) as ApiException | null,
     addItem,
