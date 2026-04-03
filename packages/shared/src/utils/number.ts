@@ -44,6 +44,21 @@ export const formatPrice = (
   });
 };
 
+export const formatPricePrecise = (
+  amount?: number,
+  options?: FormatPriceOptions,
+): string => {
+  const { currency = "USD", ...rest } = options || {};
+
+  return formatNumber(amount, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    ...rest,
+  });
+};
+
 export const formatCompactNumber = (
   value?: number,
   options?: FormatNumberOptions,

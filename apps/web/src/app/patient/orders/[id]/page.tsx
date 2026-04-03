@@ -15,7 +15,7 @@ import {
 } from "@workspace/ui/components/card";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 import { cn } from "@workspace/ui/lib/utils";
-import { formatDate } from "@workspace/shared/utils";
+import { formatDate, formatPricePrecise } from "@workspace/shared/utils";
 import { useOrder } from "@/hooks/healthcare";
 
 const orderStatusConfig: Record<string, { label: string; className: string }> =
@@ -45,13 +45,6 @@ const orderStatusConfig: Record<string, { label: string; className: string }> =
       className: "border-gray-200 bg-gray-50 text-gray-500",
     },
   };
-
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
 
 export default function OrderDetailPage({ params }: AppPageProps) {
   const { id } = React.use(params);
@@ -134,11 +127,11 @@ export default function OrderDetailPage({ params }: AppPageProps) {
               <div>
                 <p className="font-medium">{item.productName}</p>
                 <p className="text-sm text-muted-foreground">
-                  {item.quantity} × {formatAmount(item.unitPrice)}
+                  {item.quantity} × {formatPricePrecise(item.unitPrice)}
                 </p>
               </div>
               <p className="font-semibold shrink-0">
-                {formatAmount(item.totalPrice)}
+                {formatPricePrecise(item.totalPrice)}
               </p>
             </div>
           ))}
@@ -147,21 +140,21 @@ export default function OrderDetailPage({ params }: AppPageProps) {
           <div className="border-t pt-3 space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatAmount(ord.subtotal)}</span>
+              <span>{formatPricePrecise(ord.subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span>{formatAmount(ord.shippingCost)}</span>
+              <span>{formatPricePrecise(ord.shippingCost)}</span>
             </div>
             {ord.discountAmount > 0 && (
               <div className="flex justify-between text-emerald-600">
                 <span>Discount</span>
-                <span>-{formatAmount(ord.discountAmount)}</span>
+                <span>-{formatPricePrecise(ord.discountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between font-semibold text-base pt-1 border-t">
               <span>Total</span>
-              <span>{formatAmount(ord.total)}</span>
+              <span>{formatPricePrecise(ord.total)}</span>
             </div>
           </div>
         </SectionCard>

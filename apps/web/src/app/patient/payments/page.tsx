@@ -7,7 +7,7 @@ import SectionCard from "@workspace/ui/shared/SectionCard";
 import StatCard from "@workspace/ui/shared/StatCard";
 import { cn } from "@workspace/ui/lib/utils";
 import { usePayments } from "@/hooks/healthcare";
-import { formatDate } from "@workspace/shared/utils";
+import { formatDate, formatPricePrecise } from "@workspace/shared/utils";
 
 const paymentStatusConfig: Record<
   string,
@@ -31,13 +31,6 @@ const paymentStatusConfig: Record<
   },
 };
 
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
-
 export default function PaymentsPage() {
   const { data, isLoading } = usePayments({});
 
@@ -52,7 +45,7 @@ export default function PaymentsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           label="Total Paid"
-          value={formatAmount(totalPaid)}
+          value={formatPricePrecise(totalPaid)}
           className="border-primary/20 bg-linear-to-br from-primary/10 to-card"
         />
         <StatCard
@@ -126,7 +119,7 @@ export default function PaymentsPage() {
                     )}
                   </div>
                   <p className="text-xl font-semibold tracking-tight">
-                    {formatAmount(payment.amount)}
+                    {formatPricePrecise(payment.amount)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate((payment as any).createdAt, { mode: "date" })}

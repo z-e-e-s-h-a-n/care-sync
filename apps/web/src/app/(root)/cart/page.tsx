@@ -20,16 +20,9 @@ import {
   useShopProduct,
 } from "@/hooks/healthcare";
 import { useLocalCart } from "@/hooks/use-local-cart";
-import { parseDuration } from "@workspace/shared/utils";
+import { formatPricePrecise, parseDuration } from "@workspace/shared/utils";
 
 const STALE_TIME = parseDuration("10m");
-
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
 
 function LocalCartRow({
   productId,
@@ -107,7 +100,9 @@ function LocalCartRow({
               <Plus className="size-3" />
             </button>
           </div>
-          <p className="font-semibold text-primary">{formatAmount(lineTotal)}</p>
+          <p className="font-semibold text-primary">
+            {formatPricePrecise(lineTotal)}
+          </p>
         </div>
       </div>
     </div>
@@ -250,7 +245,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         <p className="font-semibold text-primary">
-                          {formatAmount(lineTotal)}
+                          {formatPricePrecise(lineTotal)}
                         </p>
                       </div>
                     </div>
@@ -384,14 +379,14 @@ function CartSummaryPanel({
               {item.name} × {item.quantity}
             </span>
             <span className="shrink-0 font-medium">
-              {formatAmount(item.total)}
+              {formatPricePrecise(item.total)}
             </span>
           </div>
         ))}
         <Separator />
         <div className="flex justify-between font-semibold">
           <span>Subtotal</span>
-          <span>{formatAmount(subtotal)}</span>
+          <span>{formatPricePrecise(subtotal)}</span>
         </div>
         <p className="text-xs text-muted-foreground">
           Shipping calculated at checkout.

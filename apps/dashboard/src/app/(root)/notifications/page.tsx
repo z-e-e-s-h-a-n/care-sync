@@ -19,12 +19,10 @@ import {
   useNotificationActions,
   useNotifications,
 } from "@workspace/ui/hooks/use-notification";
+import { formatDate } from "@workspace/shared/utils";
 
 const formatDateTime = (value: string) =>
-  new Date(value).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  formatDate(value, { mode: "datetime" });
 
 const NotificationsPage = () => {
   const { data, isLoading, unreadCount } = useNotifications();

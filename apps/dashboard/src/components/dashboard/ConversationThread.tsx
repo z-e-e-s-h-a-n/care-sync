@@ -3,6 +3,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { formatDate } from "@workspace/shared/utils";
 
 import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
@@ -17,11 +18,6 @@ import {
 interface ConversationThreadProps {
   appointmentId: string;
 }
-
-const timestampFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 const ConversationThread = ({ appointmentId }: ConversationThreadProps) => {
   const [body, setBody] = React.useState("");
@@ -64,7 +60,7 @@ const ConversationThread = ({ appointmentId }: ConversationThreadProps) => {
                   {message.sender?.displayName ?? "Unknown sender"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {timestampFormatter.format(new Date(message.createdAt))}
+                  {formatDate(message.createdAt, { mode: "datetime" })}
                 </p>
               </div>
               <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">

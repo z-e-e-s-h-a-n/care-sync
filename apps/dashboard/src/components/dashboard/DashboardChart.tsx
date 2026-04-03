@@ -42,6 +42,7 @@ import {
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
+import { formatDate } from "@workspace/shared/utils";
 
 import DashboardEmptyState from "@/components/dashboard/DashboardEmptyState";
 
@@ -72,12 +73,9 @@ function isIsoDay(value: unknown): value is string {
 }
 
 function formatIsoDay(value: string) {
-  const date = new Date(`${value}T00:00:00Z`);
-
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+  return formatDate(value, {
+    fallback: value,
+    options: { month: "short", day: "numeric", year: "numeric" },
   });
 }
 
@@ -88,8 +86,10 @@ function addIsoDays(value: string, days: number): string {
 }
 
 function weekdayShort(value: string) {
-  const date = new Date(`${value}T00:00:00Z`);
-  return date.toLocaleDateString(undefined, { weekday: "short" });
+  return formatDate(value, {
+    mode: "weekday",
+    fallback: value,
+  });
 }
 
 function safeNumber(value: unknown) {
@@ -336,13 +336,10 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
                 minTickGap={28}
                 tickFormatter={(value) =>
                   isIsoDay(value)
-                    ? new Date(`${value}T00:00:00Z`).toLocaleDateString(
-                        undefined,
-                        {
-                          month: "short",
-                          day: "numeric",
-                        },
-                      )
+                    ? formatDate(value, {
+                        fallback: String(value),
+                        options: { month: "short", day: "numeric" },
+                      })
                     : String(value)
                 }
               />
@@ -407,13 +404,10 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
                   tickMargin={8}
                   tickFormatter={(value) =>
                     isIsoDay(value)
-                      ? new Date(`${value}T00:00:00Z`).toLocaleDateString(
-                          undefined,
-                          {
-                            month: "short",
-                            day: "numeric",
-                          },
-                        )
+                      ? formatDate(value, {
+                          fallback: String(value),
+                          options: { month: "short", day: "numeric" },
+                        })
                       : String(value)
                   }
                 />
@@ -513,3 +507,7 @@ export default function DashboardChart({ area, bar, pie }: DashboardChartProps) 
     </section>
   );
 }
+
+
+
+

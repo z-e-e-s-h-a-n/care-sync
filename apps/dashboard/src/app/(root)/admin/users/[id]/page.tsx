@@ -1,22 +1,22 @@
 "use client";
 
+import React from "react";
+import type { AppPageProps } from "@workspace/contracts";
 import type { UserResponse } from "@workspace/contracts/user";
-
-import { useAdminUser } from "@/hooks/admin";
-import { Badge } from "@workspace/ui/components/badge";
-
-import {
-  type SectionConfig,
-  GenericDetailsPage,
-} from "@workspace/ui/shared/GenericDetailsPage";
+import { formatDate } from "@workspace/shared/utils";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar";
+import { Badge } from "@workspace/ui/components/badge";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
-import type { AppPageProps } from "@workspace/contracts";
-import React from "react";
+import {
+  type SectionConfig,
+  GenericDetailsPage,
+} from "@workspace/ui/shared/GenericDetailsPage";
+
+import { useAdminUser } from "@/hooks/admin";
 
 const sections: SectionConfig<UserResponse>[] = [
   {
@@ -62,12 +62,13 @@ const sections: SectionConfig<UserResponse>[] = [
       {
         label: "Last Login",
         accessor: "lastLoginAt",
-        format: (value) => (value ? new Date(value).toLocaleString() : "Never"),
+        format: (value) =>
+          value ? formatDate(value, { mode: "datetime" }) : "Never",
       },
       {
         label: "Created At",
         accessor: "createdAt",
-        format: (value) => new Date(value).toLocaleString(),
+        format: (value) => formatDate(value, { mode: "datetime" }),
       },
     ],
     columns: 2,
@@ -85,7 +86,7 @@ const renderHeader = (data: UserResponse) => (
           height={200}
           className="size-20 rounded-full object-cover"
         />
-        <AvatarFallback className="text-2xl bg-linear-to-br from-primary/50 to-secondary/50">
+        <AvatarFallback className="bg-linear-to-br from-primary/50 to-secondary/50 text-2xl">
           {data.firstName.charAt(0)} {data.lastName?.charAt(0)}
         </AvatarFallback>
       </Avatar>
@@ -93,7 +94,7 @@ const renderHeader = (data: UserResponse) => (
     <div>
       <h2 className="text-2xl font-bold">{data.displayName}</h2>
       <p className="text-muted-foreground">{data.email}</p>
-      <div className="flex items-center gap-2 mt-2">
+      <div className="mt-2 flex items-center gap-2">
         <Badge variant="outline">{data.role}</Badge>
         <Badge variant={getStatusVariant(data.status)}>{data.status}</Badge>
       </div>

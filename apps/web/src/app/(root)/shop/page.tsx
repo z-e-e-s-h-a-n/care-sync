@@ -9,17 +9,11 @@ import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Card, CardContent } from "@workspace/ui/components/card";
+import { formatPricePrecise } from "@workspace/shared/utils";
 import SectionHeader from "@/components/SectionHeader";
 import CTASection from "@/components/sections/CTASection";
 import { useProducts } from "@/hooks/healthcare";
 import PageHeader from "@/components/PageHeader";
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(price);
-}
 
 export default function ShopPage() {
   const [search, setSearch] = useState("");
@@ -141,11 +135,11 @@ export default function ShopPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold text-primary">
-                          {formatPrice(p.sellPrice)}
+                          {formatPricePrecise(p.sellPrice)}
                         </span>
                         {isOnSale && (
                           <span className="text-sm text-muted-foreground line-through">
-                            {formatPrice(p.compareAtPrice!)}
+                            {formatPricePrecise(p.compareAtPrice!)}
                           </span>
                         )}
                       </div>

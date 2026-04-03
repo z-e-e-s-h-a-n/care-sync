@@ -8,7 +8,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import SectionCard from "@workspace/ui/shared/SectionCard";
 import StatCard from "@workspace/ui/shared/StatCard";
 import { cn } from "@workspace/ui/lib/utils";
-import { formatDate } from "@workspace/shared/utils";
+import { formatDate, formatPricePrecise } from "@workspace/shared/utils";
 import { useOrders } from "@/hooks/healthcare";
 
 const orderStatusConfig: Record<string, { label: string; className: string }> =
@@ -39,13 +39,6 @@ const orderStatusConfig: Record<string, { label: string; className: string }> =
     },
   };
 
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-}
-
 export default function OrdersPage() {
   const { data, isLoading } = useOrders({ page: 1, limit: 50, sortBy: "createdAt", sortOrder: "desc" });
 
@@ -72,7 +65,7 @@ export default function OrdersPage() {
         />
         <StatCard
           label="Total Spent"
-          value={formatAmount(totalSpent)}
+          value={formatPricePrecise(totalSpent)}
           className="border-purple-200 bg-linear-to-br from-purple-100/60 to-card"
         />
       </div>
@@ -147,7 +140,7 @@ export default function OrdersPage() {
                     <p className="font-medium">{ord.orderNumber}</p>
                     <p className="text-sm text-muted-foreground">
                       {itemCount} item{itemCount !== 1 ? "s" : ""} ·{" "}
-                      {formatAmount(ord.total)} ·{" "}
+                      {formatPricePrecise(ord.total)} ·{" "}
                       {formatDate(ord.createdAt, { mode: "date" })}
                     </p>
                   </div>

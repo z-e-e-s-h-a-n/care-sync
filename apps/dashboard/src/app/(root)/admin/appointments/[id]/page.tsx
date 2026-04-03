@@ -14,13 +14,8 @@ import {
   GenericDetailsPage,
 } from "@workspace/ui/shared/GenericDetailsPage";
 import { useAppointment } from "@/hooks/appointment";
-import { formatDate } from "@workspace/shared/utils";
+import { formatDate, formatPricePrecise } from "@workspace/shared/utils";
 import { getStatusVariant } from "@workspace/ui/lib/utils";
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
 
 const formatDateTime = (value?: string) =>
   formatDate(value, { mode: "datetime", fallback: "Not recorded" });
@@ -184,7 +179,7 @@ const relatedEntities: RelatedEntityConfig<AppointmentResponse>[] = [
     columns: [
       {
         header: "Amount",
-        accessor: (item) => currencyFormatter.format(item.amount),
+        accessor: (item) => formatPricePrecise(item.amount),
       },
       {
         header: "Provider",
@@ -288,4 +283,6 @@ const Page = ({ params }: AppPageProps) => {
 };
 
 export default Page;
+
+
 

@@ -9,17 +9,11 @@ import type { AppPageProps } from "@workspace/contracts";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { formatPricePrecise } from "@workspace/shared/utils";
 import { cn } from "@workspace/ui/lib/utils";
 import useUser from "@workspace/ui/hooks/use-user";
 import { useShopProduct, useAddToCart } from "@/hooks/healthcare";
 import { useLocalCart } from "@/hooks/use-local-cart";
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(price);
-}
 
 export default function ProductPage({ params }: AppPageProps) {
   const { slug } = React.use(params);
@@ -148,12 +142,12 @@ export default function ProductPage({ params }: AppPageProps) {
             </h1>
             <div className="flex items-center gap-3 pt-1">
               <span className="text-2xl font-semibold text-primary">
-                {formatPrice(product.sellPrice)}
+                {formatPricePrecise(product.sellPrice)}
               </span>
               {isOnSale && (
                 <>
                   <span className="text-base text-muted-foreground line-through">
-                    {formatPrice(product.compareAtPrice!)}
+                    {formatPricePrecise(product.compareAtPrice!)}
                   </span>
                   <Badge className="bg-destructive text-destructive-foreground text-xs">
                     Sale
