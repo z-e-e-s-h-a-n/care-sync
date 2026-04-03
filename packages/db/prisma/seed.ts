@@ -11,19 +11,24 @@ import {
   CampaignStatus,
   ConversationStatus,
   ConversationType,
+  DeliveryType,
   DoctorVerificationStatus,
   Gender,
   IdentificationType,
+  InventoryStatus,
   MediaType,
   MediaVisibility,
   NotificationChannel,
   NotificationPurpose,
   NotificationStatus,
+  OrderStatus,
   PaymentMethodType,
   PaymentProvider,
   PaymentStatus,
   PrismaClient,
+  ProductStatus,
   RefundStatus,
+  ShipmentStatus,
   ThemeMode,
   UserRole,
   UserStatus,
@@ -59,6 +64,22 @@ const DOCTOR_AVATAR_URLS = [
 const ADMIN_AVATAR_URL =
   "https://res.cloudinary.com/ddyclchvl/image/upload/v1774982441/admin_c0a0gt.png";
 
+const STAFF_AVATAR_URLS = [
+  "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1594824475317-6e07f695f1b4?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80",
+];
+
+const PRODUCT_IMAGE_URLS = [
+  "https://images.unsplash.com/photo-1516549655669-df33a03d4a4a?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1514413494665-c83134d9ebdd?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80",
+];
+
 const daysFromNow = (days: number, hour = 9, minute = 0) => {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -79,6 +100,21 @@ const slugify = (value: string) =>
 async function clearDatabase() {
   console.log("Clearing existing seed data...");
 
+  await prisma.dataPoint.deleteMany();
+  await prisma.sessionNote.deleteMany();
+  await prisma.behaviorProgram.deleteMany();
+  await prisma.progressReport.deleteMany();
+  await prisma.insuranceAuthorization.deleteMany();
+  await prisma.treatmentPlan.deleteMany();
+  await prisma.staffAssignment.deleteMany();
+  await prisma.caregiverAccess.deleteMany();
+  await prisma.shipment.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.productImage.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.productCategory.deleteMany();
   await prisma.messageAttachment.deleteMany();
   await prisma.message.deleteMany();
   await prisma.conversation.deleteMany();
@@ -93,12 +129,13 @@ async function clearDatabase() {
   await prisma.auditLog.deleteMany();
   await prisma.otp.deleteMany();
   await prisma.session.deleteMany();
+  await prisma.staffProfile.deleteMany();
   await prisma.doctorProfile.deleteMany();
   await prisma.patientProfile.deleteMany();
-  await prisma.media.deleteMany();
   await prisma.branchTiming.deleteMany();
   await prisma.branch.deleteMany();
   await prisma.businessProfile.deleteMany();
+  await prisma.media.deleteMany();
   await prisma.user.deleteMany();
   await prisma.contactMessage.deleteMany();
   await prisma.newsletterSubscriber.deleteMany();
@@ -160,6 +197,57 @@ async function seedFoundation() {
     ),
   );
 
+  const staffSeeds = [
+    {
+      firstName: "Harper",
+      lastName: "Quinn",
+      title: "BCBA",
+      specialty: "Behavior Program Oversight",
+      credentials: ["BCBA", "M.Ed. ABA"],
+    },
+    {
+      firstName: "Liam",
+      lastName: "Brooks",
+      title: "RBT",
+      specialty: "Direct Therapy Sessions",
+      credentials: ["RBT"],
+    },
+    {
+      firstName: "Emma",
+      lastName: "Diaz",
+      title: "BCaBA",
+      specialty: "Parent Training & Supervision",
+      credentials: ["BCaBA", "CPR"],
+    },
+    {
+      firstName: "James",
+      lastName: "Cole",
+      title: "Program Manager",
+      specialty: "Scheduling & Care Coordination",
+      credentials: ["Operations Lead"],
+    },
+  ] as const;
+
+  const staff = await Promise.all(
+    staffSeeds.map((member, index) =>
+      prisma.user.create({
+        data: {
+          firstName: member.firstName,
+          lastName: member.lastName,
+          displayName: `${member.firstName} ${member.lastName}`,
+          email: `staff.${member.lastName.toLowerCase()}@caresync.demo`,
+          phone: `+1555000003${index + 1}`,
+          password: hashedPassword,
+          role: UserRole.staff,
+          status: UserStatus.active,
+          isEmailVerified: true,
+          isPhoneVerified: true,
+          pushNotifications: true,
+        },
+      }),
+    ),
+  );
+
   const patients = await Promise.all(
     Array.from({ length: 14 }).map((_, index) => {
       const firstName = faker.person.firstName();
@@ -185,7 +273,7 @@ async function seedFoundation() {
     }),
   );
 
-  return { admin, doctors, patients, doctorSeeds };
+  return { admin, doctors, patients, staff, doctorSeeds, staffSeeds };
 }
 
 async function seedMedia(
@@ -224,6 +312,26 @@ async function seedMedia(
           type: MediaType.avatar,
           visibility: MediaVisibility.public,
           altText: `${doctor.displayName} avatar`,
+        },
+      }),
+    ),
+  );
+
+  const staffAvatars = await Promise.all(
+    foundation.staff.map((member, index) =>
+      prisma.media.create({
+        data: {
+          uploadedById: foundation.admin.id,
+          publicId: `prod-seed/staff-${index + 1}-avatar`,
+          url: `${STAFF_AVATAR_URLS[index % STAFF_AVATAR_URLS.length]}&v=staff-${index + 1}`,
+          mimeType: "image/jpeg",
+          resourceType: "image",
+          size: 145000,
+          hash: `prod-seed-staff-${index + 1}-avatar-hash`,
+          name: `staff-${index + 1}-avatar.jpg`,
+          type: MediaType.avatar,
+          visibility: MediaVisibility.public,
+          altText: `${member.displayName} avatar`,
         },
       }),
     ),
@@ -291,9 +399,19 @@ async function seedMedia(
     ),
   );
 
+  await Promise.all(
+    foundation.staff.map((member, index) =>
+      prisma.user.update({
+        where: { id: member.id },
+        data: { avatarId: staffAvatars[index]?.id },
+      }),
+    ),
+  );
+
   return {
     adminAvatar,
     doctorAvatars,
+    staffAvatars,
     businessLogo,
     businessFavicon,
     businessCover,
@@ -432,7 +550,7 @@ async function seedProfiles(
   foundation: Awaited<ReturnType<typeof seedFoundation>>,
   branches: Awaited<ReturnType<typeof seedBusinessAndBranches>>,
 ) {
-  console.log("Seeding patient and doctor profiles...");
+  console.log("Seeding patient, doctor, and staff profiles...");
 
   const patients = await Promise.all(
     foundation.patients.map((user, index) =>
@@ -515,7 +633,23 @@ async function seedProfiles(
     }),
   );
 
-  return { patients, doctors };
+  const staff = await Promise.all(
+    foundation.staff.map((user, index) =>
+      prisma.staffProfile.create({
+        data: {
+          userId: user.id,
+          branchId: branchPool[index % branchPool.length].id,
+          title: foundation.staffSeeds[index]!.title,
+          specialty: foundation.staffSeeds[index]!.specialty,
+          bio: `${foundation.staffSeeds[index]!.title} supporting therapy operations and patient care.`,
+          credentials: [...foundation.staffSeeds[index]!.credentials],
+          isActive: true,
+        },
+      }),
+    ),
+  );
+
+  return { patients, doctors, staff };
 }
 
 async function seedAvailability(
@@ -811,6 +945,329 @@ async function seedPayments(
   }
 }
 
+async function seedCommerce(
+  foundation: Awaited<ReturnType<typeof seedFoundation>>,
+) {
+  console.log("Seeding product catalog, carts, orders, and shipments...");
+
+  const therapyTools = await prisma.productCategory.create({
+    data: {
+      name: "Therapy Tools",
+      slug: "therapy-tools",
+      description: "ABA-ready therapy aids and reinforcement tools.",
+      isActive: true,
+    },
+  });
+
+  const parentResources = await prisma.productCategory.create({
+    data: {
+      name: "Parent Resources",
+      slug: "parent-resources",
+      description: "At-home support kits and caregiver resources.",
+      isActive: true,
+    },
+  });
+
+  const sensoryCategory = await prisma.productCategory.create({
+    data: {
+      parentId: therapyTools.id,
+      name: "Sensory Support",
+      slug: "sensory-support",
+      description: "Sensory regulation and calming items.",
+      isActive: true,
+    },
+  });
+
+  const productSeeds = [
+    {
+      name: "Visual Schedule Board",
+      slug: "visual-schedule-board",
+      description:
+        "Portable daily routine board with reusable icons for ABA sessions and home routines.",
+      price: 24.99,
+      compareAtPrice: 29.99,
+      stockCount: 42,
+      categoryId: therapyTools.id,
+    },
+    {
+      name: "Token Economy Starter Kit",
+      slug: "token-economy-starter-kit",
+      description:
+        "Reinforcement board, tokens, and reward cards for skill acquisition sessions.",
+      price: 18.5,
+      compareAtPrice: null,
+      stockCount: 67,
+      categoryId: therapyTools.id,
+    },
+    {
+      name: "Calm Corner Sensory Bundle",
+      slug: "calm-corner-sensory-bundle",
+      description:
+        "Weighted lap pad, fidget tools, and calming visuals for self-regulation support.",
+      price: 54.0,
+      compareAtPrice: 62.0,
+      stockCount: 14,
+      categoryId: sensoryCategory.id,
+    },
+    {
+      name: "Parent Coaching Workbook",
+      slug: "parent-coaching-workbook",
+      description:
+        "Guided home practice workbook with routines, behavior tips, and progress pages.",
+      price: 16.75,
+      compareAtPrice: null,
+      stockCount: 85,
+      categoryId: parentResources.id,
+    },
+    {
+      name: "AAC Communication Cards",
+      slug: "aac-communication-cards",
+      description:
+        "Durable laminated communication cards for requests, emotions, and transitions.",
+      price: 21.25,
+      compareAtPrice: 25.0,
+      stockCount: 26,
+      categoryId: therapyTools.id,
+    },
+    {
+      name: "Fine Motor Activity Box",
+      slug: "fine-motor-activity-box",
+      description:
+        "Structured fine-motor tasks for table time, matching, and independent work practice.",
+      price: 39.99,
+      compareAtPrice: null,
+      stockCount: 9,
+      categoryId: therapyTools.id,
+    },
+  ] as const;
+
+  const products = await Promise.all(
+    productSeeds.map((product, index) =>
+      prisma.product.create({
+        data: {
+          categoryId: product.categoryId,
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          price: product.price,
+          compareAtPrice: product.compareAtPrice,
+          stockCount: product.stockCount,
+          requiresShipping: true,
+          status: ProductStatus.active,
+          inventoryStatus:
+            product.stockCount <= 10
+              ? InventoryStatus.lowStock
+              : InventoryStatus.inStock,
+        },
+      }).then(async (createdProduct) => {
+        const media = await prisma.media.create({
+          data: {
+            uploadedById: foundation.admin.id,
+            publicId: `prod-seed/product-${index + 1}`,
+            url: `${PRODUCT_IMAGE_URLS[index % PRODUCT_IMAGE_URLS.length]}&v=product-${index + 1}`,
+            mimeType: "image/jpeg",
+            resourceType: "image",
+            size: 210000,
+            hash: `prod-seed-product-${index + 1}-hash`,
+            name: `${createdProduct.slug}.jpg`,
+            type: MediaType.product,
+            visibility: MediaVisibility.public,
+            altText: createdProduct.name,
+          },
+        });
+
+        await prisma.productImage.create({
+          data: {
+            productId: createdProduct.id,
+            mediaId: media.id,
+            position: 0,
+          },
+        });
+
+        return createdProduct;
+      }),
+    ),
+  );
+
+  await prisma.cartItem.createMany({
+    data: [
+      {
+        userId: foundation.patients[0]!.id,
+        productId: products[0]!.id,
+        quantity: 1,
+      },
+      {
+        userId: foundation.patients[0]!.id,
+        productId: products[3]!.id,
+        quantity: 2,
+      },
+      {
+        userId: foundation.patients[1]!.id,
+        productId: products[2]!.id,
+        quantity: 1,
+      },
+    ],
+  });
+
+  const orderData = [
+    {
+      patient: foundation.patients[0]!,
+      status: OrderStatus.processing,
+      deliveryType: DeliveryType.delivery,
+      items: [
+        { product: products[0]!, quantity: 1 },
+        { product: products[3]!, quantity: 1 },
+      ],
+      shippingName: foundation.patients[0]!.displayName,
+      shippingPhone: foundation.patients[0]!.phone,
+      shippingStreet: "1200 Broadway",
+      shippingCity: "New York",
+      shippingState: "NY",
+      shippingPostalCode: "10001",
+      shippingCountry: "United States",
+      shippingCost: 8.5,
+      discountAmount: 0,
+    },
+    {
+      patient: foundation.patients[1]!,
+      status: OrderStatus.delivered,
+      deliveryType: DeliveryType.delivery,
+      items: [{ product: products[2]!, quantity: 1 }],
+      shippingName: foundation.patients[1]!.displayName,
+      shippingPhone: foundation.patients[1]!.phone,
+      shippingStreet: "501 Congress Ave",
+      shippingCity: "Austin",
+      shippingState: "TX",
+      shippingPostalCode: "78701",
+      shippingCountry: "United States",
+      shippingCost: 10,
+      discountAmount: 5,
+    },
+    {
+      patient: foundation.patients[2]!,
+      status: OrderStatus.pending,
+      deliveryType: DeliveryType.pickup,
+      items: [
+        { product: products[1]!, quantity: 2 },
+        { product: products[4]!, quantity: 1 },
+      ],
+      shippingName: null,
+      shippingPhone: null,
+      shippingStreet: null,
+      shippingCity: null,
+      shippingState: null,
+      shippingPostalCode: null,
+      shippingCountry: null,
+      shippingCost: 0,
+      discountAmount: 0,
+    },
+  ] as const;
+
+  const orders = [];
+
+  for (const [index, orderSeed] of orderData.entries()) {
+    const subtotal = orderSeed.items.reduce(
+      (sum, item) => sum + Number(item.product.price) * item.quantity,
+      0,
+    );
+    const total = subtotal + orderSeed.shippingCost - orderSeed.discountAmount;
+
+    const order = await prisma.order.create({
+      data: {
+        orderNumber: `ORD-US-${2001 + index}`,
+        userId: orderSeed.patient.id,
+        status: orderSeed.status,
+        deliveryType: orderSeed.deliveryType,
+        shippingName: orderSeed.shippingName,
+        shippingPhone: orderSeed.shippingPhone,
+        shippingStreet: orderSeed.shippingStreet,
+        shippingCity: orderSeed.shippingCity,
+        shippingState: orderSeed.shippingState,
+        shippingPostalCode: orderSeed.shippingPostalCode,
+        shippingCountry: orderSeed.shippingCountry,
+        subtotal,
+        shippingCost: orderSeed.shippingCost,
+        discountAmount: orderSeed.discountAmount,
+        total,
+        notes:
+          orderSeed.deliveryType === DeliveryType.pickup
+            ? "Customer will collect from branch reception."
+            : "Handle with care - demo seed order.",
+        confirmedAt:
+          orderSeed.status !== OrderStatus.pending ? daysFromNow(-2, 10, 30) : null,
+        shippedAt:
+          orderSeed.status === OrderStatus.processing ||
+          orderSeed.status === OrderStatus.delivered
+            ? daysFromNow(-1, 12, 0)
+            : null,
+        deliveredAt:
+          orderSeed.status === OrderStatus.delivered
+            ? daysFromNow(-0, 15, 30)
+            : null,
+        items: {
+          create: orderSeed.items.map((item) => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            unitPrice: item.product.price,
+            quantity: item.quantity,
+            totalPrice: Number(item.product.price) * item.quantity,
+          })),
+        },
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (order.status !== OrderStatus.pending) {
+      await prisma.payment.create({
+        data: {
+          orderId: order.id,
+          provider:
+            index % 2 === 0 ? PaymentProvider.stripe : PaymentProvider.paypal,
+          methodType:
+            index % 2 === 0 ? PaymentMethodType.card : PaymentMethodType.wallet,
+          status:
+            order.status === OrderStatus.delivered
+              ? PaymentStatus.succeeded
+              : PaymentStatus.pending,
+          amount: total,
+          transactionId: `PAY-ORD-${order.orderNumber}`,
+          paidAt:
+            order.status === OrderStatus.delivered
+              ? daysFromNow(-2, 10, 30)
+              : null,
+          metadata: { label: "Demo store order payment", demo: true },
+        },
+      });
+    }
+
+    if (order.status === OrderStatus.processing || order.status === OrderStatus.delivered) {
+      await prisma.shipment.create({
+        data: {
+          orderId: order.id,
+          status:
+            order.status === OrderStatus.delivered
+              ? ShipmentStatus.delivered
+              : ShipmentStatus.inTransit,
+          provider: "UPS",
+          trackingNumber: `1ZDEMO${2001 + index}`,
+          trackingUrl: `https://www.ups.com/track?tracknum=1ZDEMO${2001 + index}`,
+          shippedAt: daysFromNow(-1, 12, 0),
+          deliveredAt:
+            order.status === OrderStatus.delivered
+              ? daysFromNow(0, 15, 30)
+              : null,
+        },
+      });
+    }
+
+    orders.push(order);
+  }
+
+  return { products, orders, categories: { therapyTools, parentResources, sensoryCategory } };
+}
+
 async function seedNotifications(
   foundation: Awaited<ReturnType<typeof seedFoundation>>,
 ) {
@@ -876,6 +1333,15 @@ async function seedNotifications(
         channels: [NotificationChannel.sms],
         status: NotificationStatus.sent,
       },
+      {
+        userId: foundation.staff[0]!.id,
+        title: "New patient assignment",
+        message: "You have been assigned a new patient to support this week.",
+        recipient: foundation.staff[0]!.email!,
+        purpose: NotificationPurpose.appointmentStatus,
+        channels: [NotificationChannel.email],
+        status: NotificationStatus.sent,
+      },
     ],
   });
 }
@@ -917,6 +1383,23 @@ async function seedTrafficAndLeads() {
   });
 }
 
+async function seedStaffAssignments(
+  foundation: Awaited<ReturnType<typeof seedFoundation>>,
+  profiles: Awaited<ReturnType<typeof seedProfiles>>,
+) {
+  console.log("Seeding staff assignments...");
+
+  await prisma.staffAssignment.createMany({
+    data: profiles.patients.slice(0, 6).map((patient, index) => ({
+      patientId: patient.id,
+      staffId: foundation.staff[index % foundation.staff.length]!.id,
+      assignedById: foundation.admin.id,
+      isActive: true,
+      notes: "Demo caseload assignment.",
+    })),
+  });
+}
+
 async function main() {
   console.log("Starting Prisma PROD seed...");
   console.log(`Default seed password: ${DEFAULT_PASSWORD}`);
@@ -931,6 +1414,8 @@ async function main() {
   const appointments = await seedAppointments(foundation, profiles, branches);
   await seedConversations(foundation, profiles, appointments, branches);
   await seedPayments(foundation, appointments);
+  await seedCommerce(foundation);
+  await seedStaffAssignments(foundation, profiles);
   await seedNotifications(foundation);
   await seedTrafficAndLeads();
 
@@ -942,6 +1427,9 @@ async function main() {
   );
   console.log(
     `Doctor: dr.green@caresync.demo / ${DEFAULT_PASSWORD} (and other dr.*@caresync.demo)`,
+  );
+  console.log(
+    `Staff: staff.quinn@caresync.demo / ${DEFAULT_PASSWORD} (and other staff.*@caresync.demo)`,
   );
 }
 

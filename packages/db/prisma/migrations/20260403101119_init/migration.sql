@@ -98,6 +98,15 @@ CREATE TYPE "OrderStatus" AS ENUM ('pending', 'processing', 'shipped', 'delivere
 CREATE TYPE "DeliveryType" AS ENUM ('delivery', 'pickup');
 
 -- CreateEnum
+CREATE TYPE "ProductStatus" AS ENUM ('draft', 'active', 'archived');
+
+-- CreateEnum
+CREATE TYPE "InventoryStatus" AS ENUM ('inStock', 'lowStock', 'outOfStock');
+
+-- CreateEnum
+CREATE TYPE "ShipmentStatus" AS ENUM ('pending', 'processing', 'shipped', 'inTransit', 'delivered', 'failed', 'cancelled');
+
+-- CreateEnum
 CREATE TYPE "TreatmentPlanStatus" AS ENUM ('draft', 'active', 'completed', 'discontinued');
 
 -- CreateEnum
@@ -593,6 +602,7 @@ CREATE TABLE "BusinessProfile" (
 -- CreateTable
 CREATE TABLE "ProductCategory" (
     "id" TEXT NOT NULL,
+    "parentId" TEXT,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT,
@@ -614,7 +624,8 @@ CREATE TABLE "Product" (
     "compareAtPrice" DECIMAL(10,2),
     "stockCount" INTEGER NOT NULL DEFAULT 0,
     "requiresShipping" BOOLEAN NOT NULL DEFAULT true,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "status" "ProductStatus" NOT NULL DEFAULT 'draft',
+    "inventoryStatus" "InventoryStatus" NOT NULL DEFAULT 'inStock',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
@@ -661,10 +672,15 @@ CREATE TABLE "Order" (
     "shippingCountry" TEXT,
     "subtotal" DECIMAL(10,2) NOT NULL,
     "shippingCost" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "discountAmount" DECIMAL(10,2) NOT NULL DEFAULT 0,
     "total" DECIMAL(10,2) NOT NULL,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "confirmedAt" TIMESTAMP(3),
+    "shippedAt" TIMESTAMP(3),
+    "deliveredAt" TIMESTAMP(3),
+    "cancelledAt" TIMESTAMP(3),
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
 );
@@ -681,6 +697,23 @@ CREATE TABLE "OrderItem" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Shipment" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "status" "ShipmentStatus" NOT NULL DEFAULT 'pending',
+    "provider" TEXT,
+    "trackingNumber" TEXT,
+    "trackingUrl" TEXT,
+    "shippedAt" TIMESTAMP(3),
+    "deliveredAt" TIMESTAMP(3),
+    "cancelledAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Shipment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -1036,13 +1069,19 @@ CREATE UNIQUE INDEX "ProductCategory_slug_key" ON "ProductCategory"("slug");
 CREATE INDEX "ProductCategory_isActive_idx" ON "ProductCategory"("isActive");
 
 -- CreateIndex
+CREATE INDEX "ProductCategory_parentId_idx" ON "ProductCategory"("parentId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
 
 -- CreateIndex
 CREATE INDEX "Product_categoryId_idx" ON "Product"("categoryId");
 
 -- CreateIndex
-CREATE INDEX "Product_isActive_idx" ON "Product"("isActive");
+CREATE INDEX "Product_status_idx" ON "Product"("status");
+
+-- CreateIndex
+CREATE INDEX "Product_inventoryStatus_idx" ON "Product"("inventoryStatus");
 
 -- CreateIndex
 CREATE INDEX "Product_deletedAt_idx" ON "Product"("deletedAt");
@@ -1073,6 +1112,12 @@ CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
 
 -- CreateIndex
 CREATE INDEX "OrderItem_productId_idx" ON "OrderItem"("productId");
+
+-- CreateIndex
+CREATE INDEX "Shipment_orderId_idx" ON "Shipment"("orderId");
+
+-- CreateIndex
+CREATE INDEX "Shipment_status_idx" ON "Shipment"("status");
 
 -- CreateIndex
 CREATE INDEX "TreatmentPlan_patientId_status_idx" ON "TreatmentPlan"("patientId", "status");
@@ -1267,6 +1312,9 @@ ALTER TABLE "BusinessProfile" ADD CONSTRAINT "BusinessProfile_logoId_fkey" FOREI
 ALTER TABLE "BusinessProfile" ADD CONSTRAINT "BusinessProfile_coverId_fkey" FOREIGN KEY ("coverId") REFERENCES "Media"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ProductCategory" ADD CONSTRAINT "ProductCategory_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "ProductCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "ProductCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1289,6 +1337,9 @@ ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("or
 
 -- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Shipment" ADD CONSTRAINT "Shipment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TreatmentPlan" ADD CONSTRAINT "TreatmentPlan_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "PatientProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
