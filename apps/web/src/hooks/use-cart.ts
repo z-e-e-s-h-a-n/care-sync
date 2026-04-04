@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   CartItemType,
@@ -9,8 +9,8 @@ import type {
 import * as order from "@workspace/sdk/order";
 import * as product from "@workspace/sdk/product";
 import { parseDuration } from "@workspace/shared/utils";
-import useUser from "@workspace/ui/hooks/use-user";
 import type { ApiException } from "@workspace/sdk";
+import useUser from "@workspace/ui/hooks/use-user";
 import { useLocalStorage } from "./use-local-storage";
 
 const STORAGE_KEY = "care-sync-cart";
@@ -37,10 +37,35 @@ function normalizeCartItems(items: CartItemType[]) {
 function mapServerCartItems(
   items: Awaited<ReturnType<typeof order.getCart>>["data"]["items"] = [],
 ) {
-  return items.map((item) => ({
-    productId: item.productId,
-    quantity: item.quantity,
-  }));
+  return normalizeCartItems(
+    items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    })),
+  );
+}
+
+function areCartItemsEqual(a: CartItemType[], b: CartItemType[]) {
+  if (a.length !== b.length) return false;
+
+  return a.every((item, index) => {
+    const other = b[index];
+    return (
+      item.productId === other?.productId && item.quantity === other.quantity
+    );
+  });
+}
+
+function mergeLocalWithMissingServerItems(
+  localItems: CartItemType[],
+  serverItems: CartItemType[],
+) {
+  const localIds = new Set(localItems.map((item) => item.productId));
+
+  return normalizeCartItems([
+    ...localItems,
+    ...serverItems.filter((item) => !localIds.has(item.productId)),
+  ]);
 }
 
 export function useCart() {
@@ -50,11 +75,13 @@ export function useCart() {
 
   const [items, setItems] = useLocalStorage<CartItemType[]>(STORAGE_KEY, []);
   const normalizedItems = useMemo(() => normalizeCartItems(items), [items]);
+  const [initializedUserId, setInitializedUserId] = useState<string | null>(null);
 
   const cartQuery = useQuery({
     queryKey: ["cart"],
     queryFn: order.getCart,
-    select: (res: Awaited<ReturnType<typeof order.getCart>>) => res.data,
+    select: (res: Awaited<ReturnType<typeof order.getCart>>) =>
+      mapServerCartItems(res.data.items),
     enabled: isLoggedIn,
     staleTime: STALE_TIME,
     gcTime: STALE_TIME,
@@ -65,54 +92,68 @@ export function useCart() {
 
   const syncMutation = useMutation({
     mutationFn: (nextItems: CartItemType[]) =>
-      order.syncCart({ items: normalizeCartItems(nextItems) }),
+      order.syncCart({
+        items: normalizeCartItems(nextItems),
+        mode: "replace",
+      }),
     onSuccess: (result) => {
-      setItems(mapServerCartItems(result.data.items));
-      queryClient.setQueryData(["cart"], result.data);
+      queryClient.setQueryData(
+        ["cart"],
+        mapServerCartItems(result.data.items),
+      );
     },
   });
 
   const clearMutation = useMutation({
     mutationFn: order.clearCart,
     onSuccess: () => {
-      setItems([]);
-      queryClient.setQueryData(["cart"], { items: [] });
+      queryClient.setQueryData(["cart"], []);
     },
   });
 
-  const syncedUserIdRef = useRef<string | null>(null);
-
   useEffect(() => {
     if (!currentUser?.id) {
-      syncedUserIdRef.current = null;
+      setInitializedUserId(null);
       return;
     }
 
     if (userLoading || cartQuery.isLoading || syncMutation.isPending) return;
-    if (syncedUserIdRef.current === currentUser.id) return;
+    if (initializedUserId === currentUser.id) return;
 
-    if (normalizedItems.length > 0) {
-      syncMutation.mutate(normalizedItems, {
+    const serverItems = cartQuery.data ?? [];
+    const mergedItems = mergeLocalWithMissingServerItems(
+      normalizedItems,
+      serverItems,
+    );
+    const shouldUpdateLocal = !areCartItemsEqual(mergedItems, normalizedItems);
+    const shouldSyncServer = !areCartItemsEqual(mergedItems, serverItems);
+
+    if (shouldUpdateLocal) {
+      setItems(mergedItems);
+    }
+
+    if (shouldSyncServer) {
+      syncMutation.mutate(mergedItems, {
         onSuccess: () => {
-          syncedUserIdRef.current = currentUser.id;
+          setInitializedUserId(currentUser.id);
         },
       });
       return;
     }
 
-    setItems(mapServerCartItems(cartQuery.data?.items));
-    syncedUserIdRef.current = currentUser.id;
+    setInitializedUserId(currentUser.id);
   }, [
-    cartQuery.data?.items,
+    cartQuery.data,
     cartQuery.isLoading,
     currentUser?.id,
+    initializedUserId,
     normalizedItems,
     setItems,
     syncMutation,
     userLoading,
   ]);
 
-  const guestProductsQuery = useQuery({
+  const productsQuery = useQuery({
     queryKey: [
       "products",
       "cart",
@@ -128,7 +169,7 @@ export function useCart() {
       }),
     select: (res: Awaited<ReturnType<typeof product.listProducts>>) =>
       res.data.products,
-    enabled: !isLoggedIn && normalizedItems.length > 0,
+    enabled: normalizedItems.length > 0,
     staleTime: STALE_TIME,
     gcTime: STALE_TIME,
     refetchOnWindowFocus: false,
@@ -137,12 +178,8 @@ export function useCart() {
   });
 
   const displayItems = useMemo(() => {
-    if (isLoggedIn) {
-      return cartQuery.data?.items ?? [];
-    }
-
     const productMap = new Map(
-      (guestProductsQuery.data ?? []).map((item) => [item.id, item]),
+      (productsQuery.data ?? []).map((item) => [item.id, item]),
     );
 
     return normalizedItems
@@ -157,34 +194,33 @@ export function useCart() {
           product: productData,
         };
       })
-      .filter((item) => Boolean(item));
-  }, [
-    cartQuery.data?.items,
-    guestProductsQuery.data,
-    isLoggedIn,
-    normalizedItems,
-  ]) as CartItemResponse[];
+      .filter((item): item is CartItemResponse => Boolean(item));
+  }, [normalizedItems, productsQuery.data]);
 
   const count = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = displayItems.reduce(
     (sum, item) => sum + item.product.sellPrice * item.quantity,
     0,
   );
-  const isResolvingProducts = !isLoggedIn && guestProductsQuery.isLoading;
+  const isInitializingLoggedInCart =
+    isLoggedIn && initializedUserId !== currentUser?.id;
   const isLoading =
     userLoading ||
-    (isLoggedIn && (cartQuery.isLoading || syncMutation.isPending)) ||
-    isResolvingProducts;
+    productsQuery.isLoading ||
+    (isInitializingLoggedInCart &&
+      (cartQuery.isLoading || syncMutation.isPending));
+
+  const syncIfNeeded = (nextItems: CartItemType[]) => {
+    if (!isLoggedIn || initializedUserId !== currentUser?.id) return;
+    syncMutation.mutate(nextItems);
+  };
 
   const updateLocalItems = (
     updater: (current: CartItemType[]) => CartItemType[],
   ) => {
     const nextItems = normalizeCartItems(updater(normalizedItems));
     setItems(nextItems);
-
-    if (isLoggedIn) {
-      syncMutation.mutate(nextItems);
-    }
+    syncIfNeeded(nextItems);
   };
 
   const addItem = async (data: CartItemType) => {
@@ -220,12 +256,11 @@ export function useCart() {
   };
 
   const clearCart = async () => {
-    if (isLoggedIn) {
-      await clearMutation.mutateAsync();
-      return;
-    }
-
     setItems([]);
+
+    if (isLoggedIn && initializedUserId === currentUser?.id) {
+      await clearMutation.mutateAsync();
+    }
   };
 
   return {
@@ -237,7 +272,7 @@ export function useCart() {
     isLoading,
     isSyncing: syncMutation.isPending || clearMutation.isPending,
     error: (cartQuery.error ??
-      guestProductsQuery.error ??
+      productsQuery.error ??
       syncMutation.error ??
       clearMutation.error) as ApiException | null,
     addItem,

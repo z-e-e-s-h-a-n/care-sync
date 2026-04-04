@@ -64,7 +64,7 @@ export class OrderController {
   @Roles("patient")
   @Post("cart/sync")
   syncCart(@Body() dto: SyncCartDto, @User("id") userId: string) {
-    return this.orderService.syncCart(dto.items, userId);
+    return this.orderService.syncCart(dto.items, userId, dto.mode);
   }
 
   @Roles("patient")

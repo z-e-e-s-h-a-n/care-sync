@@ -27,8 +27,11 @@ export const updateCartItemSchema = z.object({
   quantity: positiveIntSchema,
 });
 
+export const cartSyncModeEnum = z.enum(["merge", "replace"]);
+
 export const syncCartSchema = z.object({
   items: z.array(cartItemSchema).default([]),
+  mode: cartSyncModeEnum.default("merge"),
 });
 
 const orderAddressSchema = {

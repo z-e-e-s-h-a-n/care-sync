@@ -88,7 +88,11 @@ export class OrderService {
     };
   }
 
-  async syncCart(items: CartItemDto[], userId: string) {
+  async syncCart(
+    items: CartItemDto[],
+    userId: string,
+    mode: "merge" | "replace" = "merge",
+  ) {
     const nextItems = items.filter((item) => item.quantity > 0);
 
     const synced = await this.prisma.$transaction(async (tx) => {
@@ -131,8 +135,10 @@ export class OrderService {
 
           const quantity = Math.min(
             product.stockCount,
-            (existingMap.get(productId) ?? 0) +
-              (incomingMap.get(productId) ?? 0),
+            mode === "merge"
+              ? (existingMap.get(productId) ?? 0) +
+                  (incomingMap.get(productId) ?? 0)
+              : (incomingMap.get(productId) ?? 0),
           );
 
           if (quantity <= 0) return null;
