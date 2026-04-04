@@ -5,9 +5,10 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import type {
-  AddToCartDto,
+  CartItemDto,
   UpdateCartItemDto,
   CheckoutDto,
+  CreateManualOrderDto,
   UpdateOrderStatusDto,
   CreateShipmentDto,
   UpdateShipmentDto,
@@ -40,7 +41,7 @@ export class OrderService {
     };
   }
 
-  async addToCart(dto: AddToCartDto, userId: string) {
+  async addToCart(dto: CartItemDto, userId: string) {
     const product = await this.prisma.product.findFirst({
       where: { id: dto.productId, status: "active" },
     });
@@ -85,7 +86,7 @@ export class OrderService {
     };
   }
 
-  async syncCart(items: AddToCartDto[], userId: string) {
+  async syncCart(items: CartItemDto[], userId: string) {
     const nextItems = items.filter((item) => item.quantity > 0);
 
     const synced = await this.prisma.$transaction(async (tx) => {
@@ -118,7 +119,9 @@ export class OrderService {
           })
         : [];
 
-      const productMap = new Map(products.map((product) => [product.id, product]));
+      const productMap = new Map(
+        products.map((product) => [product.id, product]),
+      );
       const mergedItems = productIds
         .map((productId) => {
           const product = productMap.get(productId);
@@ -126,13 +129,16 @@ export class OrderService {
 
           const quantity = Math.min(
             product.stockCount,
-            (existingMap.get(productId) ?? 0) + (incomingMap.get(productId) ?? 0),
+            (existingMap.get(productId) ?? 0) +
+              (incomingMap.get(productId) ?? 0),
           );
 
           if (quantity <= 0) return null;
           return { productId, quantity };
         })
-        .filter((item): item is { productId: string; quantity: number } => Boolean(item));
+        .filter((item): item is { productId: string; quantity: number } =>
+          Boolean(item),
+        );
 
       await tx.cartItem.deleteMany({ where: { userId } });
 
@@ -223,8 +229,7 @@ export class OrderService {
             status: "pending",
             deliveryType: dto.deliveryType,
             notes: dto.notes,
-            shippingName:
-              dto.shippingName ?? `${firstName} ${lastName}`.trim(),
+            shippingName: dto.shippingName ?? `${firstName} ${lastName}`.trim(),
             shippingPhone: dto.shippingPhone ?? phone,
             shippingStreet: dto.shippingStreet,
             shippingCity: dto.shippingCity,
@@ -272,7 +277,8 @@ export class OrderService {
         products.map((product) => [product.id, product.sellPrice]),
       );
       const subtotal = items.reduce(
-        (sum, item) => sum + Number(priceMap.get(item.productId)) * item.quantity,
+        (sum, item) =>
+          sum + Number(priceMap.get(item.productId)) * item.quantity,
         0,
       );
 
@@ -335,7 +341,8 @@ export class OrderService {
             create: items.map((item) => ({
               productId: item.productId,
               productName:
-                products.find((product) => product.id === item.productId)?.name ?? "",
+                products.find((product) => product.id === item.productId)
+                  ?.name ?? "",
               unitPrice: priceMap.get(item.productId)!,
               quantity: item.quantity,
               totalPrice: Number(priceMap.get(item.productId)) * item.quantity,
@@ -348,6 +355,94 @@ export class OrderService {
 
     return {
       message: "Order placed successfully.",
+      data: result,
+    };
+  }
+
+  async createManualOrder(dto: CreateManualOrderDto) {
+    const result = await this.prisma.$transaction(async (tx) => {
+      const patient = await tx.patientProfile.findUniqueOrThrow({
+        where: { id: dto.patientId },
+        include: { user: true },
+      });
+
+      const products = await tx.product.findMany({
+        where: {
+          id: { in: dto.items.map((item) => item.productId) },
+          status: "active",
+        },
+      });
+
+      if (products.length !== dto.items.length) {
+        throw new BadRequestException(
+          "One or more selected products are unavailable.",
+        );
+      }
+
+      const productMap = new Map(
+        products.map((product) => [product.id, product]),
+      );
+
+      for (const item of dto.items) {
+        const product = productMap.get(item.productId);
+        if (!product) {
+          throw new BadRequestException(
+            "One or more selected products are unavailable.",
+          );
+        }
+
+        if (product.stockCount < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for ${product.name}.`,
+          );
+        }
+      }
+
+      const subtotal = dto.items.reduce((sum, item) => {
+        const product = productMap.get(item.productId)!;
+        return sum + Number(product.sellPrice) * item.quantity;
+      }, 0);
+
+      return tx.order.create({
+        data: {
+          userId: patient.userId,
+          orderNumber: this.createOrderNumber(),
+          status: "pending",
+          deliveryType: dto.deliveryType,
+          notes: dto.notes,
+          shippingName:
+            dto.shippingName?.trim() || patient.user.displayName || undefined,
+          shippingPhone:
+            dto.shippingPhone?.trim() || patient.user.phone || undefined,
+          shippingStreet: dto.shippingStreet?.trim() || undefined,
+          shippingCity: dto.shippingCity?.trim() || undefined,
+          shippingState: dto.shippingState?.trim() || undefined,
+          shippingPostalCode: dto.shippingPostalCode?.trim() || undefined,
+          shippingCountry: dto.shippingCountry?.trim() || undefined,
+          subtotal,
+          shippingCost: 0,
+          discountAmount: 0,
+          total: subtotal,
+          items: {
+            create: dto.items.map((item) => {
+              const product = productMap.get(item.productId)!;
+
+              return {
+                productId: product.id,
+                productName: product.name,
+                unitPrice: product.sellPrice,
+                quantity: item.quantity,
+                totalPrice: Number(product.sellPrice) * item.quantity,
+              };
+            }),
+          },
+        },
+        include: this.orderInclude,
+      });
+    });
+
+    return {
+      message: "Order created successfully.",
       data: result,
     };
   }

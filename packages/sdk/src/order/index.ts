@@ -1,9 +1,10 @@
 import apiClient, { executeApi } from "../lib/api-client";
 import type {
-  AddToCartType,
+  CartItemType,
   UpdateCartItemType,
   SyncCartType,
   CheckoutType,
+  CreateManualOrderType,
   UpdateOrderStatusType,
   CreateShipmentType,
   UpdateShipmentType,
@@ -21,7 +22,7 @@ export const getCart = () =>
     apiClient.get("/orders/cart"),
   );
 
-export const addToCart = (data: AddToCartType) =>
+export const addToCart = (data: CartItemType) =>
   executeApi<CartItemResponse>(() => apiClient.post("/orders/cart", data));
 
 export const updateCartItem = (itemId: string, data: UpdateCartItemType) =>
@@ -45,15 +46,19 @@ export const clearCart = () =>
 export const checkout = (data: CheckoutType) =>
   executeApi<OrderResponse>(() => apiClient.post("/orders", data));
 
+export const createOrder = (data: CreateManualOrderType) =>
+  executeApi<OrderResponse>(() => apiClient.post("/orders/manual", data));
+
 export const listOrders = (params?: OrderQueryType) =>
-  executeApi<OrderQueryResponse>(() =>
-    apiClient.get("/orders", { params }),
-  );
+  executeApi<OrderQueryResponse>(() => apiClient.get("/orders", { params }));
 
 export const getOrder = (orderId: string) =>
   executeApi<OrderResponse>(() => apiClient.get(`/orders/${orderId}`));
 
-export const updateOrderStatus = (orderId: string, data: UpdateOrderStatusType) =>
+export const updateOrderStatus = (
+  orderId: string,
+  data: UpdateOrderStatusType,
+) =>
   executeApi<OrderResponse>(() =>
     apiClient.patch(`/orders/${orderId}/status`, data),
   );

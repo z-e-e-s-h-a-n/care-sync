@@ -13,10 +13,11 @@ import {
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import {
-  AddToCartDto,
+  CartItemDto,
   UpdateCartItemDto,
   SyncCartDto,
   CheckoutDto,
+  CreateManualOrderDto,
   UpdateOrderStatusDto,
   CreateShipmentDto,
   UpdateShipmentDto,
@@ -46,7 +47,7 @@ export class OrderController {
 
   @Roles("patient")
   @Post("cart")
-  addToCart(@Body() dto: AddToCartDto, @User("id") userId: string) {
+  addToCart(@Body() dto: CartItemDto, @User("id") userId: string) {
     return this.orderService.addToCart(dto, userId);
   }
 
@@ -89,6 +90,12 @@ export class OrderController {
   ) {
     const currentUser = await this.resolveCheckoutUser(req, res);
     return this.orderService.checkout(dto, currentUser);
+  }
+
+  @Roles("admin", "doctor", "staff")
+  @Post("manual")
+  createManualOrder(@Body() dto: CreateManualOrderDto) {
+    return this.orderService.createManualOrder(dto);
   }
 
   @Roles("admin", "doctor", "staff", "patient")
@@ -139,7 +146,10 @@ export class OrderController {
       return req.user;
     } catch {
       try {
-        const payload = await this.tokenService.verifyToken(req, "refreshToken");
+        const payload = await this.tokenService.verifyToken(
+          req,
+          "refreshToken",
+        );
         await this.tokenService.refreshTokens(req, res, payload);
         return req.user;
       } catch {

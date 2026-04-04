@@ -16,7 +16,7 @@ import {
   phoneSchema,
 } from "../lib/schema";
 
-export const addToCartSchema = z.object({
+export const cartItemSchema = z.object({
   productId: idSchema,
   quantity: positiveIntSchema,
 });
@@ -26,7 +26,7 @@ export const updateCartItemSchema = z.object({
 });
 
 export const syncCartSchema = z.object({
-  items: z.array(addToCartSchema).default([]),
+  items: z.array(cartItemSchema).default([]),
 });
 
 const orderAddressSchema = {
@@ -56,6 +56,56 @@ export const checkoutSchema = z.object({
     )
     .optional(),
 });
+
+export const createManualOrderSchema = z
+  .object({
+    patientId: idSchema,
+    ...orderAddressSchema,
+    items: z.array(cartItemSchema).min(1, "Add at least one product."),
+  })
+  .superRefine((value, ctx) => {
+    if (value.deliveryType !== "delivery") return;
+
+    if (!value.shippingName?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["shippingName"],
+        message: "Shipping name is required for delivery orders.",
+      });
+    }
+
+    if (!value.shippingPhone?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["shippingPhone"],
+        message: "Shipping phone is required for delivery orders.",
+      });
+    }
+
+    if (!value.shippingStreet?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["shippingStreet"],
+        message: "Street is required for delivery orders.",
+      });
+    }
+
+    if (!value.shippingCity?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["shippingCity"],
+        message: "City is required for delivery orders.",
+      });
+    }
+
+    if (!value.shippingCountry?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["shippingCountry"],
+        message: "Country is required for delivery orders.",
+      });
+    }
+  });
 
 export const updateOrderStatusSchema = z.object({
   status: OrderStatusEnum,

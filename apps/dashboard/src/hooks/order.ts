@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  CreateManualOrderType,
   UpdateOrderStatusType,
   CreateShipmentType,
   UpdateShipmentType,
@@ -53,6 +54,23 @@ export function useOrder(orderId?: string) {
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     fetchError: query.error as ApiException | null,
+  };
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (data: CreateManualOrderType) => order.createOrder(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+
+  return {
+    createOrder: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    error: mutation.error as ApiException | null,
   };
 }
 

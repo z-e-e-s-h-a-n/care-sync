@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
-  AddToCartType,
+  CartItemType,
   CartItemResponse,
 } from "@workspace/contracts/order";
 import * as order from "@workspace/sdk/order";
@@ -16,7 +16,7 @@ import { useLocalStorage } from "./use-local-storage";
 const STORAGE_KEY = "care-sync-cart";
 const STALE_TIME = parseDuration("10m");
 
-function normalizeCartItems(items: AddToCartType[]) {
+function normalizeCartItems(items: CartItemType[]) {
   const quantityByProductId = new Map<string, number>();
 
   for (const item of items) {
@@ -48,7 +48,7 @@ export function useCart() {
   const { currentUser, isLoading: userLoading } = useUser();
   const isLoggedIn = Boolean(currentUser);
 
-  const [items, setItems] = useLocalStorage<AddToCartType[]>(STORAGE_KEY, []);
+  const [items, setItems] = useLocalStorage<CartItemType[]>(STORAGE_KEY, []);
   const normalizedItems = useMemo(() => normalizeCartItems(items), [items]);
 
   const cartQuery = useQuery({
@@ -64,7 +64,7 @@ export function useCart() {
   });
 
   const syncMutation = useMutation({
-    mutationFn: (nextItems: AddToCartType[]) =>
+    mutationFn: (nextItems: CartItemType[]) =>
       order.syncCart({ items: normalizeCartItems(nextItems) }),
     onSuccess: (result) => {
       setItems(mapServerCartItems(result.data.items));
@@ -177,7 +177,7 @@ export function useCart() {
     isResolvingProducts;
 
   const updateLocalItems = (
-    updater: (current: AddToCartType[]) => AddToCartType[],
+    updater: (current: CartItemType[]) => CartItemType[],
   ) => {
     const nextItems = normalizeCartItems(updater(normalizedItems));
     setItems(nextItems);
@@ -187,7 +187,7 @@ export function useCart() {
     }
   };
 
-  const addItem = async (data: AddToCartType) => {
+  const addItem = async (data: CartItemType) => {
     updateLocalItems((current) => {
       const existing = current.find(
         (item) => item.productId === data.productId,

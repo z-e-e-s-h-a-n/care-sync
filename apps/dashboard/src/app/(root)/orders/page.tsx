@@ -66,7 +66,7 @@ const OrdersPage = () => {
   return (
     <ListPage
       dataKey="orders"
-      canAdd={false}
+      canAdd
       columns={columns}
       defaultSortBy="createdAt"
       defaultSearchBy="orderNumber"

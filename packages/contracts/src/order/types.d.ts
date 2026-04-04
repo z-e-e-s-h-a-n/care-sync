@@ -1,10 +1,16 @@
 import type z from "zod";
-import type { Order, OrderItem, Shipment, CartItem } from "@workspace/db/browser";
 import type {
-  addToCartSchema,
+  Order,
+  OrderItem,
+  Shipment,
+  CartItem,
+} from "@workspace/db/browser";
+import type {
+  cartItemSchema,
   updateCartItemSchema,
   syncCartSchema,
   checkoutSchema,
+  createManualOrderSchema,
   updateOrderStatusSchema,
   createShipmentSchema,
   updateShipmentSchema,
@@ -14,10 +20,11 @@ import type { BaseQueryResponse, Sanitize } from "../lib/types";
 import type { ProductResponse } from "../product/types";
 import type { BaseUserResponse } from "../user/types";
 
-export type AddToCartType = z.input<typeof addToCartSchema>;
+export type CartItemType = z.input<typeof cartItemSchema>;
 export type UpdateCartItemType = z.input<typeof updateCartItemSchema>;
 export type SyncCartType = z.input<typeof syncCartSchema>;
 export type CheckoutType = z.input<typeof checkoutSchema>;
+export type CreateManualOrderType = z.input<typeof createManualOrderSchema>;
 export type UpdateOrderStatusType = z.input<typeof updateOrderStatusSchema>;
 export type CreateShipmentType = z.input<typeof createShipmentSchema>;
 export type UpdateShipmentType = z.input<typeof updateShipmentSchema>;
