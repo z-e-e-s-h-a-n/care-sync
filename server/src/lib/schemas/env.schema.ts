@@ -15,7 +15,7 @@ const zMsString = z
 
 export const envSchema = z.object({
   // ==============================
-  // Mi MedCare Server
+  // care-sync Server
   // ==============================
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -76,6 +76,13 @@ export const envSchema = z.object({
   // External APIs
   // ==============================
   IP_STACK_API_KEY: z.string(),
+
+  // ==============================
+  // Payments
+  // ==============================
+  STRIPE_SECRET_KEY: z.string(),
+  STRIPE_PUBLISHABLE_KEY: z.string(),
+  STRIPE_WEBHOOK_SECRET: z.string(),
 
   // ==============================
   // Admin Bootstrap

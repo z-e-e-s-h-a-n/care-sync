@@ -2,11 +2,14 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
   Query,
+  Req,
 } from "@nestjs/common";
+import type { Request } from "express";
 import {
   CreatePaymentIntentDto,
   CreateRefundDto,
@@ -16,6 +19,7 @@ import {
 } from "@workspace/contracts/payment";
 
 import { PaymentService } from "./payment.service";
+import { Public } from "@/decorators/public.decorator";
 import { Roles } from "@/decorators/roles.decorator";
 import { User } from "@/decorators/user.decorator";
 
@@ -68,5 +72,14 @@ export class PaymentController {
     @User() user: Express.User,
   ) {
     return this.paymentService.updateRefundStatus(refundId, dto, user);
+  }
+
+  @Public()
+  @Post("webhooks/stripe")
+  handleStripeWebhook(
+    @Headers("stripe-signature") signature: string | undefined,
+    @Req() req: Request & { rawBody?: Buffer },
+  ) {
+    return this.paymentService.handleStripeWebhook(signature, req.rawBody);
   }
 }

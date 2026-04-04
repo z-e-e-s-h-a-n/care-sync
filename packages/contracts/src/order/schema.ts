@@ -5,6 +5,8 @@ import {
   ShipmentStatusEnum,
   OrderSearchByEnum,
   OrderSortByEnum,
+  PaymentProviderEnum,
+  PaymentMethodTypeEnum,
 } from "../lib/enums";
 import {
   baseQuerySchema,
@@ -47,6 +49,8 @@ export const checkoutSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema.optional(),
   phone: phoneSchema,
+  paymentProvider: PaymentProviderEnum.default("stripe"),
+  paymentMethodType: PaymentMethodTypeEnum.default("card"),
   items: z
     .array(
       z.object({

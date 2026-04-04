@@ -14,6 +14,7 @@ import { ResponseInterceptor } from "@/interceptors/response.interceptor";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: WinstonModule.createLogger(winstonConfig),
+    rawBody: true,
   });
   const env = app.get(EnvService);
   const logger = await app.resolve(LoggerService);

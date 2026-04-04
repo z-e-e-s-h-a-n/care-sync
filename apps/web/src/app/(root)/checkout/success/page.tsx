@@ -20,11 +20,11 @@ export default async function CheckoutSuccessPage({
 
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Order placed successfully
+              Payment completed successfully
             </h1>
             <p className="text-sm text-muted-foreground">
-              Your order has been received and our team will contact you to
-              confirm payment and fulfillment details.
+              Your order is confirmed and payment has been received. Our team
+              will now prepare fulfillment and shipping updates.
             </p>
             {orderId ? (
               <p className="text-sm font-medium text-foreground">

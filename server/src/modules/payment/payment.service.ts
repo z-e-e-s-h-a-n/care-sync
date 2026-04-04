@@ -11,12 +11,18 @@ import type {
   UpdateRefundStatusDto,
 } from "@workspace/contracts/payment";
 import type { PaymentStatus, Prisma } from "@workspace/db/client";
+import type Stripe from "stripe";
+import StripeClient from "stripe";
 
 import { PrismaService } from "@/modules/prisma/prisma.service";
+import { EnvService } from "@/modules/env/env.service";
 
 @Injectable()
 export class PaymentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly env: EnvService,
+  ) {}
 
   async createPayment(dto: CreatePaymentIntentDto, currentUser: Express.User) {
     if (!dto.appointmentId) {
@@ -68,6 +74,104 @@ export class PaymentService {
       message: "Payment intent created successfully.",
       data: payment,
       meta: { targetType: "appointment", targetId: appointment.id },
+    };
+  }
+
+  async createStripeOrderCheckout(orderId: string) {
+    const order = await this.prisma.order.findUniqueOrThrow({
+      where: { id: orderId },
+      include: this.orderPaymentInclude,
+    });
+
+    if (!order.items.length) {
+      throw new BadRequestException("Order has no items to pay for.");
+    }
+
+    if (!order.user.email) {
+      throw new BadRequestException(
+        "An email address is required to start Stripe checkout.",
+      );
+    }
+
+    const existingPayment = await this.prisma.payment.findFirst({
+      where: {
+        orderId: order.id,
+        provider: "stripe",
+      },
+    });
+
+    const payment = existingPayment
+      ? await this.prisma.payment.update({
+          where: { id: existingPayment.id },
+          data: {
+            amount: order.total,
+            methodType: "card",
+            status: "pending",
+            failureMessage: null,
+            refundedAt: null,
+          },
+        })
+      : await this.prisma.payment.create({
+          data: {
+            orderId: order.id,
+            amount: order.total,
+            provider: "stripe",
+            methodType: "card",
+            status: "pending",
+          },
+        });
+
+    const stripe = this.getStripeClient();
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      ui_mode: "embedded_page",
+      return_url: `${this.env.get("CLIENT_ENDPOINT")}/checkout/success?orderId=${order.id}`,
+      customer_email: order.user.email,
+      metadata: {
+        orderId: order.id,
+        paymentId: payment.id,
+      },
+      payment_intent_data: {
+        metadata: {
+          orderId: order.id,
+          paymentId: payment.id,
+        },
+      },
+      line_items: order.items.map((item) => ({
+        quantity: item.quantity,
+        price_data: {
+          currency: "usd",
+          unit_amount: Math.round(Number(item.unitPrice) * 100),
+          product_data: {
+            name: item.productName,
+          },
+        },
+      })),
+    });
+
+    if (!session.client_secret) {
+      throw new BadRequestException(
+        "Stripe did not return a checkout session secret.",
+      );
+    }
+
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        metadata: {
+          stripeSessionId: session.id,
+          stripeSessionStatus: session.status,
+        },
+      },
+    });
+
+    return {
+      provider: "stripe" as const,
+      methodType: "card" as const,
+      publishableKey: this.env.get("STRIPE_PUBLISHABLE_KEY"),
+      clientSecret: session.client_secret,
+      sessionId: session.id,
+      paymentId: payment.id,
     };
   }
 
@@ -170,6 +274,50 @@ export class PaymentService {
     };
   }
 
+  async handleStripeWebhook(signature: string | undefined, rawBody?: Buffer) {
+    if (!signature || !rawBody) {
+      throw new BadRequestException("Missing Stripe webhook signature.");
+    }
+
+    const stripe = this.getStripeClient();
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        this.env.get("STRIPE_WEBHOOK_SECRET"),
+      );
+    } catch {
+      throw new BadRequestException("Invalid Stripe webhook signature.");
+    }
+
+    switch (event.type) {
+      case "checkout.session.completed":
+        await this.handleStripeCheckoutCompleted(
+          event.data.object as Stripe.Checkout.Session,
+        );
+        break;
+
+      case "checkout.session.expired":
+        await this.handleStripeCheckoutExpired(
+          event.data.object as Stripe.Checkout.Session,
+        );
+        break;
+
+      case "payment_intent.payment_failed":
+        await this.handleStripePaymentFailed(
+          event.data.object as Stripe.PaymentIntent,
+        );
+        break;
+
+      default:
+        break;
+    }
+
+    return { received: true };
+  }
+
   async createRefund(dto: CreateRefundDto, currentUser: Express.User) {
     const payment = await this.prisma.payment.findUniqueOrThrow({
       where: { id: dto.paymentId },
@@ -250,7 +398,10 @@ export class PaymentService {
       where: { userId: currentUser.id },
     });
 
-    where.appointment = { patientId: patient.id };
+    where.OR = [
+      { appointment: { patientId: patient.id } },
+      { order: { userId: currentUser.id } },
+    ];
   }
 
   private async assertPaymentAccess(payment: any, currentUser: Express.User) {
@@ -272,7 +423,10 @@ export class PaymentService {
       where: { userId: currentUser.id },
     });
 
-    if (payment.appointment?.patientId !== patient.id) {
+    if (
+      payment.appointment?.patientId !== patient.id &&
+      payment.order?.userId !== currentUser.id
+    ) {
       throw new ForbiddenException(
         "You can only view your own payment records.",
       );
@@ -291,6 +445,18 @@ export class PaymentService {
   }
 
   private async handleSuccessfulPayment(payment: any) {
+    if (payment.orderId) {
+      await this.prisma.order.update({
+        where: { id: payment.orderId },
+        data: {
+          status: "processing",
+          confirmedAt: new Date(),
+        },
+      });
+
+      return;
+    }
+
     if (!payment.appointmentId) return;
 
     const commissionPercent = Number(
@@ -332,6 +498,73 @@ export class PaymentService {
     }
   }
 
+  private async handleStripeCheckoutCompleted(
+    session: Stripe.Checkout.Session,
+  ) {
+    const paymentId = session.metadata?.paymentId;
+    if (!paymentId) return;
+
+    const payment = await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: "succeeded",
+        transactionId:
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : session.id,
+        paidAt: new Date(),
+        failureMessage: null,
+        metadata: {
+          stripeSessionId: session.id,
+          stripePaymentStatus: session.payment_status,
+          stripeSessionStatus: session.status,
+        },
+      },
+      include: this.paymentInclude,
+    });
+
+    await this.handleSuccessfulPayment(payment);
+  }
+
+  private async handleStripeCheckoutExpired(session: Stripe.Checkout.Session) {
+    const paymentId = session.metadata?.paymentId;
+    if (!paymentId) return;
+
+    await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: "failed",
+        failureMessage: "Stripe checkout session expired.",
+        metadata: {
+          stripeSessionId: session.id,
+          stripeSessionStatus: session.status,
+        },
+      },
+    });
+  }
+
+  private async handleStripePaymentFailed(intent: Stripe.PaymentIntent) {
+    const paymentId = intent.metadata.paymentId;
+    if (!paymentId) return;
+
+    await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: "failed",
+        transactionId: intent.id,
+        failureMessage: intent.last_payment_error?.message,
+        metadata: {
+          stripePaymentIntentId: intent.id,
+          stripePaymentStatus: intent.status,
+        },
+      },
+    });
+  }
+
+  private getStripeClient() {
+    return new StripeClient(this.env.get("STRIPE_SECRET_KEY"));
+  }
+
   private paymentInclude = {
     appointment: {
       include: {
@@ -339,8 +572,14 @@ export class PaymentService {
         patient: true,
       },
     },
+    order: true,
     refunds: true,
   } satisfies Prisma.PaymentInclude;
+
+  private orderPaymentInclude = {
+    user: { omit: { password: true } },
+    items: true,
+  } satisfies Prisma.OrderInclude;
 
   private refundInclude = {
     payment: {

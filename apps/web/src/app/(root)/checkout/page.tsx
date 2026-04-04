@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useStore } from "@tanstack/react-form";
-import { ChevronLeft, ShoppingBag } from "lucide-react";
+import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { ChevronLeft, CreditCard, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import {
   checkoutSchema,
+  type CheckoutResponse,
   type CheckoutType,
 } from "@workspace/contracts/order";
 import { formatPrice } from "@workspace/shared/utils";
@@ -93,9 +96,10 @@ function OrderSummary({
   subtotal,
 }: {
   items: {
-    productId: string;
+    id: string;
     quantity: number;
-    product: { name: string; sellPrice: number };
+    name: string;
+    unitPrice: number;
   }[];
   subtotal: number;
 }) {
@@ -106,12 +110,12 @@ function OrderSummary({
       className="shadow-sm"
     >
       {items.map((item) => (
-        <div key={item.productId} className="flex justify-between text-sm">
+        <div key={item.id} className="flex justify-between text-sm">
           <span className="flex-1 pr-2 text-muted-foreground line-clamp-1">
-            {item.product.name} × {item.quantity}
+            {item.name} × {item.quantity}
           </span>
           <span className="shrink-0 font-medium">
-            {formatPrice(item.product.sellPrice * item.quantity)}
+            {formatPrice(item.unitPrice * item.quantity)}
           </span>
         </div>
       ))}
@@ -175,6 +179,56 @@ function IdentitySection({
   );
 }
 
+function StripeCheckoutStep({
+  checkoutResult,
+  onComplete,
+}: {
+  checkoutResult: CheckoutResponse;
+  onComplete: () => void;
+}) {
+  const paymentSession = checkoutResult.paymentSession;
+  const stripePromise = useMemo(
+    () =>
+      paymentSession
+        ? loadStripe(paymentSession.publishableKey)
+        : Promise.resolve(null),
+    [paymentSession],
+  );
+
+  if (!paymentSession) return null;
+
+  return (
+    <div className="space-y-6">
+      <SectionCard className="shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            <CreditCard className="size-5" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="font-semibold">Secure payment</h2>
+            <p className="text-sm text-muted-foreground">
+              Your order has been created. Complete your payment below to
+              confirm and process it.
+            </p>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard className="overflow-hidden p-0 shadow-sm">
+        <EmbeddedCheckoutProvider
+          stripe={stripePromise}
+          options={{
+            clientSecret: paymentSession.clientSecret,
+            onComplete,
+          }}
+        >
+          <EmbeddedCheckout />
+        </EmbeddedCheckoutProvider>
+      </SectionCard>
+    </div>
+  );
+}
+
 function CheckoutForm() {
   const router = useRouter();
   const { currentUser, isLoading: userLoading } = useUser();
@@ -197,6 +251,8 @@ function CheckoutForm() {
       firstName: "",
       lastName: "",
       phone: "",
+      paymentProvider: "stripe",
+      paymentMethodType: "card",
       shippingName: "",
       shippingPhone: "",
       shippingStreet: "",
@@ -221,13 +277,22 @@ function CheckoutForm() {
           items: isLoggedIn ? undefined : items,
         });
 
+        if (result.data.paymentSession) {
+          setCheckoutResult(result.data);
+          return;
+        }
+
         await clearCart();
-        router.push(`/checkout/success?orderId=${result.data.id}`);
+        router.push(`/checkout/success?orderId=${result.data.order.id}`);
       } catch (error: any) {
         toast.error("Could not place order", { description: error?.message });
       }
     },
   });
+
+  const [checkoutResult, setCheckoutResult] = useState<CheckoutResponse | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!currentUser) return;
@@ -240,6 +305,29 @@ function CheckoutForm() {
   }, [currentUser, form]);
 
   const deliveryType = useStore(form.store, (state) => state.values.deliveryType);
+
+  const summaryItems = checkoutResult
+    ? checkoutResult.order.items.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        name: item.productName,
+        unitPrice: item.unitPrice,
+      }))
+    : displayItems.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        name: item.product.name,
+        unitPrice: item.product.sellPrice,
+      }));
+
+  const summarySubtotal = checkoutResult
+    ? checkoutResult.order.subtotal
+    : subtotal;
+
+  const handleStripeComplete = async () => {
+    await clearCart();
+    router.push(`/checkout/success?orderId=${checkoutResult?.order.id ?? ""}`);
+  };
 
   if (userLoading || isLoading) {
     return (
@@ -254,87 +342,94 @@ function CheckoutForm() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <Form form={form}>
-        <IdentitySection form={form} isLoggedIn={isLoggedIn} />
+      {checkoutResult?.paymentSession ? (
+        <StripeCheckoutStep
+          checkoutResult={checkoutResult}
+          onComplete={handleStripeComplete}
+        />
+      ) : (
+        <Form form={form}>
+          <IdentitySection form={form} isLoggedIn={isLoggedIn} />
 
-        <FormSection
-          title="Delivery Method"
-          description="Choose how you'd like to receive your order."
-        >
-          <SelectField
-            form={form}
-            name="deliveryType"
-            label="Delivery Type"
-            options={deliveryTypeOptions}
-            placeholder="Select delivery type"
-            className="md:col-span-2"
-          />
-        </FormSection>
-
-        {deliveryType === "delivery" && (
           <FormSection
-            title="Shipping Address"
-            description="Enter the address and phone number we should use for this order."
+            title="Delivery Method"
+            description="Choose how you'd like to receive your order."
           >
-            {addressFields(form)}
-          </FormSection>
-        )}
-
-        {deliveryType === "pickup" && (
-          <FormSection
-            title="Order Contact"
-            description="Add the best phone number to use for pickup updates."
-          >
-            <InputField
+            <SelectField
               form={form}
-              name="shippingPhone"
-              label="Phone Number"
-              placeholder="+1 555 000 0000"
+              name="deliveryType"
+              label="Delivery Type"
+              options={deliveryTypeOptions}
+              placeholder="Select delivery type"
               className="md:col-span-2"
             />
           </FormSection>
-        )}
 
-        <FormSection
-          title="Order Notes"
-          description="Optional notes for your order."
-        >
-          <InputField
-            form={form}
-            name="notes"
-            label="Notes"
-            type="textarea"
-            rows={3}
-            placeholder="Anything we should know?"
-            className="md:col-span-2"
-          />
-        </FormSection>
+          {deliveryType === "delivery" && (
+            <FormSection
+              title="Shipping Address"
+              description="Enter the address and phone number we should use for this order."
+            >
+              {addressFields(form)}
+            </FormSection>
+          )}
 
-        <InfoNotice
-          variant="info"
-          message="Payment is processed manually after order confirmation. Our team will contact you to complete payment."
-        />
+          {deliveryType === "pickup" && (
+            <FormSection
+              title="Order Contact"
+              description="Add the best phone number to use for pickup updates."
+            >
+              <InputField
+                form={form}
+                name="shippingPhone"
+                label="Phone Number"
+                placeholder="+1 555 000 0000"
+                className="md:col-span-2"
+              />
+            </FormSection>
+          )}
 
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => router.push("/cart")}
-            disabled={isPending}
+          <FormSection
+            title="Order Notes"
+            description="Optional notes for your order."
           >
-            Back to Cart
-          </Button>
-          <form.Subscribe selector={(state) => state.canSubmit}>
-            {(canSubmit) => (
-              <Button type="submit" disabled={!canSubmit || isPending}>
-                {isPending ? "Placing Order..." : "Place Order"}
-              </Button>
-            )}
-          </form.Subscribe>
-        </div>
-      </Form>
+            <InputField
+              form={form}
+              name="notes"
+              label="Notes"
+              type="textarea"
+              rows={3}
+              placeholder="Anything we should know?"
+              className="md:col-span-2"
+            />
+          </FormSection>
 
-      <OrderSummary items={displayItems} subtotal={subtotal} />
+          <InfoNotice
+            variant="info"
+            message="Secure card payment is handled on this page with Stripe."
+          />
+
+          <div className="flex items-center justify-between pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.push("/cart")}
+              disabled={isPending}
+            >
+              Back to Cart
+            </Button>
+            <form.Subscribe selector={(state) => state.canSubmit}>
+              {(canSubmit) => (
+                <Button type="submit" disabled={!canSubmit || isPending}>
+                  {isPending ? "Preparing Payment..." : "Continue to Payment"}
+                </Button>
+              )}
+            </form.Subscribe>
+          </div>
+        </Form>
+      )}
+
+      <OrderSummary items={summaryItems} subtotal={summarySubtotal} />
     </div>
   );
 }

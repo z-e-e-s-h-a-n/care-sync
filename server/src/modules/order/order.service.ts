@@ -19,12 +19,14 @@ import { createReference } from "@workspace/shared/utils";
 
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { OtpService } from "@/modules/auth/otp.service";
+import { PaymentService } from "@/modules/payment/payment.service";
 
 @Injectable()
 export class OrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly otpService: OtpService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   // ── Cart ──────────────────────────────────────────────────
@@ -353,9 +355,17 @@ export class OrderService {
       });
     });
 
+    const paymentSession =
+      dto.paymentProvider === "stripe"
+        ? await this.paymentService.createStripeOrderCheckout(result.id)
+        : undefined;
+
     return {
       message: "Order placed successfully.",
-      data: result,
+      data: {
+        order: result,
+        paymentSession,
+      },
     };
   }
 

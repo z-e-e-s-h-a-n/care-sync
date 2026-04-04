@@ -4,6 +4,7 @@ import type {
   UpdateCartItemType,
   SyncCartType,
   CheckoutType,
+  CheckoutResponse,
   CreateManualOrderType,
   UpdateOrderStatusType,
   CreateShipmentType,
@@ -44,7 +45,7 @@ export const clearCart = () =>
 // ── Orders ────────────────────────────────────────────────
 
 export const checkout = (data: CheckoutType) =>
-  executeApi<OrderResponse>(() => apiClient.post("/orders", data));
+  executeApi<CheckoutResponse>(() => apiClient.post("/orders", data));
 
 export const createOrder = (data: CreateManualOrderType) =>
   executeApi<OrderResponse>(() => apiClient.post("/orders/manual", data));

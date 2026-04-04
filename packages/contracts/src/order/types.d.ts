@@ -19,6 +19,7 @@ import type {
 import type { BaseQueryResponse, Sanitize } from "../lib/types";
 import type { ProductResponse } from "../product/types";
 import type { BaseUserResponse } from "../user/types";
+import type { PaymentProvider, PaymentMethodType } from "../lib/types";
 
 export type CartItemType = z.input<typeof cartItemSchema>;
 export type UpdateCartItemType = z.input<typeof updateCartItemSchema>;
@@ -45,6 +46,20 @@ export type OrderResponse = Sanitize<Order> & {
   items: OrderItemResponse[];
   shipments?: ShipmentResponse[];
 };
+
+export interface OrderCheckoutPaymentSession {
+  provider: PaymentProvider;
+  methodType: PaymentMethodType;
+  publishableKey: string;
+  clientSecret: string;
+  sessionId: string;
+  paymentId: string;
+}
+
+export interface CheckoutResponse {
+  order: OrderResponse;
+  paymentSession?: OrderCheckoutPaymentSession;
+}
 
 export interface OrderQueryResponse extends BaseQueryResponse {
   orders: OrderResponse[];
