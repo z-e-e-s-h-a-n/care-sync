@@ -405,7 +405,9 @@ function CheckoutForm() {
                       <div className="space-y-1">
                         <p className="font-medium">{b.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Select this branch for pickup.
+                          {[b.city, b.state, b.country]
+                            .filter(Boolean)
+                            .join(", ")}
                         </p>
                       </div>
                     ),
