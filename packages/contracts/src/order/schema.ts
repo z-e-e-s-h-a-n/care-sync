@@ -10,12 +10,12 @@ import {
 } from "../lib/enums";
 import {
   baseQuerySchema,
-  emailSchema,
   idSchema,
   nameSchema,
   optionalStringSchema,
   positiveIntSchema,
   phoneSchema,
+  emailSchema,
 } from "../lib/schema";
 
 export const cartItemSchema = z.object({
@@ -34,85 +34,58 @@ export const syncCartSchema = z.object({
   mode: cartSyncModeEnum.default("merge"),
 });
 
-const orderAddressSchema = {
-  deliveryType: DeliveryTypeEnum.default("delivery"),
-  notes: optionalStringSchema,
-  shippingName: z.string().min(2).optional(),
-  shippingPhone: z.string().optional(),
-  shippingStreet: z.string().optional(),
-  shippingCity: z.string().optional(),
-  shippingState: z.string().optional(),
-  shippingPostalCode: z.string().optional(),
-  shippingCountry: z.string().optional(),
-};
-
-export const checkoutSchema = z.object({
-  ...orderAddressSchema,
-  email: emailSchema,
-  firstName: nameSchema,
-  lastName: nameSchema.optional(),
-  phone: phoneSchema,
-  paymentProvider: PaymentProviderEnum.default("stripe"),
-  paymentMethodType: PaymentMethodTypeEnum.default("card"),
-  items: z
-    .array(
-      z.object({
-        productId: idSchema,
-        quantity: positiveIntSchema,
-      }),
-    )
-    .optional(),
+const orderContactSchema = z.object({
+  shippingFirstName: nameSchema,
+  shippingLastName: nameSchema.optional(),
+  shippingPhone: phoneSchema,
 });
 
-export const createManualOrderSchema = z
-  .object({
+const deliveryOrderSchema = z.object({
+  deliveryType: z.literal("delivery"),
+  shippingCountry: z.string().trim().min(2),
+  shippingStreet: z.string().trim().min(3),
+  shippingCity: z.string().trim().min(2),
+  shippingState: optionalStringSchema,
+  shippingPostalCode: z.string().trim().min(2),
+});
+
+const pickupOrderSchema = z.object({
+  deliveryType: z.literal("pickup"),
+  pickupBranchId: idSchema,
+});
+
+export const orderAddressSchema = z.discriminatedUnion("deliveryType", [
+  deliveryOrderSchema,
+  pickupOrderSchema,
+]);
+
+export const checkoutSchema = z.intersection(
+  z.object({
+    email: emailSchema,
+    paymentProvider: PaymentProviderEnum,
+    paymentMethodType: PaymentMethodTypeEnum,
+    saveInformation: z.boolean().default(false),
+    notes: optionalStringSchema,
+    items: z
+      .array(
+        z.object({
+          productId: idSchema,
+          quantity: positiveIntSchema,
+        }),
+      )
+      .optional(),
+  }),
+  z.intersection(orderContactSchema, orderAddressSchema),
+);
+
+export const createManualOrderSchema = z.intersection(
+  z.object({
     patientId: idSchema,
-    ...orderAddressSchema,
+    notes: optionalStringSchema,
     items: z.array(cartItemSchema).min(1, "Add at least one product."),
-  })
-  .superRefine((value, ctx) => {
-    if (value.deliveryType !== "delivery") return;
-
-    if (!value.shippingName?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["shippingName"],
-        message: "Shipping name is required for delivery orders.",
-      });
-    }
-
-    if (!value.shippingPhone?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["shippingPhone"],
-        message: "Shipping phone is required for delivery orders.",
-      });
-    }
-
-    if (!value.shippingStreet?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["shippingStreet"],
-        message: "Street is required for delivery orders.",
-      });
-    }
-
-    if (!value.shippingCity?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["shippingCity"],
-        message: "City is required for delivery orders.",
-      });
-    }
-
-    if (!value.shippingCountry?.trim()) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["shippingCountry"],
-        message: "Country is required for delivery orders.",
-      });
-    }
-  });
+  }),
+  z.intersection(orderContactSchema, orderAddressSchema),
+);
 
 export const updateOrderStatusSchema = z.object({
   status: OrderStatusEnum,

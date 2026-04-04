@@ -1061,6 +1061,7 @@ model Branch {
     staffMembers  StaffProfile[]
     appointments  Appointment[]
     conversations Conversation[]
+    pickupOrders  Order[]        @relation("PickupOrders")
 
     @@index([isActive])
     @@index([city])
@@ -1188,6 +1189,9 @@ model Order {
     userId String
     user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
+    pickupBranchId String?
+    pickupBranch   Branch? @relation("PickupOrders", fields: [pickupBranchId], references: [id], onDelete: SetNull)
+
     status       OrderStatus  @default(pending)
     deliveryType DeliveryType @default(delivery)
 
@@ -1219,6 +1223,7 @@ model Order {
     shipments Shipment[]
 
     @@index([userId, createdAt])
+    @@index([pickupBranchId])
     @@index([status, createdAt])
 }
 

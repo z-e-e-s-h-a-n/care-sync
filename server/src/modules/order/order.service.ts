@@ -191,28 +191,43 @@ export class OrderService {
 
   // ── Orders ────────────────────────────────────────────────
 
-  async checkout(dto: CheckoutDto, currentUser?: Express.User) {
-    const email = dto.email?.trim();
-    const firstName = dto.firstName?.trim();
-    const lastName = dto.lastName?.trim();
-    const phone = dto.phone?.trim();
+  async checkout(dto: CheckoutDto["payload"], currentUser?: Express.User) {
+    const { email, shippingFirstName, shippingLastName, shippingPhone } = dto;
+    const shippingFullName = [shippingFirstName, shippingLastName]
+      .filter(Boolean)
+      .join(" ");
 
-    if (!email || !firstName || !lastName || !phone) {
-      throw new BadRequestException(
-        "Email, first name, last name, and phone are required.",
-      );
+    if (dto.deliveryType === "pickup") {
+      await this.assertPickupBranch(dto.pickupBranchId);
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
-      if (currentUser?.id) {
+      if (currentUser) {
         const user = await tx.user.findUniqueOrThrow({
           where: { id: currentUser.id },
         });
 
-        if (user.phone !== phone) {
+        if (dto.paymentProvider === "stripe" && !user.email && !email) {
+          throw new BadRequestException(
+            "An email address is required for Stripe checkout.",
+          );
+        }
+
+        const updates: Prisma.UserUpdateInput = {};
+
+        if (shippingPhone && !user.phone) {
+          updates.phone = shippingPhone;
+        }
+
+        if (!user.email && email) {
+          updates.email = email;
+          updates.isEmailVerified = false;
+        }
+
+        if (Object.keys(updates).length > 0) {
           await tx.user.update({
             where: { id: currentUser.id },
-            data: { phone },
+            data: updates,
           });
         }
 
@@ -236,14 +251,23 @@ export class OrderService {
             orderNumber: this.createOrderNumber(),
             status: "pending",
             deliveryType: dto.deliveryType,
+            pickupBranchId:
+              dto.deliveryType === "pickup" ? dto.pickupBranchId : undefined,
             notes: dto.notes,
-            shippingName: dto.shippingName ?? `${firstName} ${lastName}`.trim(),
-            shippingPhone: dto.shippingPhone ?? phone,
-            shippingStreet: dto.shippingStreet,
-            shippingCity: dto.shippingCity,
-            shippingState: dto.shippingState,
-            shippingPostalCode: dto.shippingPostalCode,
-            shippingCountry: dto.shippingCountry,
+            shippingName: shippingFullName,
+            shippingPhone,
+            shippingStreet:
+              dto.deliveryType === "delivery" ? dto.shippingStreet : undefined,
+            shippingCity:
+              dto.deliveryType === "delivery" ? dto.shippingCity : undefined,
+            shippingState:
+              dto.deliveryType === "delivery" ? dto.shippingState : undefined,
+            shippingPostalCode:
+              dto.deliveryType === "delivery"
+                ? dto.shippingPostalCode
+                : undefined,
+            shippingCountry:
+              dto.deliveryType === "delivery" ? dto.shippingCountry : undefined,
             subtotal,
             shippingCost: 0,
             discountAmount: 0,
@@ -291,34 +315,29 @@ export class OrderService {
       );
 
       let user = await tx.user.findFirst({
-        where: { email },
+        where: { OR: [{ email }, { phone: shippingPhone }] },
       });
 
-      const isNewUser = !user;
+      if (dto.paymentProvider === "stripe" && !email) {
+        throw new BadRequestException(
+          "An email address is required for Stripe checkout.",
+        );
+      }
+
       if (!user) {
         user = await tx.user.create({
           data: {
             email,
-            firstName,
-            lastName,
-            displayName: `${firstName} ${lastName}`.trim(),
-            phone,
+            firstName: shippingFirstName,
+            lastName: shippingLastName,
+            displayName: shippingFullName,
+            phone: shippingPhone,
             role: "patient",
-          },
-        });
-      } else {
-        user = await tx.user.update({
-          where: { id: user.id },
-          data: {
-            firstName,
-            lastName,
-            displayName: `${firstName} ${lastName}`.trim(),
-            phone,
           },
         });
       }
 
-      if (isNewUser) {
+      if (!user && email) {
         await this.otpService.sendOtp({
           user,
           identifier: email,
@@ -333,14 +352,23 @@ export class OrderService {
           orderNumber: this.createOrderNumber(),
           status: "pending",
           deliveryType: dto.deliveryType,
+          pickupBranchId:
+            dto.deliveryType === "pickup" ? dto.pickupBranchId : undefined,
           notes: dto.notes,
-          shippingName: dto.shippingName ?? `${firstName} ${lastName}`.trim(),
-          shippingPhone: dto.shippingPhone ?? phone,
-          shippingStreet: dto.shippingStreet,
-          shippingCity: dto.shippingCity,
-          shippingState: dto.shippingState,
-          shippingPostalCode: dto.shippingPostalCode,
-          shippingCountry: dto.shippingCountry,
+          shippingName: shippingFullName,
+          shippingPhone,
+          shippingStreet:
+            dto.deliveryType === "delivery" ? dto.shippingStreet : undefined,
+          shippingCity:
+            dto.deliveryType === "delivery" ? dto.shippingCity : undefined,
+          shippingState:
+            dto.deliveryType === "delivery" ? dto.shippingState : undefined,
+          shippingPostalCode:
+            dto.deliveryType === "delivery"
+              ? dto.shippingPostalCode
+              : undefined,
+          shippingCountry:
+            dto.deliveryType === "delivery" ? dto.shippingCountry : undefined,
           subtotal,
           shippingCost: 0,
           discountAmount: 0,
@@ -375,8 +403,12 @@ export class OrderService {
     };
   }
 
-  async createManualOrder(dto: CreateManualOrderDto) {
+  async createManualOrder(dto: CreateManualOrderDto["payload"]) {
     const result = await this.prisma.$transaction(async (tx) => {
+      if (dto.deliveryType === "pickup") {
+        await this.assertPickupBranch(dto.pickupBranchId, tx);
+      }
+
       const patient = await tx.patientProfile.findUniqueOrThrow({
         where: { id: dto.patientId },
         include: { user: true },
@@ -419,22 +451,43 @@ export class OrderService {
         return sum + Number(product.sellPrice) * item.quantity;
       }, 0);
 
+      const shippingFullName = [dto.shippingFirstName, dto.shippingLastName]
+        .filter(Boolean)
+        .join(" ");
+
       return tx.order.create({
         data: {
           userId: patient.userId,
           orderNumber: this.createOrderNumber(),
           status: "pending",
           deliveryType: dto.deliveryType,
+          pickupBranchId:
+            dto.deliveryType === "pickup" ? dto.pickupBranchId : undefined,
           notes: dto.notes,
           shippingName:
-            dto.shippingName?.trim() || patient.user.displayName || undefined,
+            shippingFullName || patient.user.displayName || undefined,
           shippingPhone:
-            dto.shippingPhone?.trim() || patient.user.phone || undefined,
-          shippingStreet: dto.shippingStreet?.trim() || undefined,
-          shippingCity: dto.shippingCity?.trim() || undefined,
-          shippingState: dto.shippingState?.trim() || undefined,
-          shippingPostalCode: dto.shippingPostalCode?.trim() || undefined,
-          shippingCountry: dto.shippingCountry?.trim() || undefined,
+            dto.shippingPhone.trim() || patient.user.phone || undefined,
+          shippingStreet:
+            dto.deliveryType === "delivery"
+              ? dto.shippingStreet.trim()
+              : undefined,
+          shippingCity:
+            dto.deliveryType === "delivery"
+              ? dto.shippingCity.trim()
+              : undefined,
+          shippingState:
+            dto.deliveryType === "delivery"
+              ? dto.shippingState?.trim()
+              : undefined,
+          shippingPostalCode:
+            dto.deliveryType === "delivery"
+              ? dto.shippingPostalCode.trim()
+              : undefined,
+          shippingCountry:
+            dto.deliveryType === "delivery"
+              ? dto.shippingCountry.trim()
+              : undefined,
           subtotal,
           shippingCost: 0,
           discountAmount: 0,
@@ -594,6 +647,7 @@ export class OrderService {
 
   private orderInclude = {
     user: { omit: { password: true } },
+    pickupBranch: true,
     items: {
       include: {
         product: {
@@ -610,5 +664,23 @@ export class OrderService {
 
   private createOrderNumber() {
     return createReference("order");
+  }
+
+  private async assertPickupBranch(
+    branchId: string,
+    tx: Prisma.TransactionClient | PrismaService = this.prisma,
+  ) {
+    const branch = await tx.branch.findFirst({
+      where: {
+        id: branchId,
+        isActive: true,
+      },
+    });
+
+    if (!branch) {
+      throw new BadRequestException("Selected pickup branch is unavailable.");
+    }
+
+    return branch;
   }
 }

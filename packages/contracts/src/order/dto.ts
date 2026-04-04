@@ -10,12 +10,13 @@ import {
   updateShipmentSchema,
   orderQuerySchema,
 } from "./schema";
+import { createUZodDto } from "../lib/utils";
 
 export class CartItemDto extends createZodDto(cartItemSchema) {}
 export class UpdateCartItemDto extends createZodDto(updateCartItemSchema) {}
 export class SyncCartDto extends createZodDto(syncCartSchema) {}
-export class CheckoutDto extends createZodDto(checkoutSchema) {}
-export class CreateManualOrderDto extends createZodDto(
+export class CheckoutDto extends createUZodDto(checkoutSchema) {}
+export class CreateManualOrderDto extends createUZodDto(
   createManualOrderSchema,
 ) {}
 export class UpdateOrderStatusDto extends createZodDto(

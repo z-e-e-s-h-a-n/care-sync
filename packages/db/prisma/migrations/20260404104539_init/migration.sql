@@ -653,6 +653,7 @@ CREATE TABLE "Order" (
     "id" TEXT NOT NULL,
     "orderNumber" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "pickupBranchId" TEXT,
     "status" "OrderStatus" NOT NULL DEFAULT 'pending',
     "deliveryType" "DeliveryType" NOT NULL DEFAULT 'delivery',
     "shippingName" TEXT,
@@ -1091,6 +1092,9 @@ CREATE UNIQUE INDEX "Order_orderNumber_key" ON "Order"("orderNumber");
 CREATE INDEX "Order_userId_createdAt_idx" ON "Order"("userId", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "Order_pickupBranchId_idx" ON "Order"("pickupBranchId");
+
+-- CreateIndex
 CREATE INDEX "Order_status_createdAt_idx" ON "Order"("status", "createdAt");
 
 -- CreateIndex
@@ -1314,6 +1318,9 @@ ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("pr
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_pickupBranchId_fkey" FOREIGN KEY ("pickupBranchId") REFERENCES "Branch"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;

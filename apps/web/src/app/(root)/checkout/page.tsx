@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useStore } from "@tanstack/react-form";
-import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
+import {
+  EmbeddedCheckout,
+  EmbeddedCheckoutProvider,
+} from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { ChevronLeft, CreditCard, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
@@ -272,7 +275,6 @@ function CheckoutForm() {
       try {
         const result = await placeOrder({
           ...value,
-          phone: (value.shippingPhone ?? "").trim(),
           shippingPhone: (value.shippingPhone ?? "").trim(),
           items: isLoggedIn ? undefined : items,
         });
@@ -304,7 +306,10 @@ function CheckoutForm() {
     form.setFieldValue("shippingPhone", currentUser.phone ?? "");
   }, [currentUser, form]);
 
-  const deliveryType = useStore(form.store, (state) => state.values.deliveryType);
+  const deliveryType = useStore(
+    form.store,
+    (state) => state.values.deliveryType,
+  );
 
   const summaryItems = checkoutResult
     ? checkoutResult.order.items.map((item) => ({
@@ -339,6 +344,8 @@ function CheckoutForm() {
   }
 
   if (!count || !displayItems.length) return <EmptyCartState />;
+
+  console.log("form errors", form.getAllErrors());
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">

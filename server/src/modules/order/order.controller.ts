@@ -89,13 +89,13 @@ export class OrderController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const currentUser = await this.resolveCheckoutUser(req, res);
-    return this.orderService.checkout(dto, currentUser);
+    return this.orderService.checkout(dto.payload, currentUser);
   }
 
   @Roles("admin", "doctor", "staff")
   @Post("manual")
   createManualOrder(@Body() dto: CreateManualOrderDto) {
-    return this.orderService.createManualOrder(dto);
+    return this.orderService.createManualOrder(dto.payload);
   }
 
   @Roles("admin", "doctor", "staff", "patient")

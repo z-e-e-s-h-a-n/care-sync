@@ -233,7 +233,10 @@ export interface PatientDashboardOverview {
   };
   upcomingAppointments: DashboardAppointment[];
   recentOrders: Array<
-    Pick<OrderResponse, "id" | "orderNumber" | "status" | "total" | "createdAt"> & {
+    Pick<
+      OrderResponse,
+      "id" | "orderNumber" | "status" | "total" | "createdAt"
+    > & {
       itemCount: number;
     }
   >;
