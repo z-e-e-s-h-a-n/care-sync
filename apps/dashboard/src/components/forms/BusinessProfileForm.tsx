@@ -22,6 +22,7 @@ import { MediaField } from "@workspace/ui/media/mediaField";
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 
 import { useBusinessProfile } from "@/hooks/business";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const BusinessProfileForm = () => {
   const { data, isLoading, fetchError, mutateAsync, isPending } =
@@ -72,13 +73,10 @@ const BusinessProfileForm = () => {
     <Form
       form={form}
       header={
-        <div>
-          <h1 className="text-3xl font-bold">Business Profile</h1>
-          <p className="text-muted-foreground">
-            Manage the public business identity used across your dashboard and
-            website.
-          </p>
-        </div>
+        <PageIntro
+          title="Business Profile"
+          description="Manage the public business identity used across your dashboard and website."
+        />
       }
     >
       <FormSection

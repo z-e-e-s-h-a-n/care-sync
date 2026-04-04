@@ -23,6 +23,7 @@ import CUUserForm from "@/components/forms/CUUserForm";
 import { useStaffMember, useSaveStaff } from "@/hooks/staff";
 import useUser from "@workspace/ui/hooks/use-user";
 import { useBranches } from "@/hooks/business";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const credentialOptions = [
   { label: "BCBA", value: "BCBA" },
@@ -77,16 +78,15 @@ const StaffForm = ({ entityId, formType }: BaseCUFormProps) => {
   if (isLoading || isUserLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form}>
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {formType === "add" ? "Add Staff Member" : "Update Staff Member"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Assign a user account, select their branch, and complete the staff
-          profile.
-        </p>
-      </div>
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title={formType === "add" ? "Add Staff Member" : "Update Staff Member"}
+          description="Assign a user account, select the branch, and complete the staff profile."
+        />
+      }
+    >
 
       <FormSection
         title="Assignment"

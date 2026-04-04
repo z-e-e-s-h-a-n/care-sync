@@ -22,6 +22,7 @@ import { useAdminUser } from "@/hooks/admin";
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import type { UserResponse } from "@workspace/contracts/user";
 import useUser from "@workspace/ui/hooks/use-user";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 interface CUUserFormProps extends BaseCUFormProps {
   onSuccess?: (user: UserResponse) => void;
@@ -103,12 +104,15 @@ const CUUserForm = ({
   if (isLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form}>
-      <div>
-        <h2 className="capitalize text-lg font-semibold">
-          {formType === "add" ? "Add New" : "Update"} User
-        </h2>
-      </div>
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title={`${formType === "add" ? "Add New" : "Update"} User`}
+          description="Manage the user identity, account access, role, and security settings."
+        />
+      }
+    >
 
       {/* =========================
               BASIC INFORMATION

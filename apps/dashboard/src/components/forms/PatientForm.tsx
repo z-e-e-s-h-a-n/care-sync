@@ -30,6 +30,7 @@ import CUUserForm from "@/components/forms/CUUserForm";
 import { MediaField } from "@workspace/ui/media/mediaField";
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import { usePatient, useSavePatient } from "@/hooks/patient";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const formatLabel = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
@@ -81,17 +82,15 @@ const PatientForm = ({ entityId, formType }: BaseCUFormProps) => {
   if (isLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form}>
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {formType === "add" ? "Create Patient" : "Update Patient"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Select the linked patient user and manage the medical profile
-          separately from the account record.
-        </p>
-      </div>
-
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title={formType === "add" ? "Create Patient" : "Update Patient"}
+          description="Select the linked patient user and manage the medical profile separately from the account record."
+        />
+      }
+    >
       <FormSection
         title="Patient Account"
         description="Link the patient user account before completing the profile."

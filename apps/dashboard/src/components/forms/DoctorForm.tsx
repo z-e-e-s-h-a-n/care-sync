@@ -24,6 +24,7 @@ import CUUserForm from "@/components/forms/CUUserForm";
 import { useDoctor, useSaveDoctor } from "@/hooks/doctor";
 import useUser from "@workspace/ui/hooks/use-user";
 import { useBranches } from "@/hooks/business";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const languageOptions = [
   { label: "Arabic", value: "Arabic" },
@@ -78,18 +79,19 @@ const DoctorForm = ({ entityId, formType }: BaseCUFormProps) => {
   if (isLoading || isUserLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form}>
-      {currentUser?.role === "admin" && (
-        <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            {formType === "add" ? "Create Doctor" : "Update Doctor"}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Select the doctor, assign the branch, and complete the provider
-            profile.
-          </p>
-        </div>
-      )}
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title={formType === "add" ? "Create Doctor" : "Update Doctor"}
+          description={
+            currentUser?.role === "admin"
+              ? "Select the doctor, assign the branch, and complete the provider profile."
+              : "Manage your provider profile, credentials, and booking availability."
+          }
+        />
+      }
+    >
       {currentUser?.role === "admin" && (
         <FormSection
           title="Assignment"

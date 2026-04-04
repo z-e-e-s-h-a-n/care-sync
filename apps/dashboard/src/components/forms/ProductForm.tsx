@@ -23,6 +23,7 @@ import { useMediaLibrary } from "@workspace/ui/hooks/use-media";
 
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import { useProduct, useSaveProduct, useCategoryList } from "@/hooks/product";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
   const router = useRouter();
@@ -98,16 +99,15 @@ const ProductForm = ({ entityId, formType }: BaseCUFormProps) => {
   if (isLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form}>
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {formType === "add" ? "Add Product" : "Update Product"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Fill in the product details, pricing, and inventory information.
-        </p>
-      </div>
-
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title="Add product"
+          description="Create a new product listing for the shop."
+        />
+      }
+    >
       <FormSection
         title="Basic Information"
         description="Product name, slug, and category."

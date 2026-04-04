@@ -27,6 +27,7 @@ import { useCreateAppointment } from "@/hooks/appointment";
 import { useDoctors, useMyDoctorProfile } from "@/hooks/doctor";
 import { usePatients } from "@/hooks/patient";
 import { useBranches } from "@/hooks/business";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const formatLabel = (value: string) =>
   value.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
@@ -105,17 +106,19 @@ const AppointmentForm = () => {
   }
 
   return (
-    <Form form={form}>
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Book Appointment
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {isDoctorWorkspace
-            ? "Schedule an appointment from your own doctor workspace."
-            : "Book an appointment on behalf of a patient from the admin workspace."}
-        </p>
-      </div>
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title="Book Appointment"
+          description={
+            isDoctorWorkspace
+              ? "Schedule an appointment from your own doctor workspace."
+              : "Book an appointment on behalf of a patient from the admin workspace."
+          }
+        />
+      }
+    >
 
       <FormSection
         title="Linked Records"

@@ -18,6 +18,7 @@ import { InputField } from "@workspace/ui/components/input-field";
 import { SelectField } from "@workspace/ui/components/select-field";
 
 import { useCreateCampaign } from "@/hooks/campaign";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const CampaignForm = () => {
   const router = useRouter();
@@ -45,13 +46,15 @@ const CampaignForm = () => {
   });
 
   return (
-    <Form form={form}>
-      <div>
-        <h2 className="text-lg font-semibold">Create Campaign</h2>
-        <p className="text-sm text-muted-foreground">
-          Draft a notification campaign for users, patients, doctors, or admins.
-        </p>
-      </div>
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title="Create Campaign"
+          description="Draft a notification campaign for users, patients, doctors, or admins."
+        />
+      }
+    >
 
       <FormSection title="Campaign Setup">
         <SelectField

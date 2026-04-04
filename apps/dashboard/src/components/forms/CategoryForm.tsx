@@ -17,6 +17,7 @@ import { InputField } from "@workspace/ui/components/input-field";
 import { SwitchField } from "@workspace/ui/components/switch-field";
 import CUFormSkeleton from "@workspace/ui/skeleton/CUFormSkeleton";
 import { useCategory, useSaveCategory, useCategoryList } from "@/hooks/product";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const CategoryForm = ({ entityId, formType }: BaseCUFormProps) => {
   const router = useRouter();
@@ -52,15 +53,15 @@ const CategoryForm = ({ entityId, formType }: BaseCUFormProps) => {
   if (isLoading) return <CUFormSkeleton />;
 
   return (
-    <Form form={form}>
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {formType === "add" ? "Add Category" : "Update Category"}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Fill in the category details below.
-        </p>
-      </div>
+    <Form
+      form={form}
+      header={
+        <PageIntro
+          title={formType === "add" ? "Add Category" : "Update Category"}
+          description="Fill in the category details and control how it appears in the shop."
+        />
+      }
+    >
 
       <FormSection
         title="Category Details"
