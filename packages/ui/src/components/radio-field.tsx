@@ -2,6 +2,7 @@
 
 import { FieldContent, FieldDescription, FieldTitle } from "./field";
 import { FormField, type BaseFieldProps } from "./form";
+import { Label } from "./label";
 import { RadioGroup, RadioGroupItem } from "./radio-group";
 
 interface RadioFieldOption {
@@ -12,12 +13,12 @@ interface RadioFieldOption {
 
 interface RadioFieldProps<TFormData> extends BaseFieldProps<TFormData> {
   options: RadioFieldOption[];
-  variant?: "default" | "card";
+  variant?: "card" | "inline";
 }
 
 export const RadioField = <TFormData,>({
   options,
-  variant = "default",
+  variant = "card",
   ...props
 }: RadioFieldProps<TFormData>) => {
   return (
@@ -30,7 +31,7 @@ export const RadioField = <TFormData,>({
           className="grid gap-3 grid-cols-3"
         >
           {options.map((option) => (
-            <label
+            <Label
               key={option.value}
               className="flex items-start gap-3 rounded-md cursor-pointer border border-input p-2 bg-transparent dark:bg-input/30 dark:hover:bg-input/50"
             >
@@ -50,7 +51,7 @@ export const RadioField = <TFormData,>({
                   </span>
                 </>
               )}
-            </label>
+            </Label>
           ))}
         </RadioGroup>
       )}

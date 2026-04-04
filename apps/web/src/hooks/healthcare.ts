@@ -7,6 +7,7 @@ import type {
   UpdateAppointmentStatusType,
 } from "@workspace/contracts/appointment";
 import type { SendMessageType } from "@workspace/contracts/chat";
+import type { BranchQueryType } from "@workspace/contracts/business";
 import type { DoctorQueryType } from "@workspace/contracts/doctor";
 import type { PatientProfileType } from "@workspace/contracts/patient";
 import type {
@@ -25,6 +26,7 @@ import type {
 import type { ApiException } from "@workspace/sdk";
 import * as appointment from "@workspace/sdk/appointment";
 import * as availability from "@workspace/sdk/availability";
+import * as business from "@workspace/sdk/business";
 import * as chat from "@workspace/sdk/chat";
 import * as doctor from "@workspace/sdk/doctor";
 import * as patient from "@workspace/sdk/patient";
@@ -47,6 +49,23 @@ export function useDoctors(params: DoctorQueryType) {
   const query = useQuery({
     queryKey: ["doctors", params],
     queryFn: () => doctor.listDoctors(params),
+    select: (res) => res.data,
+    placeholderData: (prev) => prev,
+    ...queryDefaults,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchError: query.error as ApiException | null,
+  };
+}
+
+export function useBranches(params?: BranchQueryType) {
+  const query = useQuery({
+    queryKey: ["branches", params],
+    queryFn: () => business.listBranches(params),
     select: (res) => res.data,
     placeholderData: (prev) => prev,
     ...queryDefaults,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,80 +10,42 @@ import {
   EmbeddedCheckoutProvider,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { ChevronLeft, CreditCard, ShoppingBag } from "lucide-react";
+import {
+  ChevronLeft,
+  CreditCard,
+  MapPin,
+  ShoppingBag,
+  Store,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   checkoutSchema,
   type CheckoutResponse,
   type CheckoutType,
 } from "@workspace/contracts/order";
-import { formatPrice } from "@workspace/shared/utils";
+import { formatPricePrecise } from "@workspace/shared/utils";
 import { Button } from "@workspace/ui/components/button";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Form, FormSection } from "@workspace/ui/components/form";
 import { InputField } from "@workspace/ui/components/input-field";
 import { SelectField } from "@workspace/ui/components/select-field";
 import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@workspace/ui/components/tabs";
 import useUser from "@workspace/ui/hooks/use-user";
 import { InfoNotice } from "@workspace/ui/shared/InfoNotice";
 import SectionCard from "@workspace/ui/shared/SectionCard";
-import { usePlaceOrder } from "@/hooks/healthcare";
+import { useBranches, usePlaceOrder } from "@/hooks/healthcare";
 import { useCart } from "@/hooks/use-cart";
+import { CheckboxField } from "@workspace/ui/components/checkbox-field";
+import { ComboboxField } from "@workspace/ui/components/combobox-field";
 
-const deliveryTypeOptions = [
-  { label: "Delivery — Ship to my address", value: "delivery" },
-  { label: "Pickup — I'll collect in person", value: "pickup" },
-];
-
-const addressFields = (form: any) => (
-  <>
-    <InputField
-      form={form}
-      name="shippingName"
-      label="Full Name"
-      placeholder="Jane Smith"
-    />
-    <InputField
-      form={form}
-      name="shippingPhone"
-      label="Phone Number"
-      placeholder="+1 555 000 0000"
-    />
-    <InputField
-      form={form}
-      name="shippingStreet"
-      label="Street Address"
-      placeholder="123 Main St"
-      className="md:col-span-2"
-    />
-    <InputField
-      form={form}
-      name="shippingCity"
-      label="City"
-      placeholder="Los Angeles"
-    />
-    <InputField
-      form={form}
-      name="shippingState"
-      label="State"
-      placeholder="CA"
-    />
-    <InputField
-      form={form}
-      name="shippingPostalCode"
-      label="Postal Code"
-      placeholder="90001"
-    />
-    <InputField
-      form={form}
-      name="shippingCountry"
-      label="Country"
-      placeholder="United States"
-    />
-  </>
-);
-
-function EmptyCartState() {
+const EmptyCartState = () => {
   return (
     <div className="flex min-h-64 flex-col items-center justify-center gap-4 p-6 text-center">
       <ShoppingBag className="size-10 text-muted-foreground" />
@@ -92,7 +55,7 @@ function EmptyCartState() {
       </Button>
     </div>
   );
-}
+};
 
 function OrderSummary({
   items,
@@ -118,67 +81,25 @@ function OrderSummary({
             {item.name} × {item.quantity}
           </span>
           <span className="shrink-0 font-medium">
-            {formatPrice(item.unitPrice * item.quantity)}
+            {formatPricePrecise(item.unitPrice * item.quantity)}
           </span>
         </div>
       ))}
       <Separator />
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">Subtotal</span>
-        <span className="font-medium">{formatPrice(subtotal)}</span>
+        <span className="font-medium">{formatPricePrecise(subtotal)}</span>
       </div>
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">Shipping</span>
-        <span className="text-muted-foreground">TBD</span>
+        <span className="text-muted-foreground">Calculated next</span>
       </div>
       <Separator />
       <div className="flex justify-between font-semibold">
         <span>Estimated Total</span>
-        <span>{formatPrice(subtotal)}</span>
+        <span>{formatPricePrecise(subtotal)}</span>
       </div>
     </SectionCard>
-  );
-}
-
-function IdentitySection({
-  form,
-  isLoggedIn,
-}: {
-  form: any;
-  isLoggedIn: boolean;
-}) {
-  return (
-    <FormSection
-      title="Your Details"
-      description={
-        isLoggedIn
-          ? "Your account identity is linked to this order. You can still update your phone number here."
-          : "We'll use these details to create or match your account."
-      }
-    >
-      <InputField
-        form={form}
-        name="firstName"
-        label="First Name"
-        placeholder="Jane"
-        disabled={isLoggedIn}
-      />
-      <InputField
-        form={form}
-        name="lastName"
-        label="Last Name"
-        placeholder="Smith"
-        disabled={isLoggedIn}
-      />
-      <InputField
-        form={form}
-        name="email"
-        label="Email"
-        type="email"
-        placeholder="jane@example.com"
-        disabled={isLoggedIn}
-      />
-    </FormSection>
   );
 }
 
@@ -245,24 +166,28 @@ function CheckoutForm() {
     clearCart,
   } = useCart();
   const { placeOrder, isPending } = usePlaceOrder();
+  const [checkoutResult, setCheckoutResult] = useState<CheckoutResponse | null>(
+    null,
+  );
+  const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
 
   const form = useForm({
     defaultValues: {
-      deliveryType: "delivery",
-      notes: "",
       email: "",
-      firstName: "",
-      lastName: "",
-      phone: "",
-      paymentProvider: "stripe",
-      paymentMethodType: "card",
-      shippingName: "",
+      deliveryType: "delivery",
+      shippingFirstName: "",
+      shippingLastName: "",
       shippingPhone: "",
       shippingStreet: "",
       shippingCity: "",
       shippingState: "",
       shippingPostalCode: "",
       shippingCountry: "",
+      pickupBranchId: "",
+      saveInformation: false,
+      notes: "",
+      paymentProvider: "stripe",
+      paymentMethodType: "card",
       items: [],
     } as CheckoutType,
     validators: { onSubmit: checkoutSchema },
@@ -275,7 +200,6 @@ function CheckoutForm() {
       try {
         const result = await placeOrder({
           ...value,
-          shippingPhone: (value.shippingPhone ?? "").trim(),
           items: isLoggedIn ? undefined : items,
         });
 
@@ -292,24 +216,22 @@ function CheckoutForm() {
     },
   });
 
-  const [checkoutResult, setCheckoutResult] = useState<CheckoutResponse | null>(
-    null,
-  );
-
   useEffect(() => {
     if (!currentUser) return;
 
     form.setFieldValue("email", currentUser.email ?? "");
-    form.setFieldValue("firstName", currentUser.firstName ?? "");
-    form.setFieldValue("lastName", currentUser.lastName ?? "");
-    form.setFieldValue("shippingName", currentUser.displayName ?? "");
+    form.setFieldValue("shippingFirstName", currentUser.firstName ?? "");
+    form.setFieldValue("shippingLastName", currentUser.lastName ?? "");
     form.setFieldValue("shippingPhone", currentUser.phone ?? "");
   }, [currentUser, form]);
 
-  const deliveryType = useStore(
-    form.store,
-    (state) => state.values.deliveryType,
-  );
+  const { deliveryType, pickupBranchId } = useStore(form.store, (state) => ({
+    deliveryType: state.values.deliveryType,
+    pickupBranchId:
+      state.values.deliveryType === "pickup"
+        ? state.values.pickupBranchId
+        : undefined,
+  }));
 
   const summaryItems = checkoutResult
     ? checkoutResult.order.items.map((item) => ({
@@ -336,19 +258,17 @@ function CheckoutForm() {
 
   if (userLoading || isLoading) {
     return (
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <Skeleton className="h-80 rounded-xl" />
-        <Skeleton className="h-56 rounded-xl" />
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <Skeleton className="h-180 rounded-2xl" />
+        <Skeleton className="h-72 rounded-2xl" />
       </div>
     );
   }
 
   if (!count || !displayItems.length) return <EmptyCartState />;
 
-  console.log("form errors", form.getAllErrors());
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {checkoutResult?.paymentSession ? (
         <StripeCheckoutStep
           checkoutResult={checkoutResult}
@@ -356,45 +276,206 @@ function CheckoutForm() {
         />
       ) : (
         <Form form={form}>
-          <IdentitySection form={form} isLoggedIn={isLoggedIn} />
-
           <FormSection
-            title="Delivery Method"
-            description="Choose how you'd like to receive your order."
+            title="Your Details"
+            description={
+              <div className="flex items-center justify-between gap-3">
+                <span>Use your email to continue with this order.</span>
+                {!isLoggedIn && (
+                  <Link
+                    href="/auth/sign-in"
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Sign in
+                  </Link>
+                )}
+              </div>
+            }
           >
-            <SelectField
+            <InputField
               form={form}
-              name="deliveryType"
-              label="Delivery Type"
-              options={deliveryTypeOptions}
-              placeholder="Select delivery type"
+              name="email"
+              type="email"
+              label="Email"
+              placeholder="jane@example.com"
+              disabled={isLoggedIn}
               className="md:col-span-2"
             />
           </FormSection>
 
-          {deliveryType === "delivery" && (
-            <FormSection
-              title="Shipping Address"
-              description="Enter the address and phone number we should use for this order."
+          <FormSection
+            title="Shipping Details"
+            description="Choose delivery or pickup, then complete the order contact details."
+            className="grid-cols-1 space-y-4"
+          >
+            <Tabs
+              value={deliveryType}
+              onValueChange={(value) =>
+                form.setFieldValue(
+                  "deliveryType",
+                  value as CheckoutType["deliveryType"],
+                )
+              }
+              className="w-full"
             >
-              {addressFields(form)}
-            </FormSection>
-          )}
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="delivery">
+                  <MapPin className="size-4" />
+                  Ship
+                </TabsTrigger>
+                <TabsTrigger value="pickup">
+                  <Store className="size-4" />
+                  Pickup
+                </TabsTrigger>
+              </TabsList>
 
-          {deliveryType === "pickup" && (
-            <FormSection
-              title="Order Contact"
-              description="Add the best phone number to use for pickup updates."
-            >
-              <InputField
+              <TabsContent
+                value="delivery"
+                className="grid grid-cols-2 gap-4 pt-2"
+              >
+                <InputField
+                  form={form}
+                  name="shippingCountry"
+                  label="Country"
+                  placeholder="United States"
+                  className="col-span-2"
+                />
+                <InputField
+                  form={form}
+                  name="shippingFirstName"
+                  label="First Name"
+                  placeholder="Jane"
+                />
+                <InputField
+                  form={form}
+                  name="shippingLastName"
+                  label="Last Name"
+                  placeholder="Smith"
+                />
+                <InputField
+                  form={form}
+                  name="shippingStreet"
+                  label="Address"
+                  placeholder="123 Main St"
+                  className="col-span-2"
+                />
+                <InputField
+                  form={form}
+                  name="shippingCity"
+                  label="City"
+                  placeholder="Los Angeles"
+                />
+                <InputField
+                  form={form}
+                  name="shippingState"
+                  label="State / Region"
+                  placeholder="CA"
+                />
+                <InputField
+                  form={form}
+                  name="shippingPostalCode"
+                  label="Postal Code / ZIP"
+                  placeholder="90001"
+                />
+                <InputField
+                  form={form}
+                  name="shippingPhone"
+                  label="Phone"
+                  placeholder="+1 555 000 0000"
+                />
+              </TabsContent>
+
+              <TabsContent
+                value="pickup"
+                className="grid gap-4 md:grid-cols-2 pt-2"
+              >
+                <ComboboxField
+                  form={form}
+                  name="pickupBranchId"
+                  label="Pickup Branch"
+                  className="md:col-span-2"
+                  dataKey="branches"
+                  useQuery={useBranches}
+                  queryArgs={{}}
+                  getOption={(b) => ({
+                    key: b.id,
+                    label: b.name,
+                    value: b.id,
+                    content: (
+                      <div className="space-y-1">
+                        <p className="font-medium">{b.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Select this branch for pickup.
+                        </p>
+                      </div>
+                    ),
+                  })}
+                />
+                <InputField
+                  form={form}
+                  name="shippingFirstName"
+                  label="First Name"
+                  placeholder="Jane"
+                />
+                <InputField
+                  form={form}
+                  name="shippingLastName"
+                  label="Last Name"
+                  placeholder="Smith"
+                />
+                <InputField
+                  form={form}
+                  name="shippingPhone"
+                  label="Phone"
+                  placeholder="+1 555 000 0000"
+                  className="md:col-span-2"
+                />
+              </TabsContent>
+            </Tabs>
+
+            <CheckboxField
+              form={form}
+              variant="inline"
+              name="saveInformation"
+              label="Save this information for next time"
+            />
+          </FormSection>
+
+          <FormSection
+            title="Payment"
+            description="Pay securely on this page. Stripe will handle your card details after you continue."
+          >
+            <div className="md:col-span-2 space-y-4">
+              <div className="rounded-xl border bg-card/60 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 text-primary">
+                    <CreditCard className="size-4.5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-medium">Credit and debit card</p>
+                    <p className="text-sm text-muted-foreground">
+                      Continue to Stripe’s secure embedded payment form without
+                      leaving this page.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <CheckboxField
                 form={form}
-                name="shippingPhone"
-                label="Phone Number"
-                placeholder="+1 555 000 0000"
-                className="md:col-span-2"
+                variant="inline"
+                name="saveInformation"
+                label="Use shipping details as billing details"
               />
-            </FormSection>
-          )}
+
+              {!useShippingAsBilling && (
+                <InfoNotice
+                  variant="info"
+                  message="Billing details editing can be added next. For now, we’ll use your checkout contact details during payment."
+                />
+              )}
+            </div>
+          </FormSection>
 
           <FormSection
             title="Order Notes"
@@ -410,11 +491,6 @@ function CheckoutForm() {
               className="md:col-span-2"
             />
           </FormSection>
-
-          <InfoNotice
-            variant="info"
-            message="Secure card payment is handled on this page with Stripe."
-          />
 
           <div className="flex items-center justify-between pt-2">
             <Button
@@ -436,7 +512,13 @@ function CheckoutForm() {
         </Form>
       )}
 
-      <OrderSummary items={summaryItems} subtotal={summarySubtotal} />
+      <div className="space-y-4">
+        <OrderSummary items={summaryItems} subtotal={summarySubtotal} />
+        <InfoNotice
+          variant="default"
+          message="Taxes, delivery charges, and pickup instructions are confirmed after you continue to payment."
+        />
+      </div>
     </div>
   );
 }

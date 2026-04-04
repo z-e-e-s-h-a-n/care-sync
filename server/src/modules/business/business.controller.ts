@@ -40,13 +40,11 @@ export class BusinessController {
     return this.businessService.createBranch(dto);
   }
 
-  @Roles("admin")
   @Get("branches")
   async listBranches(@Query() query: BranchQueryDto) {
     return this.businessService.listBranches(query);
   }
 
-  @Roles("admin")
   @Get("branch/:branchId")
   async getBranch(@Param("branchId") branchId: string) {
     return this.businessService.getBranch(branchId);

@@ -1,6 +1,5 @@
 import type { ComponentProps } from "react";
 import { cn } from "../lib/utils";
-import { Checkbox } from "./checkbox";
 import { FormField, type BaseFieldProps } from "./form";
 import { Input } from "./input";
 import { Textarea } from "./textarea";
@@ -23,8 +22,7 @@ type InputExtraProps =
       rows?: number;
       maxLength?: number;
       resize?: "none" | "both" | "horizontal" | "vertical";
-    }
-  | { type: "checkbox" };
+    };
 
 export type InputFieldProps<TFormData> = BaseFieldProps<TFormData> &
   InputExtraProps;
@@ -33,14 +31,7 @@ export const InputField = <TFormData,>(props: InputFieldProps<TFormData>) => {
   const { className, ...rest } = props;
 
   return (
-    <FormField
-      className={cn(
-        rest.type === "checkbox" &&
-          "flex-row-reverse items-center cursor-pointer",
-        className,
-      )}
-      {...rest}
-    >
+    <FormField className={className} {...rest}>
       {({ isInvalid, ...field }) => {
         switch (rest.type) {
           case "textarea": {
@@ -53,17 +44,6 @@ export const InputField = <TFormData,>(props: InputFieldProps<TFormData>) => {
                 rows={rows}
                 maxLength={maxLength}
                 className={cn(resize && `resize-${resize}`)}
-              />
-            );
-          }
-
-          case "checkbox": {
-            return (
-              <Checkbox
-                {...field}
-                aria-invalid={isInvalid}
-                checked={field.value}
-                onCheckedChange={field.onChange}
               />
             );
           }

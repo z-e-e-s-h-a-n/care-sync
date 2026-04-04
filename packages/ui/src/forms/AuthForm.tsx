@@ -36,6 +36,7 @@ import type {
   ValidateOtpType,
 } from "@workspace/contracts/auth";
 import SocialAuthField from "./SocialAuthField";
+import { CheckboxField } from "../components/checkbox-field";
 
 type AppType = "web" | "dashboard";
 
@@ -354,9 +355,9 @@ export function AuthForm({
             </div>
 
             {isSignIn && (
-              <InputField
+              <CheckboxField
                 form={form}
-                type="checkbox"
+                variant="inline"
                 name="rememberDevice"
                 label="Remember Me"
               />
@@ -416,7 +417,8 @@ export function AuthForm({
                 Thoughtful care for every child and family.
               </h2>
               <p className="max-w-sm text-sm leading-6 text-white/80">
-                Secure access to appointments, updates, and support from one place.
+                Secure access to appointments, updates, and support from one
+                place.
               </p>
             </div>
           </div>
