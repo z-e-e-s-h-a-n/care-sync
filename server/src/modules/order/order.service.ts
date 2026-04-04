@@ -317,6 +317,7 @@ export class OrderService {
       let user = await tx.user.findFirst({
         where: { OR: [{ email }, { phone: shippingPhone }] },
       });
+      let createdGuestUser = false;
 
       if (dto.paymentProvider === "stripe" && !email) {
         throw new BadRequestException(
@@ -335,9 +336,10 @@ export class OrderService {
             role: "patient",
           },
         });
+        createdGuestUser = true;
       }
 
-      if (!user && email) {
+      if (createdGuestUser && email) {
         await this.otpService.sendOtp({
           user,
           identifier: email,

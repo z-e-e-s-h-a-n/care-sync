@@ -6,8 +6,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useStore } from "@tanstack/react-form";
 import {
-  EmbeddedCheckout,
-  EmbeddedCheckoutProvider,
+  Elements,
+  ExpressCheckoutElement,
+  PaymentElement,
+  useElements,
+  useStripe,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -18,6 +21,7 @@ import {
   Store,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import {
   checkoutSchema,
   type CheckoutResponse,
@@ -103,6 +107,190 @@ function OrderSummary({
   );
 }
 
+function StripePaymentForm({
+  checkoutResult,
+  onComplete,
+}: {
+  checkoutResult: CheckoutResponse;
+  onComplete: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const paymentSession = checkoutResult.paymentSession;
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [availableExpressMethods, setAvailableExpressMethods] = useState<
+    string[]
+  >([]);
+  const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
+
+  const confirmPayment = async (
+    expressEvent?: StripeExpressCheckoutElementConfirmEvent,
+  ) => {
+    if (!stripe || !elements || !paymentSession) return;
+
+    setIsConfirming(true);
+
+    const result = await stripe.confirmPayment({
+      elements,
+      clientSecret: paymentSession.clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/checkout/success?orderId=${checkoutResult.order.id}`,
+      },
+      redirect: "if_required",
+    });
+
+    setIsConfirming(false);
+
+    if (result.error) {
+      expressEvent?.paymentFailed({
+        reason: "fail",
+        message: result.error.message,
+      });
+
+      toast.error("Payment failed", {
+        description: result.error.message,
+      });
+      return;
+    }
+
+    if (
+      result.paymentIntent?.status === "succeeded" ||
+      result.paymentIntent?.status === "processing"
+    ) {
+      await onComplete();
+      return;
+    }
+
+    toast.message("Payment confirmation is still processing.");
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionCard className="shadow-sm">
+        <div className="space-y-5">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-primary/10 p-2 text-primary">
+              <CreditCard className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="font-semibold">Complete your payment</h2>
+              <p className="text-sm text-muted-foreground">
+                Choose an express option first, or pay with your card below.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Express checkout</p>
+              <p className="text-sm text-muted-foreground">
+                Available options can include PayPal, Apple Pay, Google Pay, and
+                Link depending on the device and Stripe configuration.
+              </p>
+            </div>
+
+            <div className="rounded-xl border bg-card/60 p-4">
+              <ExpressCheckoutElement
+                onConfirm={(event) => void confirmPayment(event)}
+                onReady={(event) => {
+                  const methods = Object.entries(
+                    event.availablePaymentMethods ?? {},
+                  )
+                    .filter(([, isAvailable]) => isAvailable)
+                    .map(([method]) => method);
+
+                  setAvailableExpressMethods(methods);
+                }}
+                options={{
+                  buttonHeight: 48,
+                  buttonTheme: {
+                    paypal: "gold",
+                    googlePay: "black",
+                    applePay: "black",
+                  },
+                  buttonType: {
+                    paypal: "checkout",
+                    googlePay: "checkout",
+                    applePay: "check-out",
+                  },
+                  layout: {
+                    maxColumns: 3,
+                    maxRows: 1,
+                    overflow: "auto",
+                  },
+                  paymentMethods: {
+                    paypal: "auto",
+                    applePay: "always",
+                    googlePay: "always",
+                    link: "auto",
+                  },
+                  emailRequired: true,
+                  billingAddressRequired: !useShippingAsBilling,
+                }}
+              />
+            </div>
+
+            {!availableExpressMethods.length && (
+              <InfoNotice
+                variant="info"
+                message="Express checkout options appear automatically when they are available for this device and payment intent."
+              />
+            )}
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Pay with card</p>
+              <p className="text-sm text-muted-foreground">
+                Enter your card details inline without leaving this page.
+              </p>
+            </div>
+
+            <div className="rounded-xl border bg-card/60 p-4">
+              <PaymentElement
+                options={{
+                  layout: "tabs",
+                }}
+              />
+            </div>
+
+            <label className="flex items-center gap-3 rounded-lg border p-3">
+              <Checkbox
+                checked={useShippingAsBilling}
+                onCheckedChange={(checked) =>
+                  setUseShippingAsBilling(checked === true)
+                }
+              />
+              <span className="text-sm font-medium">
+                Use shipping details as billing address
+              </span>
+            </label>
+
+            {!useShippingAsBilling && (
+              <InfoNotice
+                variant="info"
+                message="Billing details can be collected next. For now, Stripe will ask for any extra details it needs during confirmation."
+              />
+            )}
+
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={() => void confirmPayment()}
+                disabled={!stripe || !elements || isConfirming}
+              >
+                {isConfirming ? "Confirming Payment..." : "Pay Securely"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+    </div>
+  );
+}
+
 function StripeCheckoutStep({
   checkoutResult,
   onComplete,
@@ -122,34 +310,17 @@ function StripeCheckoutStep({
   if (!paymentSession) return null;
 
   return (
-    <div className="space-y-6">
-      <SectionCard className="shadow-sm">
-        <div className="flex items-start gap-3">
-          <div className="rounded-full bg-primary/10 p-2 text-primary">
-            <CreditCard className="size-5" />
-          </div>
-          <div className="space-y-1">
-            <h2 className="font-semibold">Secure payment</h2>
-            <p className="text-sm text-muted-foreground">
-              Your order has been created. Complete your payment below to
-              confirm and process it.
-            </p>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard className="overflow-hidden p-0 shadow-sm">
-        <EmbeddedCheckoutProvider
-          stripe={stripePromise}
-          options={{
-            clientSecret: paymentSession.clientSecret,
-            onComplete,
-          }}
-        >
-          <EmbeddedCheckout />
-        </EmbeddedCheckoutProvider>
-      </SectionCard>
-    </div>
+    <Elements
+      stripe={stripePromise}
+      options={{
+        clientSecret: paymentSession.clientSecret,
+      }}
+    >
+      <StripePaymentForm
+        checkoutResult={checkoutResult}
+        onComplete={onComplete}
+      />
+    </Elements>
   );
 }
 
@@ -441,42 +612,6 @@ function CheckoutForm() {
               name="saveInformation"
               label="Save this information for next time"
             />
-          </FormSection>
-
-          <FormSection
-            title="Payment"
-            description="Pay securely on this page. Stripe will handle your card details after you continue."
-          >
-            <div className="md:col-span-2 space-y-4">
-              <div className="rounded-xl border bg-card/60 p-4">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-primary/10 p-2 text-primary">
-                    <CreditCard className="size-4.5" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-medium">Credit and debit card</p>
-                    <p className="text-sm text-muted-foreground">
-                      Continue to Stripe’s secure embedded payment form without
-                      leaving this page.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <CheckboxField
-                form={form}
-                variant="inline"
-                name="saveInformation"
-                label="Use shipping details as billing details"
-              />
-
-              {!useShippingAsBilling && (
-                <InfoNotice
-                  variant="info"
-                  message="Billing details editing can be added next. For now, we’ll use your checkout contact details during payment."
-                />
-              )}
-            </div>
           </FormSection>
 
           <FormSection

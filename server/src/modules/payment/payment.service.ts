@@ -122,36 +122,23 @@ export class PaymentService {
         });
 
     const stripe = this.getStripeClient();
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      ui_mode: "embedded_page",
-      return_url: `${this.env.get("CLIENT_ENDPOINT")}/checkout/success?orderId=${order.id}`,
-      customer_email: order.user.email,
+    const intent = await stripe.paymentIntents.create({
+      amount: Math.round(Number(order.total) * 100),
+      currency: "usd",
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      receipt_email: order.user.email ?? undefined,
+      description: `Order ${order.orderNumber}`,
       metadata: {
         orderId: order.id,
         paymentId: payment.id,
       },
-      payment_intent_data: {
-        metadata: {
-          orderId: order.id,
-          paymentId: payment.id,
-        },
-      },
-      line_items: order.items.map((item) => ({
-        quantity: item.quantity,
-        price_data: {
-          currency: "usd",
-          unit_amount: Math.round(Number(item.unitPrice) * 100),
-          product_data: {
-            name: item.productName,
-          },
-        },
-      })),
     });
 
-    if (!session.client_secret) {
+    if (!intent.client_secret) {
       throw new BadRequestException(
-        "Stripe did not return a checkout session secret.",
+        "Stripe did not return a payment intent secret.",
       );
     }
 
@@ -159,8 +146,8 @@ export class PaymentService {
       where: { id: payment.id },
       data: {
         metadata: {
-          stripeSessionId: session.id,
-          stripeSessionStatus: session.status,
+          stripePaymentIntentId: intent.id,
+          stripePaymentStatus: intent.status,
         },
       },
     });
@@ -169,8 +156,8 @@ export class PaymentService {
       provider: "stripe" as const,
       methodType: "card" as const,
       publishableKey: this.env.get("STRIPE_PUBLISHABLE_KEY"),
-      clientSecret: session.client_secret,
-      sessionId: session.id,
+      clientSecret: intent.client_secret,
+      sessionId: intent.id,
       paymentId: payment.id,
     };
   }
@@ -293,20 +280,20 @@ export class PaymentService {
     }
 
     switch (event.type) {
-      case "checkout.session.completed":
-        await this.handleStripeCheckoutCompleted(
-          event.data.object as Stripe.Checkout.Session,
-        );
-        break;
-
-      case "checkout.session.expired":
-        await this.handleStripeCheckoutExpired(
-          event.data.object as Stripe.Checkout.Session,
+      case "payment_intent.succeeded":
+        await this.handleStripePaymentSucceeded(
+          event.data.object as Stripe.PaymentIntent,
         );
         break;
 
       case "payment_intent.payment_failed":
         await this.handleStripePaymentFailed(
+          event.data.object as Stripe.PaymentIntent,
+        );
+        break;
+
+      case "payment_intent.canceled":
+        await this.handleStripePaymentCanceled(
           event.data.object as Stripe.PaymentIntent,
         );
         break;
@@ -498,26 +485,20 @@ export class PaymentService {
     }
   }
 
-  private async handleStripeCheckoutCompleted(
-    session: Stripe.Checkout.Session,
-  ) {
-    const paymentId = session.metadata?.paymentId;
+  private async handleStripePaymentSucceeded(intent: Stripe.PaymentIntent) {
+    const paymentId = intent.metadata.paymentId;
     if (!paymentId) return;
 
     const payment = await this.prisma.payment.update({
       where: { id: paymentId },
       data: {
         status: "succeeded",
-        transactionId:
-          typeof session.payment_intent === "string"
-            ? session.payment_intent
-            : session.id,
+        transactionId: intent.id,
         paidAt: new Date(),
         failureMessage: null,
         metadata: {
-          stripeSessionId: session.id,
-          stripePaymentStatus: session.payment_status,
-          stripeSessionStatus: session.status,
+          stripePaymentIntentId: intent.id,
+          stripePaymentStatus: intent.status,
         },
       },
       include: this.paymentInclude,
@@ -526,18 +507,19 @@ export class PaymentService {
     await this.handleSuccessfulPayment(payment);
   }
 
-  private async handleStripeCheckoutExpired(session: Stripe.Checkout.Session) {
-    const paymentId = session.metadata?.paymentId;
+  private async handleStripePaymentCanceled(intent: Stripe.PaymentIntent) {
+    const paymentId = intent.metadata.paymentId;
     if (!paymentId) return;
 
     await this.prisma.payment.update({
       where: { id: paymentId },
       data: {
         status: "failed",
-        failureMessage: "Stripe checkout session expired.",
+        transactionId: intent.id,
+        failureMessage: "Stripe payment was canceled.",
         metadata: {
-          stripeSessionId: session.id,
-          stripeSessionStatus: session.status,
+          stripePaymentIntentId: intent.id,
+          stripePaymentStatus: intent.status,
         },
       },
     });

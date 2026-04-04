@@ -3,6 +3,7 @@ import { CheckCircle2, ShoppingBag } from "lucide-react";
 import type { AppPageProps } from "@workspace/contracts";
 import { Button } from "@workspace/ui/components/button";
 import SectionCard from "@workspace/ui/shared/SectionCard";
+import ClearCartOnSuccess from "@/components/shop/ClearCartOnSuccess";
 
 export default async function CheckoutSuccessPage({
   searchParams,
@@ -12,6 +13,8 @@ export default async function CheckoutSuccessPage({
 
   return (
     <div className="container mx-auto max-w-2xl space-y-6 p-6">
+      <ClearCartOnSuccess />
+
       <SectionCard className="shadow-sm">
         <div className="flex flex-col items-center gap-4 py-8 text-center">
           <div className="rounded-full bg-primary/10 p-4 text-primary">
