@@ -70,29 +70,20 @@ Role isolation is enforced server-side via `ClientService.assertRoleAccess` (tie
 ### Already Built
 
 - **apps/web public site:** home, about, services, doctors, resources, contact pages — complete
-- Patient portal: signup, login, appointments, profile, notifications
-- Doctor portal: appointment management, patient list, availability/schedule, messages
-- Admin portal: users, doctors, patients, payments, branches, campaigns, leads, traffic analytics, audit logs, business profile
-- Payments: Stripe, PayPal, manual — full integration with refund management
-- Notifications: email, SMS, WhatsApp, push (multi-channel)
+- Patient portal: signup, login, appointments, profile, notifications, orders, messages
+- Doctor portal: appointment management, patient list, availability/schedule, messages, dashboard overview
+- Staff portal: appointments, assigned patients, messages, profile, dashboard overview — complete
+- Admin portal: users, doctors, patients, staff, payments, branches, campaigns, leads, traffic analytics, audit logs, business profile
+- E-commerce: product catalog, categories, cart, checkout (Stripe), orders — web + dashboard
+- Payments: Stripe (appointments + orders), manual — full integration with refund management
+- Notifications: email, SMS, WhatsApp, push (multi-channel) — auth events wired; care events have templates but not all are triggered yet
 - Chat/messaging: patient ↔ doctor conversations with attachments
-- Media: Cloudinary uploads (avatars, documents, prescriptions)
+- Media: Cloudinary uploads (avatars, documents, prescriptions, products)
 - Multi-branch: manage multiple clinic locations with hours
 - MFA: email / SMS / WhatsApp / Auth App OTP
 - OAuth: Google login
-- Audit logs: all admin/doctor actions tracked
-
-### In Progress / Next — Staff Role & Portal
-
-A fourth internal role (`staff`) for therapists, front-desk, BCBAs, and support staff.
-
-- Staff log in via `apps/dashboard` — same app as admin and doctor, route group `/(staff)/`
-- Staff can: view and manage appointments, view assigned patients, record session notes, send messages, view and update product order status
-- Staff cannot: access admin-only settings, financial/payment data, system configuration, or analytics
-- `UserRole` enum must include `staff`
-- All server endpoints must handle `@Roles('staff')` where appropriate
-- `ClientService.assertRoleAccess` must recognize `staff` as a valid dashboard role
-- Staff are assigned to patients and appointments by admin or doctor
+- Audit logs: all admin/doctor/staff actions tracked
+- Dashboard overviews: admin, doctor, staff, patient — all implemented
 
 ### In Scope — E-Commerce (Products, Cart, Orders)
 
@@ -229,18 +220,113 @@ When building a feature that spans the stack, prefer this order:
 - Never expose passwords in response objects. `userView.omit: { password: true }` is the standard.
 - Rate limiting and `helmet` headers must be added before any public deployment (not yet wired — see production checklist below).
 
+## Remaining Work (Non-ABA)
+
+These items are confirmed in scope and not yet complete. Work on these before any ABA clinical features.
+
+### 1. E-Commerce Gaps
+
+- **Stock decrement on order** — `OrderService.checkout()` validates `stockCount` but never decrements it. Decrement each product's `stockCount` inside the checkout transaction using `product.update({ data: { stockCount: { decrement: item.quantity } } })` for both authenticated and guest checkout paths. Also decrement in `createManualOrder`.
+- **PayPal checkout** — `paymentProvider: "paypal"` is accepted by the checkout schema and form but no PayPal code exists in `PaymentService`. Implement `createPaypalOrder` and `capturePaypalOrder` using the PayPal Orders API. The checkout response for PayPal needs a `paymentSession` so the client can redirect the user to PayPal approval. Wire the PayPal webhook for capture confirmation.
+- **Low-stock alerts** — When `stockCount` drops to a configurable threshold (e.g., ≤5) after an order, send an `orderStatus` notification to admin/staff. Can be checked in the cleanup/scheduler service on a daily cron.
+
+### 2. Notification Events — Wire Templates to Backend Events
+
+Templates exist in `packages/templates` for every purpose listed below, but the server services never call `NotificationService.sendNotification()` for these events. Each must be wired to fire when the event occurs.
+
+| Purpose | Template | Where to wire |
+|---|---|---|
+| `appointmentStatus` | `AppointmentStatus` | `AppointmentService.updateAppointment()` on status change |
+| `appointmentReminder` | `AppointmentReminder` | Scheduled job — 24h and 1h before scheduled start |
+| `newChatMessage` | `NewChatMessage` | `ChatService` when a message is saved |
+| `orderStatus` | `OrderStatus` | `OrderService.checkout()` (confirmation) and `updateOrderStatus()` |
+| `refundStatus` | `RefundStatus` | `PaymentService` when a refund is processed |
+| `paymentStatus` | `PaymentStatus` | `PaymentService` when an order payment succeeds or fails |
+
+ABA-specific purposes (`sessionNoteAdded`, `treatmentPlanUpdated`, `authorizationAlert`) have no templates yet — wire those when building ABA features.
+
+### 3. Scheduled Jobs (server/src/modules/scheduler/)
+
+Add these cron jobs alongside the existing OTP and session cleanup jobs in `CleanupService`:
+
+| Job | Schedule | What it does |
+|---|---|---|
+| Appointment reminder | Daily at 7 AM | Send `appointmentReminder` notification for appointments starting in ~24h and ~1h |
+| No-show marking | Every hour | Auto-mark past appointments as `noShow` if still in `confirmed` status and start time has passed by >30 min |
+| Low-stock alert | Daily at 8 AM | Find products with `stockCount ≤ 5` and `status: active`, notify admin/staff |
+| Soft-delete purge | Daily at 2 AM | Permanently delete soft-deleted records older than 30 days (see below) |
+
+### 4. Soft-Delete Cleanup + Dashboard Deleted Filter
+
+**Permanent purge job** — These models use `deletedAt DateTime?`. After 30 days, permanently delete them in the nightly cron:
+- `User` — purge deleted users and cascade (profiles, sessions, media)
+- `Media` — purge deleted media records (also remove from Cloudinary)
+- `Branch` — purge deleted branches
+- `Product` — purge deleted products
+- `ProductCategory` — purge deleted categories
+- `ContactMessage` — purge deleted contact messages
+- `NewsletterSubscriber` — purge deleted subscriber records
+
+**Dashboard deleted filter** — All list pages that manage soft-deletable models should support a `showDeleted` filter tab (e.g., "Active" / "Deleted"). Deleted records show in a muted state with a "Restore" action instead of "Edit/Delete". The server query must accept `includeDeleted: boolean` and use `deletedAt: showDeleted ? { not: null } : null`. Apply to: Users, Branches, Products, Categories, Contact Messages, Newsletter Subscribers.
+
+### 5. Chat / Conversation UX
+
+The chat system (patient ↔ doctor conversations with attachments) works functionally but the UX needs improvement in both `apps/web` and `apps/dashboard`:
+
+- **Message grouping** — Group consecutive messages from the same sender visually (no repeated avatar/name on every bubble)
+- **Read receipts** — Show "seen" indicators on messages (field exists on `Message` model)
+- **Typing indicator** — Optimistic UI while the other party is composing (can use polling or SSE)
+- **Attachment preview** — Inline image previews in the chat thread instead of download links only
+- **Empty states** — Meaningful empty state when no conversations exist or a conversation has no messages
+- **Unread badge** — Unread message count visible on the messages nav item
+- **Conversation list** — Show last message preview, timestamp, and unread count in the conversation sidebar
+- **Auto-scroll** — Scroll to bottom on new messages; show "scroll to latest" button when scrolled up
+
+### 6. Dashboard List Page Filters — More Professional
+
+Current list pages have basic search inputs. Upgrade to a consistent, reusable filter bar pattern:
+
+- Combine search, status filter, date range, and sort controls into a single collapsible `FilterBar` component in `packages/ui`
+- Status filter should use pill/tab selectors (not a raw `<select>`)
+- Date range filter with a calendar popover
+- Active filter count badge on the "Filters" button when any non-default filter is applied
+- Clear-all filters button
+- Filters should persist in the URL query string so they survive page refresh and are shareable
+- Apply consistently across: Orders, Products, Appointments, Payments, Users, Patients, Doctors, Staff, Audit Logs, Campaigns
+
+### 7. Dashboard Detail Page Actions — Cleaner
+
+Detail pages currently show many individual buttons in a row. Replace with:
+
+- A primary action button for the most common action (e.g., "Edit")
+- A `DropdownMenu` (three-dot or "Actions" button) for secondary actions: delete, restore, change status, export, etc.
+- Destructive actions (delete, cancel, deactivate) must require a confirmation dialog before executing
+- Status-change actions should be context-aware — only show valid next states (e.g., an order in `shipped` state should only offer `delivered` or `cancelled`, not `pending`)
+- Apply consistently across: Order detail, Product detail, Patient detail, Doctor detail, User detail, Appointment detail, Payment detail
+
+### 8. apps/web — Content Gaps (vs readysetandgoaba.com)
+
+The real client site at `readysetandgoaba.com` has pages and content not yet reflected in `apps/web`:
+
+- **Refer a Client page** (`/refer`) — A form for healthcare providers or families to refer a new patient. Submits to the lead system (maps to `ContactMessage` with a `referral` subject type or a dedicated referral model).
+- **Careers / Employment page** (`/careers`) — Static page listing open positions at the practice. Can start as a static content page; job listings can be admin-managed later.
+- **Insurance page** (`/insurance`) — Information about accepted insurance providers and the authorization process. Static content, no backend required initially.
+- **Services page enrichment** — Current services page is generic. The real site lists three therapy modalities: In-Home ABA, Center-Based ABA, and Virtual ABA. Each should have its own section with description, benefits, and a CTA. Also add: Social Skills Training and Family Support as distinct service types.
+- **Homepage stats** — The real site shows stats (years of experience, patients served, etc.) as `0+` placeholders. Wire these to real aggregate data from the API (`/public/stats` endpoint returning appointment/patient counts) or make them admin-configurable in business profile settings.
+- **Testimonials** — The homepage references parent testimonials. Add a testimonials section to the home page; testimonials can be hardcoded initially or admin-managed via a new `Testimonial` model.
+
 ## Production Checklist (Server)
 
-These items are **not yet implemented** and are required before production:
+All core production items are now complete:
 
-- [ ] Add `@nestjs/throttler` for rate limiting (especially auth + OTP endpoints)
-- [ ] Add `helmet` for HTTP security headers
-- [ ] Add `trust proxy` setting in main.ts for correct IP resolution behind load balancers
-- [ ] Wire `DashboardModule` into `app.module.ts` (currently missing)
-- [ ] Implement `DashboardService.getOverview()` (stub — returns nothing)
-- [ ] Update `server/.env.example` header (still says "Mi MedCare Server")
-- [ ] Add `staff` to `ClientService.assertRoleAccess` for dashboard client
-- [ ] Wire staff role into all relevant server guards and role checks
+- ✅ `@nestjs/throttler` — rate limiting wired in `app.module.ts`
+- ✅ `helmet` — HTTP security headers in `main.ts`
+- ✅ `trust proxy` — set in `main.ts`
+- ✅ `DashboardModule` — wired in `app.module.ts`
+- ✅ `DashboardService` — all four overviews implemented (admin, doctor, staff, patient)
+- ✅ `server/.env.example` — header updated to "care-sync Server"
+- ✅ `staff` role — `ClientService.assertRoleAccess` correctly allows staff on dashboard
+- ✅ Staff portal — full route group `/(staff)` with appointments, patients, messages, profile, dashboard
 
 ## Quality Bar
 
